@@ -1,0 +1,160 @@
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary-tint) 0%, var(--color-secondary-tint) 100%);
+  padding: 48px 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-strong);
+  padding: 40px 36px;
+  text-align: center;
+}
+
+.logo {
+  display: inline-flex;
+  font-family: var(--font-heading), sans-serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  margin-bottom: 24px;
+}
+
+.logoAso {
+  color: var(--color-primary);
+}
+
+.logoBi {
+  color: var(--color-secondary);
+}
+
+.card h1 {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--color-text-soft);
+  font-size: 0.92rem;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-soft);
+  font-size: 0.82rem;
+  margin: 24px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-primary-tint);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field span {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.field input {
+  border: 2px solid var(--color-primary-tint);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  outline: none;
+  font-family: inherit;
+  color: var(--color-text);
+}
+
+.field input:focus {
+  border-color: var(--color-primary);
+}
+
+.checkboxField {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--color-text-soft);
+  line-height: 1.5;
+}
+
+.checkboxField input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.checkboxField a {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.checkboxField a:hover {
+  color: var(--color-primary-dark);
+}
+
+.submit {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  padding: 14px;
+  border-radius: 999px;
+  border: none;
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+.submit:hover {
+  background: var(--color-primary-dark);
+}
+
+.lgpdNote {
+  margin-top: 20px;
+  font-size: 0.78rem;
+  color: var(--color-text-soft);
+  line-height: 1.5;
+  background: var(--color-primary-tint);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.switch {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: var(--color-text-soft);
+}
+
+.switch a {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.switch a:hover {
+  color: var(--color-primary-dark);
+}

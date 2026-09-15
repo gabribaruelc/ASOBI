@@ -1,0 +1,381 @@
+.hero {
+  background: linear-gradient(135deg, var(--color-primary-tint) 0%, var(--color-secondary-tint) 100%);
+  overflow: hidden;
+  position: relative;
+}
+
+.heroInner {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding: 72px 24px;
+}
+
+.heroText {
+  flex: 1;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: var(--color-primary-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 20px;
+}
+
+.heroText h1 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  color: var(--color-text);
+  margin-bottom: 18px;
+}
+
+.heroText h1 span {
+  color: var(--color-primary-dark);
+}
+
+.heroText p {
+  font-size: 1.1rem;
+  color: var(--color-text-soft);
+  max-width: 480px;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.heroActions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  padding: 14px 28px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-strong);
+  border: none;
+  font-size: 1rem;
+}
+
+.btnPrimary:hover {
+  background: var(--color-primary-dark);
+}
+
+.btnSecondary {
+  background: #fff;
+  color: var(--color-text);
+  font-weight: 700;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  font-size: 1rem;
+}
+
+.btnSecondary:hover {
+  border-color: var(--color-primary);
+}
+
+.heroVisual {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 320px;
+}
+
+.heroCard {
+  width: 280px;
+  height: 280px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6rem;
+  transform: rotate(-4deg);
+}
+
+.heroBadge {
+  position: absolute;
+  background: #fff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heroBadgeTop {
+  top: 0;
+  right: 20px;
+  transform: rotate(6deg);
+  color: var(--color-secondary-dark);
+}
+
+.heroBadgeBottom {
+  bottom: 10px;
+  left: 0;
+  transform: rotate(-6deg);
+  color: var(--color-primary-dark);
+}
+
+.section {
+  padding: 72px 0;
+}
+
+.sectionHead {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 48px;
+}
+
+.sectionHead p.kicker {
+  color: var(--color-secondary-dark);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.sectionHead h2 {
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  margin-bottom: 12px;
+}
+
+.sectionHead p.desc {
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.skillsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.skillCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: 28px 22px;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.15s ease;
+}
+
+.skillCard:hover {
+  transform: translateY(-6px);
+}
+
+.skillIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin: 0 auto 16px;
+}
+
+.skillCard h3 {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.skillCard p {
+  font-size: 0.9rem;
+  color: var(--color-text-soft);
+  line-height: 1.5;
+}
+
+.categoriesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 24px;
+}
+
+.categoryCard {
+  border-radius: var(--radius-md);
+  padding: 32px 20px;
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+}
+
+.categoryCard .emoji {
+  font-size: 2.4rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.categoryCard .age {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.productsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.productCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+}
+
+.productImage {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+}
+
+.productBody {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.productSkill {
+  align-self: flex-start;
+  background: var(--color-secondary-tint);
+  color: var(--color-secondary-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.productBody h3 {
+  font-size: 1.02rem;
+}
+
+.productMeta {
+  font-size: 0.82rem;
+  color: var(--color-text-soft);
+}
+
+.productFooter {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.productPrice {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--color-text);
+}
+
+.productButton {
+  background: var(--color-secondary);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.productButton:hover {
+  background: var(--color-secondary-dark);
+}
+
+.newsletter {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  color: #fff;
+  flex-wrap: wrap;
+}
+
+.newsletter h2 {
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+}
+
+.newsletter p {
+  opacity: 0.9;
+  max-width: 420px;
+}
+
+.newsletterForm {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.newsletterForm input {
+  border: none;
+  border-radius: 999px;
+  padding: 14px 20px;
+  min-width: 260px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+@media (max-width: 1000px) {
+  .heroInner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroText p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .heroActions {
+    justify-content: center;
+  }
+
+  .skillsGrid,
+  .categoriesGrid,
+  .productsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .newsletter {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .newsletterForm {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .skillsGrid,
+  .categoriesGrid,
+  .productsGrid {
+    grid-template-columns: 1fr;
+  }
+}

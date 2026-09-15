@@ -1,0 +1,140 @@
+.hero {
+  background: linear-gradient(135deg, var(--color-primary-tint) 0%, var(--color-secondary-tint) 100%);
+  padding: 64px 0;
+  text-align: center;
+}
+
+.kicker {
+  color: var(--color-secondary-dark);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.hero h1 {
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  margin-bottom: 18px;
+  text-transform: lowercase;
+}
+
+.logoAso {
+  color: var(--color-primary);
+}
+
+.logoBi {
+  color: var(--color-secondary);
+}
+
+.desc {
+  color: var(--color-text-soft);
+  line-height: 1.7;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.section {
+  padding: 64px 0;
+}
+
+.sectionHead {
+  text-align: center;
+  max-width: 560px;
+  margin: 0 auto 48px;
+}
+
+.sectionHead h2 {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.valuesGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.valueCard {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: 28px 22px;
+  text-align: center;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.15s ease;
+}
+
+.valueCard:hover {
+  transform: translateY(-6px);
+}
+
+.valueIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin: 0 auto 16px;
+  background: var(--color-primary-tint);
+}
+
+.valueCard h3 {
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+}
+
+.valueCard p {
+  font-size: 0.9rem;
+  color: var(--color-text-soft);
+  line-height: 1.5;
+}
+
+.mission {
+  background: var(--color-primary-tint);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.missionCard {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+}
+
+.mission h2 {
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  margin-bottom: 12px;
+}
+
+.mission .desc {
+  margin: 0;
+}
+
+@media (max-width: 1000px) {
+  .valuesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mission {
+    flex-direction: column;
+    text-align: center;
+    padding: 36px 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .valuesGrid {
+    grid-template-columns: 1fr;
+  }
+}

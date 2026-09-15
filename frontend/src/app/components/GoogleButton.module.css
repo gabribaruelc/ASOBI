@@ -1,0 +1,24 @@
+.button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+  color: var(--color-text);
+  border: 2px solid var(--color-primary-tint);
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.button:hover {
+  border-color: var(--color-primary);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
