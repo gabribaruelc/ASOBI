@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Avaliações')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Avaliações</h1>
+    <p class="muted">Nenhuma avaliação aparece na loja sem a sua aprovação. Confira se não há dados pessoais ou linguagem imprópria (o público é infantil).</p>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <nav class="tabs" aria-label="Filtrar avaliações">
+      <a th:href="@{/admin/avaliacoes(status='pendentes')}" th:classappend="${tab == 'pendentes'} ? 'active'">
+        Aguardando <span class="badge pink" th:if="${pendingCount > 0}" th:text="${pendingCount}">2</span>
+      </a>
+      <a th:href="@{/admin/avaliacoes(status='aprovadas')}" th:classappend="${tab == 'aprovadas'} ? 'active'">Aprovadas</a>
+      <a th:href="@{/admin/avaliacoes(status='rejeitadas')}" th:classappend="${tab == 'rejeitadas'} ? 'active'">Rejeitadas</a>
+    </nav>
+
+    <p class="card muted" th:if="${#lists.isEmpty(reviews)}"
+       th:text="${tab == 'pendentes'} ? 'Nenhuma avaliação aguardando. 🎉' : 'Nada por aqui.'">Nada por aqui.</p>
+
+    <article class="card review" th:each="r : ${reviews}">
+      <header class="review-header">
+        <div>
+          <strong th:text="${r.authorName}">Fernanda M.</strong>
+          <span class="stars" th:text="${#strings.repeat('★', r.rating) + #strings.repeat('☆', 5 - r.rating)}">★★★★★</span>
+          <div class="muted small">
+            <span th:text="${r.product.icon ?: '🎲'} + ' ' + ${r.product.name}">Corrida dos Sapos</span>
+            · <span th:text="${@dates.dateTime(r.createdAt)}">22/09/2026</span>
+          </div>
+        </div>
+      </header>
+      <p class="review-comment" th:text="${r.comment}">Comentário</p>
+      <div class="form-actions">
+        <form th:unless="${tab == 'aprovadas'}" th:action="@{/admin/avaliacoes/{id}/aprovar(id=${r.id})}" method="post">
+          <input type="hidden" name="tab" th:value="${tab}">
+          <button type="submit" class="button">✓ Aprovar</button>
+        </form>
+        <form th:unless="${tab == 'rejeitadas'}" th:action="@{/admin/avaliacoes/{id}/rejeitar(id=${r.id})}" method="post">
+          <input type="hidden" name="tab" th:value="${tab}">
+          <button type="submit" class="button secondary" th:text="${tab == 'aprovadas'} ? 'Tirar da loja' : '✕ Rejeitar'">✕ Rejeitar</button>
+        </form>
+        <form th:action="@{/admin/avaliacoes/{id}/excluir(id=${r.id})}" method="post"
+              onsubmit="return confirm('Excluir esta avaliação de vez?');">
+          <input type="hidden" name="tab" th:value="${tab}">
+          <button type="submit" class="link-button danger">Excluir</button>
+        </form>
+      </div>
+    </article>
+  </main>
+</div>
+</body>
+</html>

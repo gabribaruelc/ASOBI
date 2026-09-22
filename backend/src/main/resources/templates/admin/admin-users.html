@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Admins')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Admins</h1>
+    <p class="muted">Quem pode entrar no painel. A pessoa entra com a conta Google do e-mail cadastrado aqui.</p>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <form th:action="@{/admin/admins}" th:object="${form}" method="post" class="card inline-form">
+      <label>E-mail do novo admin
+        <input type="email" th:field="*{email}" placeholder="nome@gmail.com" required>
+      </label>
+      <button type="submit" class="button">Adicionar</button>
+      <p class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">E-mail inválido</p>
+    </form>
+
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr><th>E-mail</th><th>Adicionado por</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="admin : ${admins}">
+            <td>
+              <span th:text="${admin.email}">dona@asobi.com.br</span>
+              <span class="badge blue" th:if="${admin.email == currentAdminEmail}">você</span>
+            </td>
+            <td class="muted" th:text="${admin.createdByEmail ?: '—'}">—</td>
+            <td class="actions">
+              <form th:unless="${admin.email == currentAdminEmail}"
+                    th:action="@{/admin/admins/{id}/excluir(id=${admin.id})}" method="post"
+                    onsubmit="return confirm('Remover o acesso deste e-mail ao painel?');">
+                <button type="submit" class="link-button danger">Remover</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</body>
+</html>

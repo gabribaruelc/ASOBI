@@ -57,11 +57,15 @@ export function CartProvider({ children }) {
     setItems((prev) => prev.filter((item) => item.slug !== slug));
   }
 
+  function clearCart() {
+    setItems([]);
+  }
+
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, updateQuantity, removeItem, count }}
+      value={{ items, addItem, updateQuantity, removeItem, clearCart, count }}
     >
       {children}
     </CartContext.Provider>

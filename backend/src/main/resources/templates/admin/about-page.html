@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Página Sobre')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <div class="page-header">
+      <div>
+        <h1>Página Sobre</h1>
+        <p class="muted">O que aparece em <a th:href="${storeUrl + '/sobre'}" target="_blank" rel="noopener">/sobre</a> na loja.</p>
+      </div>
+    </div>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <form th:action="@{/admin/sobre}" th:object="${form}" method="post" novalidate>
+      <section class="card">
+        <h2>Nossa história</h2>
+        <label>Texto de abertura
+          <textarea th:field="*{heroText}" maxlength="4000" rows="6"></textarea>
+          <span class="field-error" th:if="${#fields.hasErrors('heroText')}" th:errors="*{heroText}"></span>
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Valores</h2>
+        <div class="values-grid">
+          <div class="fieldset" th:each="value, stat : *{values}">
+            <label>Ícone
+              <input type="text" th:field="*{values[__${stat.index}__].icon}" maxlength="16">
+            </label>
+            <label>Título
+              <input type="text" th:field="*{values[__${stat.index}__].title}" maxlength="100">
+              <span class="field-error" th:if="${#fields.hasErrors('values[__${stat.index}__].title')}"
+                    th:errors="*{values[__${stat.index}__].title}"></span>
+            </label>
+            <label>Texto
+              <textarea th:field="*{values[__${stat.index}__].text}" maxlength="1000" rows="3"></textarea>
+              <span class="field-error" th:if="${#fields.hasErrors('values[__${stat.index}__].text')}"
+                    th:errors="*{values[__${stat.index}__].text}"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Missão</h2>
+        <div class="form-grid">
+          <label>Emoji
+            <input type="text" th:field="*{missionEmoji}" maxlength="16">
+          </label>
+          <label>Título
+            <input type="text" th:field="*{missionTitle}" maxlength="200">
+            <span class="field-error" th:if="${#fields.hasErrors('missionTitle')}" th:errors="*{missionTitle}"></span>
+          </label>
+          <label class="full">Texto
+            <textarea th:field="*{missionText}" maxlength="4000" rows="5"></textarea>
+            <span class="field-error" th:if="${#fields.hasErrors('missionText')}" th:errors="*{missionText}"></span>
+          </label>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit" class="button">Salvar página Sobre</button>
+      </div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

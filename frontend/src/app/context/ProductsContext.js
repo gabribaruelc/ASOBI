@@ -1,16 +1,35 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { INITIAL_PRODUCTS } from "../data/products";
+import { AGE_FILTERS, INITIAL_PRODUCTS } from "../data/products";
+import { apiFetch, isApiEnabled, toStoreProduct } from "../lib/api";
 
 const ProductsContext = createContext(null);
 const STORAGE_KEY = "asobi-products";
 
 export function ProductsProvider({ children }) {
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState(isApiEnabled ? [] : INITIAL_PRODUCTS);
+  // Faixas etárias ({ key, label }) — vêm do banco quando a API está ligada.
+  const [ageFilters, setAgeFilters] = useState(isApiEnabled ? [] : AGE_FILTERS);
   const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(isApiEnabled);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
+    if (isApiEnabled) {
+      Promise.all([apiFetch("/api/products"), apiFetch("/api/categories")])
+        .then(([productData, categoryData]) => {
+          setProducts(productData.map(toStoreProduct));
+          setAgeFilters(categoryData.map((c) => ({ key: c.slug, label: c.name })));
+        })
+        .catch((error) => setLoadError(error.message))
+        .finally(() => {
+          setLoading(false);
+          setHydrated(true);
+        });
+      return;
+    }
+
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage só existe no client; lido após a hidratação para não gerar mismatch com o SSR
@@ -22,7 +41,8 @@ export function ProductsProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    // Com a API ligada, o banco é a fonte da verdade — nada vai para o localStorage.
+    if (!hydrated || isApiEnabled) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     } catch {
@@ -46,7 +66,20 @@ export function ProductsProvider({ children }) {
     setProducts((prev) => prev.filter((product) => product.slug !== slug));
   }
 
-  function addReview(slug, review) {
+  // Com a API, a avaliação vai para o backend como pendente e só aparece
+  // depois de aprovada no painel — por isso não entra na lista local.
+  async function addReview(slug, review) {
+    if (isApiEnabled) {
+      await apiFetch(`/api/products/${encodeURIComponent(slug)}/reviews`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: review.name,
+          rating: review.rating,
+          comment: review.comment,
+        }),
+      });
+      return;
+    }
     setProducts((prev) =>
       prev.map((product) =>
         product.slug === slug
@@ -90,7 +123,10 @@ export function ProductsProvider({ children }) {
     <ProductsContext.Provider
       value={{
         products,
+        ageFilters,
         hydrated,
+        loading,
+        loadError,
         addProduct,
         updateProduct,
         removeProduct,

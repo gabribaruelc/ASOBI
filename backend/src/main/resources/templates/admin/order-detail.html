@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Pedido #' + ${order.id})}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <p><a th:href="@{/admin/pedidos}">← Pedidos</a></p>
+    <div class="page-header">
+      <div>
+        <h1 th:text="${'Pedido #' + order.id}">Pedido #1</h1>
+        <p class="muted" th:text="${'Feito em ' + @dates.dateTime(order.createdAt)}">Feito em 22/09/2026</p>
+      </div>
+      <div class="badges">
+        <span th:replace="~{admin/fragments :: statusBadge(${order})}"></span>
+      </div>
+    </div>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <p class="alert error" th:if="${order.stockIssue}">
+      Este pedido foi pago, mas o estoque de algum item acabou antes (outra compra ao mesmo tempo).
+      Confira o estoque e combine com o cliente: enviar depois ou estornar pelo Mercado Pago.
+    </p>
+
+    <div class="detail-grid">
+      <section class="card">
+        <h2>Itens</h2>
+        <table>
+          <tbody>
+            <tr th:each="item : ${order.items}">
+              <td>
+                <span th:text="${item.quantity + '× ' + item.productName}">1× Jogo</span>
+                <span class="muted small" th:if="${item.product == null}">(produto excluído)</span>
+              </td>
+              <td class="actions" th:text="${'R$ ' + #numbers.formatDecimal(item.lineTotal, 1, 'POINT', 2, 'COMMA')}">R$ 89,90</td>
+            </tr>
+            <tr>
+              <td class="muted" th:text="${order.shippingService != null ? 'Frete · ' + order.shippingService : 'Frete (a combinar)'}">Frete</td>
+              <td class="actions muted" th:text="${'R$ ' + #numbers.formatDecimal(order.shippingCost, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+            </tr>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td class="actions"><strong th:text="${'R$ ' + #numbers.formatDecimal(order.total, 1, 'POINT', 2, 'COMMA')}">R$ 89,90</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Cliente</h2>
+        <p>
+          <strong th:text="${order.customer.name}">Maria</strong><br>
+          <a th:href="${'mailto:' + order.customer.email}" th:text="${order.customer.email}">maria@example.com</a><br>
+          <a th:href="${order.customer.whatsappUrl}" target="_blank" rel="noopener"
+             th:text="${order.customer.phone + ' (WhatsApp)'}">(11) 99999-9999</a>
+        </p>
+        <h2>Entrega</h2>
+        <p th:with="a=${order.shippingAddress}">
+          <span th:text="${a.street + ', ' + a.number + (a.complement != null ? ' — ' + a.complement : '')}">Rua X, 10</span><br>
+          <span th:text="${a.district + ' · ' + a.city + '/' + a.state}">Centro · São Paulo/SP</span><br>
+          <span th:text="${'CEP ' + a.postalCode}">CEP 01000-000</span>
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Pagamento</h2>
+        <p>
+          <span class="muted">Via:</span> <span th:text="${order.paymentProvider == 'mercadopago' ? 'Mercado Pago' : 'Manual'}">Mercado Pago</span><br>
+          <span th:if="${order.paymentMethod != null}"><span class="muted">Forma:</span> <span th:text="${order.paymentMethod}">pix</span><br></span>
+          <span th:if="${order.paymentStatus != null}"><span class="muted">Situação:</span> <span th:text="${order.paymentStatus}">approved</span><br></span>
+          <span th:if="${order.paymentId != null}"><span class="muted">ID do pagamento:</span> <span th:text="${order.paymentId}">123</span><br></span>
+          <span th:if="${order.paidAt != null}"><span class="muted">Pago em:</span> <span th:text="${@dates.dateTime(order.paidAt)}">22/09</span></span>
+        </p>
+
+        <div class="form-actions" th:if="${order.status.name() == 'PENDING_PAYMENT'}">
+          <form th:action="@{/admin/pedidos/{id}/marcar-pago(id=${order.id})}" method="post"
+                onsubmit="return confirm('Confirmar que o pagamento foi recebido? O estoque será baixado.');">
+            <button type="submit" class="button">Marcar como pago</button>
+          </form>
+          <form th:action="@{/admin/pedidos/{id}/cancelar(id=${order.id})}" method="post"
+                onsubmit="return confirm('Cancelar este pedido?');">
+            <button type="submit" class="button secondary">Cancelar pedido</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="card" th:if="${order.status.name() == 'PAID' or order.status.name() == 'SHIPPED'}">
+        <h2>Envio</h2>
+        <form th:if="${order.status.name() == 'PAID'}" th:action="@{/admin/pedidos/{id}/marcar-enviado(id=${order.id})}"
+              method="post" class="inline-form">
+          <label>Código de rastreio <span class="hint">opcional</span>
+            <input type="text" name="trackingCode" maxlength="60" placeholder="AA123456789BR">
+          </label>
+          <button type="submit" class="button pink">Marcar como enviado</button>
+        </form>
+        <p th:if="${order.status.name() == 'SHIPPED'}">
+          Enviado em <span th:text="${@dates.dateTime(order.shippedAt)}">23/09</span>
+          <span th:if="${order.trackingCode != null}">· rastreio <strong th:text="${order.trackingCode}">AA123</strong></span>
+        </p>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

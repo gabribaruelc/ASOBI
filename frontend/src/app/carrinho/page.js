@@ -108,9 +108,9 @@ export default function CarrinhoPage() {
                 <span>Total</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
-              <button type="button" className={styles.checkoutButton}>
+              <Link href="/checkout" className={styles.checkoutButton}>
                 Finalizar compra
-              </button>
+              </Link>
               <p className={styles.paymentNote}>
                 Pagamento via Pix, cartão ou boleto
               </p>

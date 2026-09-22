@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Faixas etárias')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Faixas etárias</h1>
+    <p class="muted">São as categorias do catálogo (o "trilho" de pills abaixo do menu da loja). A ordem define a posição na loja.</p>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <form th:action="@{/admin/categorias}" th:object="${form}" method="post" class="card inline-form">
+      <label>Nova faixa etária
+        <input type="text" th:field="*{name}" maxlength="100" placeholder="Ex.: 11 a 14 anos" required>
+      </label>
+      <label class="narrow">Ordem
+        <input type="number" th:field="*{position}" min="0" required>
+      </label>
+      <button type="submit" class="button">Adicionar</button>
+      <p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+    </form>
+
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr><th>Nome e ordem</th><th>Link na loja</th><th>Produtos</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="c : ${categories}">
+            <td>
+              <form th:action="@{/admin/categorias/{id}(id=${c.id})}" method="post" class="stock-form">
+                <input type="text" name="name" th:value="${c.name}" maxlength="100" required aria-label="Nome" class="wide">
+                <input type="number" name="position" th:value="${c.position}" min="0" required aria-label="Ordem">
+                <button type="submit" class="link-button">Salvar</button>
+              </form>
+            </td>
+            <td class="muted small" th:text="${'/jogos?idade=' + c.slug}">/jogos?idade=4-6</td>
+            <td th:text="${c.productCount}">3</td>
+            <td class="actions">
+              <form th:action="@{/admin/categorias/{id}/excluir(id=${c.id})}" method="post"
+                    onsubmit="return confirm('Excluir esta faixa etária?');">
+                <button type="submit" class="link-button danger">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</body>
+</html>

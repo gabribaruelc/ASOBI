@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { apiFetch, isApiEnabled } from "../lib/api";
 
 const SiteContentContext = createContext(null);
 const STORAGE_KEY = "asobi-site-content";
@@ -41,6 +42,15 @@ export function SiteContentProvider({ children }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    if (isApiEnabled) {
+      // Conteúdo editado no painel admin (backend). Se a API falhar, mantém o texto padrão.
+      apiFetch("/api/content/about")
+        .then(setSobre)
+        .catch(() => {})
+        .finally(() => setHydrated(true));
+      return;
+    }
+
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage só existe no client; lido após a hidratação para não gerar mismatch com o SSR
@@ -52,7 +62,7 @@ export function SiteContentProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || isApiEnabled) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sobre));
     } catch {

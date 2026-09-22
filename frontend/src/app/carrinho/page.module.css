@@ -206,6 +206,8 @@
 }
 
 .checkoutButton {
+  display: block;
+  text-align: center;
   width: 100%;
   background: var(--color-primary);
   color: #fff;

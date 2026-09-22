@@ -11,13 +11,25 @@ import { useProducts, isProductNew } from "../../context/ProductsContext";
 
 export default function ProdutoPage() {
   const { slug } = useParams();
-  const { products, addReview } = useProducts();
+  const { products, addReview, loading } = useProducts();
   const product = products.find((p) => p.slug === slug);
 
   const [reviewName, setReviewName] = useState("");
   const [reviewRating, setReviewRating] = useState("5");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSent, setReviewSent] = useState(false);
+  const [reviewSending, setReviewSending] = useState(false);
+  const [reviewError, setReviewError] = useState(null);
+
+  if (!product && loading) {
+    return (
+      <main className={styles.main}>
+        <div className="container">
+          <p>Carregando…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!product) {
     return (
@@ -47,15 +59,24 @@ export default function ProdutoPage() {
       approvedReviews.length
     : null;
 
-  function handleReviewSubmit(event) {
+  async function handleReviewSubmit(event) {
     event.preventDefault();
-    addReview(product.slug, {
-      id: crypto.randomUUID(),
-      name: reviewName,
-      rating: Number(reviewRating),
-      comment: reviewComment,
-      status: "pending",
-    });
+    setReviewSending(true);
+    setReviewError(null);
+    try {
+      await addReview(product.slug, {
+        id: crypto.randomUUID(),
+        name: reviewName,
+        rating: Number(reviewRating),
+        comment: reviewComment,
+        status: "pending",
+      });
+    } catch (error) {
+      setReviewError(error.message);
+      return;
+    } finally {
+      setReviewSending(false);
+    }
     setReviewName("");
     setReviewRating("5");
     setReviewComment("");
@@ -181,6 +202,7 @@ export default function ProdutoPage() {
                     placeholder="Seu nome"
                     value={reviewName}
                     onChange={(e) => setReviewName(e.target.value)}
+                    maxLength={80}
                     required
                   />
                 </label>
@@ -207,11 +229,21 @@ export default function ProdutoPage() {
                   placeholder="Conte como foi a experiência com esse jogo"
                   value={reviewComment}
                   onChange={(e) => setReviewComment(e.target.value)}
+                  maxLength={1000}
                   required
                 />
               </label>
-              <button type="submit" className={styles.reviewSubmit}>
-                Enviar avaliação
+              {reviewError && (
+                <p className={styles.reviewNote} role="alert">
+                  {reviewError}
+                </p>
+              )}
+              <button
+                type="submit"
+                className={styles.reviewSubmit}
+                disabled={reviewSending}
+              >
+                {reviewSending ? "Enviando…" : "Enviar avaliação"}
               </button>
               <p className={styles.reviewNote}>
                 Sua avaliação passa por aprovação da nossa equipe antes de

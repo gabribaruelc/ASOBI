@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Configurações')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Configurações</h1>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <form th:action="@{/admin/configuracoes}" th:object="${form}" method="post" novalidate>
+      <section class="card">
+        <h2>Frete</h2>
+
+        <label class="toggle">
+          <input type="checkbox" th:field="*{shippingEnabled}" th:disabled="${!shippingProviderConfigured and !form.shippingEnabled}">
+          <span>
+            <strong>Calcular frete automaticamente pelo CEP</strong>
+            <span class="hint">Ligado: o cliente escolhe PAC, SEDEX etc. no checkout (cotação do Melhor Envio).
+              Desligado: o frete aparece como "a combinar" e você combina com o cliente.</span>
+          </span>
+        </label>
+        <p class="alert error" th:unless="${shippingProviderConfigured}">
+          O Melhor Envio ainda não está conectado (falta o token MELHOR_ENVIO_TOKEN no servidor).
+          Enquanto isso, o frete fica "a combinar".
+        </p>
+
+        <div class="form-grid">
+          <label>CEP de origem (de onde os pedidos saem)
+            <input type="text" th:field="*{originPostalCode}" maxlength="9" placeholder="00000-000">
+            <span class="field-error" th:if="${#fields.hasErrors('originPostalCode')}" th:errors="*{originPostalCode}"></span>
+          </label>
+          <label>Frete grátis a partir de (R$)
+            <input type="number" th:field="*{freeShippingThreshold}" min="0" step="0.01" placeholder="150.00">
+            <span class="hint">A opção de frete mais barata sai de graça. Vazio = sem frete grátis.</span>
+            <span class="field-error" th:if="${#fields.hasErrors('freeShippingThreshold')}" th:errors="*{freeShippingThreshold}"></span>
+          </label>
+        </div>
+
+        <h2>Caixa padrão de um jogo</h2>
+        <p class="hint">Usada para cotar o frete. Meça uma caixa típica já embalada.</p>
+        <div class="form-grid four">
+          <label>Peso (kg)
+            <input type="number" th:field="*{packageWeightKg}" min="0.01" step="0.01">
+            <span class="field-error" th:if="${#fields.hasErrors('packageWeightKg')}" th:errors="*{packageWeightKg}"></span>
+          </label>
+          <label>Largura (cm)
+            <input type="number" th:field="*{packageWidthCm}" min="1" max="100">
+            <span class="field-error" th:if="${#fields.hasErrors('packageWidthCm')}" th:errors="*{packageWidthCm}"></span>
+          </label>
+          <label>Altura (cm)
+            <input type="number" th:field="*{packageHeightCm}" min="1" max="100">
+            <span class="field-error" th:if="${#fields.hasErrors('packageHeightCm')}" th:errors="*{packageHeightCm}"></span>
+          </label>
+          <label>Comprimento (cm)
+            <input type="number" th:field="*{packageLengthCm}" min="1" max="100">
+            <span class="field-error" th:if="${#fields.hasErrors('packageLengthCm')}" th:errors="*{packageLengthCm}"></span>
+          </label>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit" class="button">Salvar configurações</button>
+      </div>
+    </form>
+  </main>
+</div>
+</body>
+</html>
