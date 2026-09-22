@@ -54,7 +54,14 @@ Já implementado em `frontend/` (Next.js, App Router), com dados **mockados** em
   - **Catálogo agora é mutável**: `PRODUCTS` virou `INITIAL_PRODUCTS` (seed) em `data/products.js`; o catálogo "de verdade" vive em `ProductsContext` (client-side, persistido em `localStorage` sob `asobi-products`) — é isso que o admin edita e é isso que as páginas de cliente (`/jogos`, `/novidades`, `/promocoes`, ficha de produto, carrinho) leem via `useProducts()`. Produto ganhou campo `stock` (estoque) e trocou `isNew: boolean` por `newUntil: string | null` (data de expiração), com `isProductNew()`/`daysRemaining()` calculando o resto em `ProductsContext.js`.
   - Como isso ainda não é Supabase, essas páginas de catálogo tiveram que virar Client Components (antes eram Server Components com `generateStaticParams`/`generateMetadata` dinâmica por produto) — perderam SSG e metadata por-produto nessa fase; isso volta quando o catálogo migrar para o Supabase com Server Components lendo do banco.
 
-**Ao integrar o Supabase** (próximo passo real, ainda não feito): a tabela de produtos deve seguir a mesma estrutura de campos usada em `INITIAL_PRODUCTS`/`ProductsContext` (agora incluindo `stock` e `newUntil`) para não exigir retrabalho nas telas já prontas; o conteúdo do Sobre e a lista de admins (hoje em `SiteContentContext`/`AdminContext` + `localStorage`) viram tabelas equivalentes; e a checagem de admin deve migrar do `localStorage` para o Supabase Auth + uma tabela `admins` (ou coluna `role` em `profiles`), validada no backend (Spring Boot, em `backend/`) — nunca só escondendo botão no frontend, que é o que o mock atual faz.
+## Progresso do backend (`backend/`, branch `feat/backend-java`)
+Spring Boot 4.1 + Java 17, organizado por domínio (`catalog`, `review`, `order`, `payment`, `shipping`, `content`, `settings`, `admin`), cada um com controller/service/repository/model/dto. Esquema do banco em migrações Flyway (`src/main/resources/db/migration`). Detalhes de execução, variáveis de ambiente e deploy no `backend/README.md`.
+- **API REST para a loja** (`/api/**`, pública, CORS para o Next.js, erros em RFC 9457): catálogo e faixas etárias, conteúdo do Sobre, envio de avaliações (sempre entram pendentes), pedidos (preço e estoque calculados no servidor), acompanhamento do pedido, cotação de frete, webhook do Mercado Pago.
+- **Painel admin em Thymeleaf** (`/admin/**`): login com Google + e-mail na tabela `admin_users` (conferido no banco a cada requisição), sessão no banco (Spring Session JDBC). Telas: dashboard, pedidos, produtos, faixas etárias, avaliações, página Sobre, configurações (liga/desliga frete) e admins.
+- **Pagamento**: Mercado Pago Checkout Pro (webhook com assinatura conferida; o pagamento é sempre reconsultado na API). Sem token do Mercado Pago, roda em modo manual (a Donna marca como pago no painel).
+- **Estoque** baixa só quando o pagamento é aprovado, com lock na linha do produto.
+- **Frontend** usa a API quando `NEXT_PUBLIC_API_URL` está definido (ver `frontend/.env.example`); sem ela, continua no modo antigo (mock + `localStorage`). Nesse modo antigo o admin em Next.js ainda funciona; com a API ligada, `/admin` redireciona para o painel do Spring. O admin em Next.js e os mocks só devem ser apagados depois que a versão Java for confirmada.
+- Pendências conhecidas: fotos de produto (hoje só emoji; plano é Supabase Storage), login/cadastro de cliente (checkout é sem cadastro), e-mail transacional (Resend), dashboard de métricas (Fase 2).
 
 ## Ideias de microsserviço (escolher 1 para implementar "de verdade" isolado)
 1. Cálculo de frete (recomendado — desacopla de uma API externa instável).
@@ -101,8 +108,8 @@ Nome: **ASOBI** (do japonês 遊び, "brincadeira").
 - Coluna "Formas de pagamento": badges Pix / Cartão / Boleto.
 - Linha legal final: razão social + CNPJ.
 
-## Informações pendentes que a cliente (Donna) precisa fornecer
-- Nome definitivo da marca: ✅ ASOBI (decidido).
+## Informações pendentes que a cliente precisa fornecer
+- Nome definitivo da marca: ✅ ASOBI .
 - Lista final de categorias/faixas etárias.
 - Catálogo real de produtos (fotos, descrições, preços).
 - Razão social e CNPJ (necessário para rodapé e para conta do Mercado Pago).
