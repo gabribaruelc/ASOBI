@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: asobi-backend
+  profiles:
+    # Sem perfil informado, roda com o banco H2 local (não precisa instalar nada).
+    # Em produção (Cloud Run) usar SPRING_PROFILES_ACTIVE=prod.
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      # O esquema é responsabilidade do Flyway (src/main/resources/db/migration);
+      # o Hibernate só confere se as entidades batem com as tabelas.
+      ddl-auto: validate
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  # O Cloud Run informa a porta pela variável PORT.
+  port: ${PORT:8080}
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+asobi:
+  # Origem do frontend Next.js autorizada a chamar /api/** (CORS).
+  # Várias origens separadas por vírgula.
+  frontend-origins: ${FRONTEND_ORIGINS:http://localhost:3000}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    # H2 em arquivo, em modo compatível com PostgreSQL, para as migrações
+    # serem as mesmas do Supabase.
+    url: jdbc:h2:file:./data/asobi;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    # Supabase: usar a connection string do "Session pooler" (IPv4), ex.:
+    # jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      # Free tier do Supabase tem poucas conexões; o Cloud Run pode subir
+      # mais de uma instância.
+      maximum-pool-size: 3

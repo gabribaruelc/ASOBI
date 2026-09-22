@@ -10,8 +10,9 @@ Custo mensal de infraestrutura deve ficar **bem abaixo de R$110/mês** (na prát
 
 ## Stack (arquitetura de baixa manutenção — usar serviços gerenciados, nunca servidor próprio/VPS)
 - **Frontend**: Next.js, hospedado no **Cloudflare Pages** (free tier permite uso comercial).
-- **Backend/microsserviços**: **Cloudflare Workers** (free tier: 100.000 requisições/dia).
-- **Banco de dados**: **Supabase** (free tier: 500 MB). Usar auth e storage do próprio Supabase para imagens.
+- **Backend**: **Java 17 + Spring Boot** (exigência do professor: backend em Java), na pasta `backend/`, hospedado no **Google Cloud Run** (free tier, escala a zero). Substitui os Cloudflare Workers do plano original, que não rodam Java. Expõe API REST (JSON) para a loja em Next.js e renderiza o **painel admin com Thymeleaf** (o admin em Next.js em `frontend/src/app/admin` fica só até a versão Thymeleaf ser confirmada).
+- **Banco de dados**: **Supabase** (free tier: 500 MB), acessado pelo backend via JDBC/JPA (Session pooler), com esquema versionado por Flyway. Localmente o backend usa H2 em modo PostgreSQL.
+- **Login do admin**: "Entrar com Google" direto no Spring Security (OAuth2), autorizando pelo e-mail cadastrado na tabela de admins.
 - **Pagamentos**: **Mercado Pago Checkout Pro** — Pix, cartão, boleto. Nunca armazenar dados de cartão.
 - **E-mail transacional**: **Resend** (free tier: 100 e-mails/dia).
 - **Domínio**: registro.br (.com.br).
@@ -53,7 +54,7 @@ Já implementado em `frontend/` (Next.js, App Router), com dados **mockados** em
   - **Catálogo agora é mutável**: `PRODUCTS` virou `INITIAL_PRODUCTS` (seed) em `data/products.js`; o catálogo "de verdade" vive em `ProductsContext` (client-side, persistido em `localStorage` sob `asobi-products`) — é isso que o admin edita e é isso que as páginas de cliente (`/jogos`, `/novidades`, `/promocoes`, ficha de produto, carrinho) leem via `useProducts()`. Produto ganhou campo `stock` (estoque) e trocou `isNew: boolean` por `newUntil: string | null` (data de expiração), com `isProductNew()`/`daysRemaining()` calculando o resto em `ProductsContext.js`.
   - Como isso ainda não é Supabase, essas páginas de catálogo tiveram que virar Client Components (antes eram Server Components com `generateStaticParams`/`generateMetadata` dinâmica por produto) — perderam SSG e metadata por-produto nessa fase; isso volta quando o catálogo migrar para o Supabase com Server Components lendo do banco.
 
-**Ao integrar o Supabase** (próximo passo real, ainda não feito): a tabela de produtos deve seguir a mesma estrutura de campos usada em `INITIAL_PRODUCTS`/`ProductsContext` (agora incluindo `stock` e `newUntil`) para não exigir retrabalho nas telas já prontas; o conteúdo do Sobre e a lista de admins (hoje em `SiteContentContext`/`AdminContext` + `localStorage`) viram tabelas equivalentes; e a checagem de admin deve migrar do `localStorage` para o Supabase Auth + uma tabela `admins` (ou coluna `role` em `profiles`), validada no backend (Cloudflare Worker) — nunca só escondendo botão no frontend, que é o que o mock atual faz.
+**Ao integrar o Supabase** (próximo passo real, ainda não feito): a tabela de produtos deve seguir a mesma estrutura de campos usada em `INITIAL_PRODUCTS`/`ProductsContext` (agora incluindo `stock` e `newUntil`) para não exigir retrabalho nas telas já prontas; o conteúdo do Sobre e a lista de admins (hoje em `SiteContentContext`/`AdminContext` + `localStorage`) viram tabelas equivalentes; e a checagem de admin deve migrar do `localStorage` para o Supabase Auth + uma tabela `admins` (ou coluna `role` em `profiles`), validada no backend (Spring Boot, em `backend/`) — nunca só escondendo botão no frontend, que é o que o mock atual faz.
 
 ## Ideias de microsserviço (escolher 1 para implementar "de verdade" isolado)
 1. Cálculo de frete (recomendado — desacopla de uma API externa instável).
@@ -64,6 +65,17 @@ Já implementado em `frontend/` (Next.js, App Router), com dados **mockados** em
 - Nenhum servidor próprio/VPS — só serviços gerenciados, para a cliente conseguir manter sozinha.
 - Toda decisão de arquitetura deve priorizar "a dona consegue operar sem depender de programador no dia a dia".
 - Paleta e tom visual: lúdico, colorido, pensado para pais navegando com/para crianças (não usar visual corporativo/sério).
+
+## Convenção de nomes (padrão de mercado)
+Tudo que precisa de nome (pastas, arquivos, pacotes, classes, variáveis, funções, tabelas, colunas, endpoints, branches, variáveis de ambiente) segue o padrão de mercado da tecnologia em questão. Na dúvida, usar o nome que um projeto open source conhecido usaria.
+- **Idioma**: identificadores de código em **inglês** (`ProductService`, `newUntil`, tabela `products`, endpoint `/api/products`). Português fica só no que o usuário final vê: textos da interface, mensagens de erro exibidas e rotas públicas da loja (`/jogos`, `/novidades`, `/sobre`, boas para SEO). Comentários podem ser em português.
+- **Pastas do repositório**: minúsculas e genéricas, sem sufixo de tecnologia: `frontend/`, `backend/` (não `Backend-java/`).
+- **Java**: pacotes minúsculos por domínio (`br.com.asobi.catalog`), classes em PascalCase com sufixo do papel (`ProductController`, `ProductService`, `ProductRepository`, `ProductResponse`), métodos e variáveis em camelCase, constantes em UPPER_SNAKE_CASE.
+- **Banco (PostgreSQL)**: tabelas e colunas em snake_case, tabelas no plural (`products`, `order_items`, `new_until`). Migrações Flyway no formato `V<n>__<descricao_em_snake_case>.sql`.
+- **API REST**: recursos no plural, kebab-case, sem verbos (`GET /api/products/{slug}`, `POST /api/orders`); rotas de admin sob `/admin/**`.
+- **JavaScript/React**: componentes em PascalCase (`ProductCard.js`), funções e variáveis em camelCase, CSS Modules como `Component.module.css`.
+- **Variáveis de ambiente**: UPPER_SNAKE_CASE (`DB_URL`, `MERCADO_PAGO_ACCESS_TOKEN`).
+- **Git**: branches `feat/...`, `fix/...`, `chore/...`; mensagens de commit no padrão Conventional Commits (`feat: ...`, `fix: ...`).
 
 ## Marca
 Nome: **ASOBI** (do japonês 遊び, "brincadeira").
