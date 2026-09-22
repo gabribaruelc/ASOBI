@@ -10,6 +10,14 @@
     <div th:replace="~{admin/fragments :: flash}"></div>
 
     <div class="stats">
+      <a class="stat pink" th:href="@{/admin/pedidos(status='para-enviar')}">
+        <span class="stat-value" th:text="${summary.ordersToShip}">0</span>
+        <span class="stat-label">Pedidos para enviar →</span>
+      </a>
+      <a class="stat" th:href="@{/admin/pedidos(status='aguardando-pagamento')}">
+        <span class="stat-value" th:text="${summary.ordersAwaitingPayment}">0</span>
+        <span class="stat-label">Aguardando pagamento →</span>
+      </a>
       <div class="stat">
         <span class="stat-value" th:text="${summary.products}">10</span>
         <span class="stat-label">Produtos</span>

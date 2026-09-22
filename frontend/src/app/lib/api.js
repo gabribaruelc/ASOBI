@@ -17,14 +17,18 @@ export async function apiFetch(path, options = {}) {
 
   if (!response.ok) {
     let detail = "Não foi possível falar com a loja. Tente novamente.";
+    let fieldErrors = {};
     try {
       const problem = await response.json();
       if (problem.detail) detail = problem.detail;
+      if (problem.errors) fieldErrors = problem.errors;
     } catch {
       // resposta sem corpo JSON — mantém a mensagem genérica
     }
     const error = new Error(detail);
     error.status = response.status;
+    // Erros por campo (ex.: { "customer.email": "E-mail inválido." })
+    error.fieldErrors = fieldErrors;
     throw error;
   }
 

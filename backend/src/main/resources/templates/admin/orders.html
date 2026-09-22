@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Pedidos')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Pedidos</h1>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <nav class="tabs" aria-label="Filtrar pedidos">
+      <a th:href="@{/admin/pedidos(status='para-enviar')}" th:classappend="${tab == 'para-enviar'} ? 'active'">
+        Para enviar <span class="badge pink" th:if="${toShipCount > 0}" th:text="${toShipCount}">1</span>
+      </a>
+      <a th:href="@{/admin/pedidos(status='aguardando-pagamento')}" th:classappend="${tab == 'aguardando-pagamento'} ? 'active'">Aguardando pagamento</a>
+      <a th:href="@{/admin/pedidos(status='enviados')}" th:classappend="${tab == 'enviados'} ? 'active'">Enviados</a>
+      <a th:href="@{/admin/pedidos(status='cancelados')}" th:classappend="${tab == 'cancelados'} ? 'active'">Cancelados</a>
+      <a th:href="@{/admin/pedidos(status='todos')}" th:classappend="${tab == 'todos'} ? 'active'">Todos</a>
+    </nav>
+
+    <p class="card muted" th:if="${#lists.isEmpty(orders)}">Nenhum pedido aqui.</p>
+
+    <div class="card table-wrap" th:unless="${#lists.isEmpty(orders)}">
+      <table>
+        <thead>
+          <tr><th>Pedido</th><th>Cliente</th><th>Itens</th><th>Total</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="o : ${orders}">
+            <td>
+              <a th:href="@{/admin/pedidos/{id}(id=${o.id})}"><strong th:text="${'#' + o.id}">#1</strong></a>
+              <div class="muted small" th:text="${@dates.dateTime(o.createdAt)}">22/09/2026 10:00</div>
+            </td>
+            <td>
+              <span th:text="${o.customer.name}">Maria</span>
+              <div class="muted small" th:text="${o.shippingAddress.city + '/' + o.shippingAddress.state}">São Paulo/SP</div>
+            </td>
+            <td th:text="${#aggregates.sum(o.items.![quantity])}">2</td>
+            <td><strong th:text="${'R$ ' + #numbers.formatDecimal(o.total, 1, 'POINT', 2, 'COMMA')}">R$ 100,00</strong></td>
+            <td class="badges">
+              <span th:replace="~{admin/fragments :: statusBadge(${o})}"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</body>
+</html>

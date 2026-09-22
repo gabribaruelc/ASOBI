@@ -226,3 +226,8 @@ td.badges .badge { margin: 2px 4px 2px 0; }
 .stars { color: #F5A623; letter-spacing: 2px; margin-left: 8px; }
 .review-comment { white-space: pre-line; margin: 12px 0 0; }
 .review .form-actions { margin-top: 12px; align-items: center; }
+
+/* Pedidos */
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 16px; }
+.detail-grid table td { padding: 8px 0; }
+.page-header .badges .badge { margin-left: 4px; }

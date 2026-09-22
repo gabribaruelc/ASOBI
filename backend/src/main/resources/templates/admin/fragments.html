@@ -17,6 +17,7 @@
   <a th:href="@{/admin}" class="logo"><span class="aso">aso</span><span class="bi">bi</span> <small>admin</small></a>
   <nav>
     <a th:href="@{/admin}" th:classappend="${currentPath == '/admin'} ? 'active'">🏠 Painel</a>
+    <a th:href="@{/admin/pedidos}" th:classappend="${#strings.startsWith(currentPath, '/admin/pedidos')} ? 'active'">📦 Pedidos</a>
     <a th:href="@{/admin/produtos}" th:classappend="${#strings.startsWith(currentPath, '/admin/produtos')} ? 'active'">🎲 Produtos</a>
     <a th:href="@{/admin/categorias}" th:classappend="${#strings.startsWith(currentPath, '/admin/categorias')} ? 'active'">🧸 Faixas etárias</a>
     <a th:href="@{/admin/avaliacoes}" th:classappend="${#strings.startsWith(currentPath, '/admin/avaliacoes')} ? 'active'">⭐ Avaliações</a>
@@ -35,6 +36,14 @@
   <p class="alert success" th:if="${success}" th:text="${success}">Salvo!</p>
   <p class="alert error" th:if="${error}" th:text="${error}">Erro</p>
 </div>
+
+<span th:fragment="statusBadge(o)" th:remove="tag">
+  <span class="badge gray" th:if="${o.status.name() == 'PENDING_PAYMENT'}" th:text="${o.status.label}">Aguardando pagamento</span>
+  <span class="badge pink" th:if="${o.status.name() == 'PAID'}" th:text="${o.status.label}">Pago</span>
+  <span class="badge green" th:if="${o.status.name() == 'SHIPPED'}" th:text="${o.status.label}">Enviado</span>
+  <span class="badge red" th:if="${o.status.name() == 'CANCELED'}" th:text="${o.status.label}">Cancelado</span>
+  <span class="badge red" th:if="${o.stockIssue}">⚠ Estoque insuficiente</span>
+</span>
 
 </body>
 </html>
