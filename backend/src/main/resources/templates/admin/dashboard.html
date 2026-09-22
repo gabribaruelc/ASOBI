@@ -22,10 +22,10 @@
         <span class="stat-value" th:text="${summary.onSale}">3</span>
         <span class="stat-label">Em promoção</span>
       </div>
-      <div class="stat pink">
+      <a class="stat pink" th:href="@{/admin/avaliacoes}">
         <span class="stat-value" th:text="${summary.pendingReviews}">0</span>
-        <span class="stat-label">Avaliações aguardando</span>
-      </div>
+        <span class="stat-label">Avaliações aguardando →</span>
+      </a>
     </div>
   </main>
 </div>

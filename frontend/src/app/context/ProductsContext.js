@@ -66,7 +66,20 @@ export function ProductsProvider({ children }) {
     setProducts((prev) => prev.filter((product) => product.slug !== slug));
   }
 
-  function addReview(slug, review) {
+  // Com a API, a avaliação vai para o backend como pendente e só aparece
+  // depois de aprovada no painel — por isso não entra na lista local.
+  async function addReview(slug, review) {
+    if (isApiEnabled) {
+      await apiFetch(`/api/products/${encodeURIComponent(slug)}/reviews`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: review.name,
+          rating: review.rating,
+          comment: review.comment,
+        }),
+      });
+      return;
+    }
     setProducts((prev) =>
       prev.map((product) =>
         product.slug === slug

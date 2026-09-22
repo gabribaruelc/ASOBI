@@ -217,3 +217,12 @@ td.badges .badge { margin: 2px 4px 2px 0; }
 .stock-form input.wide { width: 220px; }
 [hidden] { display: none !important; }
 .values-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+
+/* Avaliações */
+.tabs { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.tabs a { text-decoration: none; color: var(--ink); font-weight: 700; padding: 8px 16px; border-radius: 999px; background: var(--white); border: 1px solid var(--line); }
+.tabs a.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.review-header { display: flex; justify-content: space-between; gap: 12px; }
+.stars { color: #F5A623; letter-spacing: 2px; margin-left: 8px; }
+.review-comment { white-space: pre-line; margin: 12px 0 0; }
+.review .form-actions { margin-top: 12px; align-items: center; }
