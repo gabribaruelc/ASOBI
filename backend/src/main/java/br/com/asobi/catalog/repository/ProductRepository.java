@@ -20,6 +20,10 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
 	boolean existsByCategoryId(Long categoryId);
 
+	long countByStock(int stock);
+
+	long countByOriginalPriceIsNotNull();
+
 	@Override
 	@EntityGraph(attributePaths = "category")
 	List<Product> findAll(Specification<Product> spec, Sort sort);

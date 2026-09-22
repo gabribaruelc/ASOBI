@@ -5,6 +5,8 @@ spring:
     # Sem perfil informado, roda com o banco H2 local (não precisa instalar nada).
     # Em produção (Cloud Run) usar SPRING_PROFILES_ACTIVE=prod.
     default: local
+    group:
+      prod: google
   jpa:
     open-in-view: false
     hibernate:
@@ -13,12 +15,20 @@ spring:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration
+  session:
+    jdbc:
+      # Tabelas criadas pelo Flyway (V5__create_spring_session_tables.sql).
+      initialize-schema: never
 
 server:
   # O Cloud Run informa a porta pela variável PORT.
   port: ${PORT:8080}
   error:
     include-message: always
+  servlet:
+    session:
+      # Sessão do painel admin.
+      timeout: 12h
 
 management:
   endpoints:
@@ -30,6 +40,11 @@ asobi:
   # Origem do frontend Next.js autorizada a chamar /api/** (CORS).
   # Várias origens separadas por vírgula.
   frontend-origins: ${FRONTEND_ORIGINS:http://localhost:3000}
+  admin:
+    # Primeiro admin, criado na subida só se a tabela admin_users estiver vazia.
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    # Login só por e-mail, sem Google — apenas para desenvolvimento local.
+    dev-login-enabled: false
 
 ---
 spring:
@@ -46,6 +61,27 @@ spring:
     console:
       enabled: true
 
+asobi:
+  admin:
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:dona@asobi.com.br}
+    dev-login-enabled: true
+
+---
+# Login com Google. Ativado automaticamente em prod; localmente, use
+# SPRING_PROFILES_ACTIVE=local,google com GOOGLE_CLIENT_ID/SECRET definidos.
+spring:
+  config:
+    activate:
+      on-profile: google
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid, email, profile
+
 ---
 spring:
   config:
@@ -61,3 +97,8 @@ spring:
       # Free tier do Supabase tem poucas conexões; o Cloud Run pode subir
       # mais de uma instância.
       maximum-pool-size: 3
+
+server:
+  # O Cloud Run termina o HTTPS no proxy; isso garante que os redirects do
+  # login com Google saiam com https://.
+  forward-headers-strategy: framework
