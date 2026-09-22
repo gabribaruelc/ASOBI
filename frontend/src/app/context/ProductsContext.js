@@ -2,15 +2,29 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { INITIAL_PRODUCTS } from "../data/products";
+import { apiFetch, isApiEnabled, toStoreProduct } from "../lib/api";
 
 const ProductsContext = createContext(null);
 const STORAGE_KEY = "asobi-products";
 
 export function ProductsProvider({ children }) {
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState(isApiEnabled ? [] : INITIAL_PRODUCTS);
   const [hydrated, setHydrated] = useState(false);
+  const [loading, setLoading] = useState(isApiEnabled);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
+    if (isApiEnabled) {
+      apiFetch("/api/products")
+        .then((data) => setProducts(data.map(toStoreProduct)))
+        .catch((error) => setLoadError(error.message))
+        .finally(() => {
+          setLoading(false);
+          setHydrated(true);
+        });
+      return;
+    }
+
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage só existe no client; lido após a hidratação para não gerar mismatch com o SSR
@@ -22,7 +36,8 @@ export function ProductsProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    // Com a API ligada, o banco é a fonte da verdade — nada vai para o localStorage.
+    if (!hydrated || isApiEnabled) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
     } catch {
@@ -91,6 +106,8 @@ export function ProductsProvider({ children }) {
       value={{
         products,
         hydrated,
+        loading,
+        loadError,
         addProduct,
         updateProduct,
         removeProduct,

@@ -11,13 +11,23 @@ import { useProducts, isProductNew } from "../../context/ProductsContext";
 
 export default function ProdutoPage() {
   const { slug } = useParams();
-  const { products, addReview } = useProducts();
+  const { products, addReview, loading } = useProducts();
   const product = products.find((p) => p.slug === slug);
 
   const [reviewName, setReviewName] = useState("");
   const [reviewRating, setReviewRating] = useState("5");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSent, setReviewSent] = useState(false);
+
+  if (!product && loading) {
+    return (
+      <main className={styles.main}>
+        <div className="container">
+          <p>Carregando…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!product) {
     return (
