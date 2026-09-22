@@ -40,6 +40,8 @@ asobi:
   # Origem do frontend Next.js autorizada a chamar /api/** (CORS).
   # Várias origens separadas por vírgula.
   frontend-origins: ${FRONTEND_ORIGINS:http://localhost:3000}
+  # Endereço público da loja (links "ver na loja" no painel, retorno do pagamento).
+  store-url: ${STORE_URL:http://localhost:3000}
   admin:
     # Primeiro admin, criado na subida só se a tabela admin_users estiver vazia.
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 import ProductCard from "../components/ProductCard";
-import { AGE_FILTERS } from "../data/products";
 import { useProducts } from "../context/ProductsContext";
 
 export default function JogosPage() {
@@ -20,7 +19,7 @@ function JogosContent() {
   const searchParams = useSearchParams();
   const idade = searchParams.get("idade");
   const estilo = searchParams.get("estilo");
-  const { products } = useProducts();
+  const { products, ageFilters } = useProducts();
 
   const filtered = products.filter((product) => {
     if (idade && product.ageKey !== idade) return false;
@@ -29,7 +28,7 @@ function JogosContent() {
   });
 
   const activeLabel =
-    AGE_FILTERS.find((f) => f.key === idade)?.label ||
+    ageFilters.find((f) => f.key === idade)?.label ||
     (estilo === "cooperativos" ? "Cooperativos" : null);
 
   return (
@@ -54,7 +53,7 @@ function JogosContent() {
             >
               Todos
             </Link>
-            {AGE_FILTERS.map((filter) => (
+            {ageFilters.map((filter) => (
               <Link
                 key={filter.key}
                 href={`/jogos?idade=${filter.key}`}

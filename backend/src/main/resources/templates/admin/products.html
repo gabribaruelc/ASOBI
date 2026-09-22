@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Produtos')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <div class="page-header">
+      <div>
+        <h1>Produtos</h1>
+        <p class="muted" th:text="${#lists.size(products)} + ' produto(s) no catálogo'">10 produtos</p>
+      </div>
+      <a th:href="@{/admin/produtos/novo}" class="button pink">+ Novo produto</a>
+    </div>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr><th>Produto</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(products)}">
+            <td colspan="5" class="muted">Nenhum produto ainda. Comece em "+ Novo produto".</td>
+          </tr>
+          <tr th:each="p : ${products}">
+            <td>
+              <span class="product-icon" th:text="${p.icon ?: '🎲'}">🎲</span>
+              <strong th:text="${p.name}">Corrida dos Sapos</strong>
+              <div class="muted small" th:text="${p.categoryName}">4 a 6 anos</div>
+            </td>
+            <td>
+              <div th:if="${p.originalPrice != null}" class="muted small strike"
+                   th:text="${'R$ ' + #numbers.formatDecimal(p.originalPrice, 1, 'POINT', 2, 'COMMA')}">R$ 99,90</div>
+              <strong th:text="${'R$ ' + #numbers.formatDecimal(p.price, 1, 'POINT', 2, 'COMMA')}">R$ 79,90</strong>
+            </td>
+            <td>
+              <form th:action="@{/admin/produtos/{id}/estoque(id=${p.id})}" method="post" class="stock-form">
+                <input type="number" name="stock" min="0" th:value="${p.stock}" aria-label="Estoque">
+                <button type="submit" class="link-button">Salvar</button>
+              </form>
+            </td>
+            <td class="badges">
+              <span class="badge red" th:if="${p.stock == 0}">Esgotado</span>
+              <span class="badge pink" th:if="${p.originalPrice != null}">Promoção</span>
+              <span class="badge blue" th:if="${p.isNew}"
+                    th:text="${'Novidade · ' + p.newDaysRemaining + (p.newDaysRemaining == 1 ? ' dia' : ' dias')}">Novidade · 3 dias</span>
+              <span class="badge green" th:if="${p.cooperative}">Cooperativo</span>
+            </td>
+            <td class="actions">
+              <a th:href="@{/admin/produtos/{id}/editar(id=${p.id})}">Editar</a>
+              <a th:href="${storeUrl + '/jogos/' + p.slug}" target="_blank" rel="noopener">Ver na loja</a>
+              <form th:if="${p.originalPrice != null}" th:action="@{/admin/produtos/{id}/encerrar-promocao(id=${p.id})}" method="post">
+                <button type="submit" class="link-button">Tirar da promoção</button>
+              </form>
+              <form th:action="@{/admin/produtos/{id}/excluir(id=${p.id})}" method="post"
+                    th:data-name="${p.name}"
+                    onsubmit="return confirm('Excluir &quot;' + this.dataset.name + '&quot;? Isso não pode ser desfeito. Se for só falta de estoque, zere o estoque.');">
+                <button type="submit" class="link-button danger">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</body>
+</html>

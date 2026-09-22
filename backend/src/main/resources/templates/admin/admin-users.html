@@ -31,7 +31,7 @@
             <td class="muted" th:text="${admin.createdByEmail ?: '—'}">—</td>
             <td class="actions">
               <form th:unless="${admin.email == currentAdminEmail}"
-                    th:action="@{/admin/admins/{id}/delete(id=${admin.id})}" method="post"
+                    th:action="@{/admin/admins/{id}/excluir(id=${admin.id})}" method="post"
                     onsubmit="return confirm('Remover o acesso deste e-mail ao painel?');">
                 <button type="submit" class="link-button danger">Remover</button>
               </form>

@@ -108,14 +108,14 @@ class AdminSecurityTests {
 	void cannotRemoveYourself() throws Exception {
 		Long ownId = adminUserRepository.findAll().stream()
 				.filter(admin -> admin.getEmail().equals(ADMIN)).findFirst().orElseThrow().getId();
-		mockMvc.perform(post("/admin/admins/{id}/delete", ownId).with(user(ADMIN)).with(csrf()))
+		mockMvc.perform(post("/admin/admins/{id}/excluir", ownId).with(user(ADMIN)).with(csrf()))
 				.andExpect(flash().attribute("error", "Você não pode remover o seu próprio acesso."));
 	}
 
 	@Test
 	void removedAdminLosesAccessImmediately() throws Exception {
 		AdminUser other = adminUserRepository.save(new AdminUser("outra@example.com", ADMIN));
-		mockMvc.perform(post("/admin/admins/{id}/delete", other.getId()).with(user(ADMIN)).with(csrf()))
+		mockMvc.perform(post("/admin/admins/{id}/excluir", other.getId()).with(user(ADMIN)).with(csrf()))
 				.andExpect(flash().attributeExists("success"));
 
 		mockMvc.perform(get("/admin").with(user("outra@example.com")))

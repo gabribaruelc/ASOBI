@@ -16,9 +16,14 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 	@EntityGraph(attributePaths = "category")
 	Optional<Product> findBySlug(String slug);
 
+	@EntityGraph(attributePaths = "category")
+	List<Product> findAllByOrderByNameAsc();
+
 	boolean existsBySlug(String slug);
 
 	boolean existsByCategoryId(Long categoryId);
+
+	long countByCategoryId(Long categoryId);
 
 	long countByStock(int stock);
 

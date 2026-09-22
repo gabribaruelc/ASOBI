@@ -55,7 +55,7 @@ public class AdminUserController {
 		return "redirect:/admin/admins";
 	}
 
-	@PostMapping("/{id}/delete")
+	@PostMapping("/{id}/excluir")
 	public String remove(@PathVariable Long id, Authentication authentication, RedirectAttributes redirect) {
 		try {
 			adminUserService.removeAdmin(id, CurrentAdmin.emailOf(authentication));

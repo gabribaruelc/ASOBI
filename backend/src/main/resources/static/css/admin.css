@@ -203,3 +203,17 @@ td.actions > * + * { margin-left: 12px; }
   .content { padding: 20px 16px; }
   .form-grid { grid-template-columns: 1fr; }
 }
+
+/* Produtos e categorias */
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.product-icon { font-size: 1.4rem; margin-right: 6px; vertical-align: middle; }
+.strike { text-decoration: line-through; }
+td.badges { display: table-cell; }
+td.badges .badge { margin: 2px 4px 2px 0; }
+.fieldset { border: 1px dashed var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.quick-dates { display: flex; flex-wrap: wrap; gap: 8px; }
+.button.small { padding: 6px 14px; font-size: .875rem; }
+.inline-form label.narrow { flex: 0 1 120px; }
+.stock-form input.wide { width: 220px; }
+[hidden] { display: none !important; }
+.values-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }

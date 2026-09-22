@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head(${product == null ? 'Novo produto' : 'Editar produto'})}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <p><a th:href="@{/admin/produtos}">← Produtos</a></p>
+    <h1 th:text="${product == null ? 'Novo produto' : 'Editar: ' + product.name}">Novo produto</h1>
+    <p class="muted" th:if="${product != null}">
+      Link na loja: <a th:href="${storeUrl + '/jogos/' + product.slug}" target="_blank" rel="noopener"
+                       th:text="${'/jogos/' + product.slug}">/jogos/slug</a>
+    </p>
+
+    <form th:action="${product == null} ? @{/admin/produtos} : @{/admin/produtos/{id}(id=${product.id})}"
+          th:object="${form}" method="post" class="card" novalidate>
+
+      <p class="alert error" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}">Erro</p>
+
+      <div class="form-grid">
+        <label class="full">Nome
+          <input type="text" th:field="*{name}" maxlength="150" required>
+          <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+        </label>
+
+        <label>Ícone <span class="hint">um emoji, enquanto não há foto</span>
+          <input type="text" th:field="*{icon}" maxlength="16" placeholder="🎲">
+          <span class="field-error" th:if="${#fields.hasErrors('icon')}" th:errors="*{icon}"></span>
+        </label>
+
+        <label>Faixa etária
+          <select th:field="*{categoryId}" required>
+            <option value="">Escolha…</option>
+            <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}">4 a 6 anos</option>
+          </select>
+          <span class="field-error" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></span>
+        </label>
+
+        <label>Idade recomendada
+          <input type="text" th:field="*{ageLabel}" maxlength="40" placeholder="6+ anos" required>
+          <span class="field-error" th:if="${#fields.hasErrors('ageLabel')}" th:errors="*{ageLabel}"></span>
+        </label>
+
+        <label>Nº de jogadores
+          <input type="text" th:field="*{players}" maxlength="60" placeholder="2 a 4 jogadores" required>
+          <span class="field-error" th:if="${#fields.hasErrors('players')}" th:errors="*{players}"></span>
+        </label>
+
+        <label class="full">Habilidade estimulada
+          <input type="text" th:field="*{skill}" maxlength="100" placeholder="Raciocínio lógico" required>
+          <span class="field-error" th:if="${#fields.hasErrors('skill')}" th:errors="*{skill}"></span>
+        </label>
+
+        <label class="full">Descrição
+          <textarea th:field="*{description}" maxlength="4000" required></textarea>
+          <span class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+        </label>
+
+        <label>Preço normal (R$)
+          <input type="number" th:field="*{regularPrice}" min="0.01" step="0.01" required>
+          <span class="field-error" th:if="${#fields.hasErrors('regularPrice')}" th:errors="*{regularPrice}"></span>
+        </label>
+
+        <label>Estoque
+          <input type="number" th:field="*{stock}" min="0" step="1" required>
+          <span class="hint">0 = aparece como esgotado na loja</span>
+          <span class="field-error" th:if="${#fields.hasErrors('stock')}" th:errors="*{stock}"></span>
+        </label>
+
+        <div class="full fieldset">
+          <label class="checkbox"><input type="checkbox" th:field="*{onSale}" id="onSale"> Em promoção</label>
+          <label id="salePriceField">Preço promocional (R$)
+            <input type="number" th:field="*{salePrice}" min="0.01" step="0.01">
+            <span class="hint">O preço normal aparece riscado na loja. Ao tirar da promoção, volta ao preço normal.</span>
+            <span class="field-error" th:if="${#fields.hasErrors('salePrice')}" th:errors="*{salePrice}"></span>
+          </label>
+        </div>
+
+        <div class="full fieldset">
+          <label>Fica em Novidades até <span class="hint">vazio = não aparece em Novidades</span>
+            <input type="date" th:field="*{newUntil}" id="newUntil">
+          </label>
+          <div class="quick-dates">
+            <button type="button" class="button secondary small" data-days="7">+7 dias</button>
+            <button type="button" class="button secondary small" data-days="15">+15 dias</button>
+            <button type="button" class="button secondary small" data-days="30">+30 dias</button>
+            <button type="button" class="button secondary small" data-days="0">Tirar de Novidades</button>
+          </div>
+        </div>
+
+        <label class="checkbox full"><input type="checkbox" th:field="*{cooperative}"> Jogo cooperativo (aparece no filtro "Cooperativos")</label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="button" th:text="${product == null ? 'Cadastrar produto' : 'Salvar alterações'}">Salvar</button>
+        <a th:href="@{/admin/produtos}" class="button secondary">Cancelar</a>
+      </div>
+    </form>
+  </main>
+</div>
+<script>
+  // Mostra o preço promocional só quando "Em promoção" está marcado.
+  const onSale = document.getElementById("onSale");
+  const saleField = document.getElementById("salePriceField");
+  const toggleSale = () => { saleField.hidden = !onSale.checked; };
+  onSale.addEventListener("change", toggleSale);
+  toggleSale();
+
+  // Atalhos de data para Novidades (a partir de hoje).
+  const newUntil = document.getElementById("newUntil");
+  document.querySelectorAll("[data-days]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const days = Number(button.dataset.days);
+      if (days === 0) { newUntil.value = ""; return; }
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      newUntil.value = date.toLocaleDateString("sv-SE"); // yyyy-mm-dd no fuso local
+    });
+  });
+</script>
+</body>
+</html>

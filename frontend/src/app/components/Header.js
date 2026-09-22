@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "./Header.module.css";
 import { useCart } from "../context/CartContext";
+import { useProducts } from "../context/ProductsContext";
 
 const NAV_LINKS = [
   { href: "/jogos", label: "Jogos" },
@@ -12,17 +13,16 @@ const NAV_LINKS = [
   { href: "/sobre", label: "Sobre" },
 ];
 
-const AGE_RANGES = [
-  { href: "/jogos?idade=ate-3", label: "Até 3 anos" },
-  { href: "/jogos?idade=4-6", label: "4 a 6 anos" },
-  { href: "/jogos?idade=7-10", label: "7 a 10 anos" },
-  { href: "/jogos?idade=mais-10", label: "+10 anos" },
-  { href: "/jogos?estilo=cooperativos", label: "Cooperativos" },
-];
+const COOPERATIVE_RANGE = { href: "/jogos?estilo=cooperativos", label: "Cooperativos" };
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { count } = useCart();
+  const { ageFilters } = useProducts();
+  const ageRanges = [
+    ...ageFilters.map((filter) => ({ href: `/jogos?idade=${filter.key}`, label: filter.label })),
+    COOPERATIVE_RANGE,
+  ];
 
   return (
     <header className={styles.header}>
@@ -73,7 +73,7 @@ export default function Header() {
 
       <div className={styles.ageRail}>
         <div className={`container ${styles.ageRailInner}`}>
-          {AGE_RANGES.map((range) => (
+          {ageRanges.map((range) => (
             <Link key={range.label} href={range.href} className={styles.agePill}>
               {range.label}
             </Link>

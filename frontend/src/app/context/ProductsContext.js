@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { INITIAL_PRODUCTS } from "../data/products";
+import { AGE_FILTERS, INITIAL_PRODUCTS } from "../data/products";
 import { apiFetch, isApiEnabled, toStoreProduct } from "../lib/api";
 
 const ProductsContext = createContext(null);
@@ -9,14 +9,19 @@ const STORAGE_KEY = "asobi-products";
 
 export function ProductsProvider({ children }) {
   const [products, setProducts] = useState(isApiEnabled ? [] : INITIAL_PRODUCTS);
+  // Faixas etárias ({ key, label }) — vêm do banco quando a API está ligada.
+  const [ageFilters, setAgeFilters] = useState(isApiEnabled ? [] : AGE_FILTERS);
   const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(isApiEnabled);
   const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     if (isApiEnabled) {
-      apiFetch("/api/products")
-        .then((data) => setProducts(data.map(toStoreProduct)))
+      Promise.all([apiFetch("/api/products"), apiFetch("/api/categories")])
+        .then(([productData, categoryData]) => {
+          setProducts(productData.map(toStoreProduct));
+          setAgeFilters(categoryData.map((c) => ({ key: c.slug, label: c.name })));
+        })
         .catch((error) => setLoadError(error.message))
         .finally(() => {
           setLoading(false);
@@ -105,6 +110,7 @@ export function ProductsProvider({ children }) {
     <ProductsContext.Provider
       value={{
         products,
+        ageFilters,
         hydrated,
         loading,
         loadError,
