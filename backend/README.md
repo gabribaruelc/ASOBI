@@ -62,8 +62,8 @@ gcloud run deploy asobi-backend \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
-  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br \
-  --set-env-vars ADMIN_BOOTSTRAP_EMAIL=<email-google-da-donna> \n  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest
+  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,ADMIN_BOOTSTRAP_EMAIL=<email-google-da-donna> \
+  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest
 ```
 
 `--min-instances 0` mantém o custo perto de zero (o primeiro acesso após um período parado leva alguns segundos para acordar).
