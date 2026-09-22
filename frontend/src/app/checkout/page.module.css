@@ -215,3 +215,45 @@
     padding: 18px;
   }
 }
+
+.shippingOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shippingOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid var(--color-primary-tint);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.shippingOption:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+.shippingName {
+  flex: 1;
+  font-weight: 700;
+}
+
+.shippingName small {
+  font-weight: 400;
+  color: var(--color-text-soft);
+}
+
+.shippingPrice {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.shippingPrice s {
+  color: var(--color-text-soft);
+  font-weight: 400;
+  margin-right: 4px;
+}

@@ -30,6 +30,8 @@ import br.com.asobi.order.model.ShippingAddress;
 import br.com.asobi.order.repository.OrderRepository;
 import br.com.asobi.payment.PaymentGateway;
 import br.com.asobi.payment.PaymentUpdate;
+import br.com.asobi.shipping.ShippingOption;
+import br.com.asobi.shipping.ShippingService;
 
 @Service
 @Transactional
@@ -40,13 +42,15 @@ public class OrderService {
 	private final OrderRepository orderRepository;
 	private final ProductRepository productRepository;
 	private final PaymentGateway paymentGateway;
+	private final ShippingService shippingService;
 	private final Clock clock;
 
 	public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-			PaymentGateway paymentGateway, Clock clock) {
+			PaymentGateway paymentGateway, ShippingService shippingService, Clock clock) {
 		this.orderRepository = orderRepository;
 		this.productRepository = productRepository;
 		this.paymentGateway = paymentGateway;
+		this.shippingService = shippingService;
 		this.clock = clock;
 	}
 
@@ -74,6 +78,16 @@ public class OrderService {
 			}
 			order.addItem(product, quantity);
 		});
+
+		// Frete automático ligado: recota e usa o preço do servidor para a opção escolhida.
+		if (shippingService.isEnabled()) {
+			if (!StringUtils.hasText(request.shippingOptionId())) {
+				throw new BusinessException("Escolha uma opção de frete.");
+			}
+			ShippingOption shipping = shippingService.resolve(order.getShippingAddress().getPostalCode(),
+					quantities, request.shippingOptionId());
+			order.setShipping(shipping.price(), shipping.label());
+		}
 
 		orderRepository.save(order);
 		String checkoutUrl = paymentGateway.createCheckout(order);

@@ -231,3 +231,10 @@ td.badges .badge { margin: 2px 4px 2px 0; }
 .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 16px; }
 .detail-grid table td { padding: 8px 0; }
 .page-header .badges .badge { margin-left: 4px; }
+
+/* Configurações */
+.toggle { flex-direction: row; align-items: flex-start; gap: 12px; font-weight: 400; margin-bottom: 16px; }
+.toggle input { width: 22px; height: 22px; margin-top: 2px; flex-shrink: 0; }
+.toggle > span { display: flex; flex-direction: column; gap: 4px; }
+.form-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 800px) { .form-grid.four { grid-template-columns: 1fr 1fr; } }

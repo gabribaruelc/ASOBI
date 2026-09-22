@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
 import { formatPrice } from "../data/products";
@@ -29,6 +29,19 @@ export default function CheckoutPage() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [lookingUpCep, setLookingUpCep] = useState(false);
+  // Frete automático (liga/desliga no painel admin).
+  const [shippingEnabled, setShippingEnabled] = useState(false);
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [shippingOptionId, setShippingOptionId] = useState(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState(null);
+
+  useEffect(() => {
+    if (!isApiEnabled) return;
+    apiFetch("/api/settings")
+      .then((settings) => setShippingEnabled(settings.shippingEnabled))
+      .catch(() => setShippingEnabled(false));
+  }, []);
 
   const cartProducts = items
     .map((item) => {
@@ -38,15 +51,41 @@ export default function CheckoutPage() {
     .filter(Boolean);
   const subtotal = cartProducts.reduce((sum, p) => sum + p.price * p.quantity, 0);
   const unavailable = cartProducts.filter((p) => p.stock <= 0);
+  const selectedShipping = shippingOptions.find((o) => o.id === shippingOptionId);
+  const total = subtotal + (selectedShipping ? selectedShipping.price : 0);
+  const needsShippingChoice = shippingEnabled && !selectedShipping;
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  // Preenche o endereço pelo CEP (ViaCEP — serviço público e gratuito).
+  async function loadShippingOptions(postalCode) {
+    setShippingLoading(true);
+    setShippingError(null);
+    setShippingOptions([]);
+    setShippingOptionId(null);
+    try {
+      const options = await apiFetch("/api/shipping/quote", {
+        method: "POST",
+        body: JSON.stringify({
+          postalCode,
+          items: items.map((item) => ({ slug: item.slug, quantity: item.quantity })),
+        }),
+      });
+      setShippingOptions(options);
+      if (options.length > 0) setShippingOptionId(options[0].id);
+    } catch (err) {
+      setShippingError(err.message);
+    } finally {
+      setShippingLoading(false);
+    }
+  }
+
+  // Preenche o endereço pelo CEP (ViaCEP — serviço público e gratuito) e cota o frete.
   async function handleCepBlur() {
     const digits = form.postalCode.replace(/\D/g, "");
     if (digits.length !== 8) return;
+    if (shippingEnabled) loadShippingOptions(digits);
     setLookingUpCep(true);
     try {
       const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
@@ -87,6 +126,7 @@ export default function CheckoutPage() {
             state: form.state,
           },
           items: items.map((item) => ({ slug: item.slug, quantity: item.quantity })),
+          shippingOptionId: shippingEnabled ? shippingOptionId : null,
         }),
       });
       clearCart();
@@ -263,6 +303,45 @@ export default function CheckoutPage() {
                 </label>
               </div>
             </section>
+
+            {shippingEnabled && (
+              <section className={styles.card}>
+                <h2>Frete</h2>
+                {shippingLoading && <p className={styles.hint}>Calculando o frete…</p>}
+                {!shippingLoading && shippingOptions.length === 0 && !shippingError && (
+                  <p className={styles.hint}>Informe o CEP para ver as opções de entrega.</p>
+                )}
+                {shippingError && <p className={styles.error}>{shippingError}</p>}
+                <div className={styles.shippingOptions}>
+                  {shippingOptions.map((option) => (
+                    <label key={option.id} className={styles.shippingOption}>
+                      <input
+                        type="radio"
+                        name="shippingOption"
+                        value={option.id}
+                        checked={shippingOptionId === option.id}
+                        onChange={() => setShippingOptionId(option.id)}
+                      />
+                      <span className={styles.shippingName}>
+                        {option.company} {option.name}
+                        {option.deliveryDays != null && (
+                          <small> · até {option.deliveryDays} dias úteis</small>
+                        )}
+                      </span>
+                      <span className={styles.shippingPrice}>
+                        {option.price === 0 ? (
+                          <>
+                            {option.originalPrice && <s>{formatPrice(option.originalPrice)}</s>} Grátis
+                          </>
+                        ) : (
+                          formatPrice(option.price)
+                        )}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
 
           <aside className={styles.summary}>
@@ -284,11 +363,17 @@ export default function CheckoutPage() {
             </div>
             <div className={styles.summaryRow}>
               <span>Frete</span>
-              <span className={styles.muted}>A combinar</span>
+              {!shippingEnabled ? (
+                <span className={styles.muted}>A combinar</span>
+              ) : selectedShipping ? (
+                <span>{selectedShipping.price === 0 ? "Grátis" : formatPrice(selectedShipping.price)}</span>
+              ) : (
+                <span className={styles.muted}>Informe o CEP</span>
+              )}
             </div>
             <div className={`${styles.summaryRow} ${styles.summaryTotal}`}>
               <span>Total</span>
-              <span>{formatPrice(subtotal)}</span>
+              <span>{formatPrice(total)}</span>
             </div>
 
             {error && (
@@ -305,7 +390,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               className={styles.submit}
-              disabled={submitting || loading || unavailable.length > 0}
+              disabled={submitting || loading || unavailable.length > 0 || needsShippingChoice}
             >
               {submitting ? "Enviando…" : "Ir para o pagamento"}
             </button>

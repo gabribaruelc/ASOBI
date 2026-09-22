@@ -20,6 +20,7 @@ public record OrderStatusResponse(
 		List<Item> items,
 		BigDecimal itemsTotal,
 		BigDecimal shippingCost,
+		String shippingService,
 		BigDecimal total,
 		String trackingCode,
 		Instant createdAt) {
@@ -39,6 +40,7 @@ public record OrderStatusResponse(
 						.toList(),
 				order.getItemsTotal(),
 				order.getShippingCost(),
+				order.getShippingService(),
 				order.getTotal(),
 				order.getTrackingCode(),
 				order.getCreatedAt());

@@ -57,6 +57,10 @@ public class Order {
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal total = BigDecimal.ZERO;
 
+	/** Serviço de entrega escolhido (ex.: "Correios PAC · 5 dias úteis"); null = frete a combinar. */
+	@Column(name = "shipping_service", length = 120)
+	private String shippingService;
+
 	@Column(name = "payment_provider", length = 30)
 	private String paymentProvider;
 
@@ -107,6 +111,11 @@ public class Order {
 	public void setShippingCost(BigDecimal shippingCost) {
 		this.shippingCost = shippingCost;
 		this.total = itemsTotal.add(shippingCost);
+	}
+
+	public void setShipping(BigDecimal shippingCost, String shippingService) {
+		setShippingCost(shippingCost);
+		this.shippingService = shippingService;
 	}
 
 	/** Registra o que o provedor de pagamento informou (sem mudar o status do pedido). */
@@ -181,6 +190,10 @@ public class Order {
 
 	public BigDecimal getTotal() {
 		return total;
+	}
+
+	public String getShippingService() {
+		return shippingService;
 	}
 
 	public String getPaymentProvider() {

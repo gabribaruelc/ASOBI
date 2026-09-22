@@ -21,7 +21,11 @@ public record OrderRequest(
 		@NotNull(message = "Informe o endereço de entrega.") @Valid AddressRequest shippingAddress,
 		@NotEmpty(message = "O carrinho está vazio.")
 		@Size(max = 50, message = "Itens demais no carrinho.")
-		List<@Valid ItemRequest> items) {
+		List<@Valid ItemRequest> items,
+
+		/** Opção escolhida na cotação de frete (obrigatória só com o frete automático ligado). */
+		@Size(max = 40, message = "Opção de frete inválida.")
+		String shippingOptionId) {
 
 	public record CustomerRequest(
 			@NotBlank(message = "Informe seu nome completo.")

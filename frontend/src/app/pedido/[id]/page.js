@@ -127,8 +127,14 @@ export default function PedidoPage() {
               </li>
             ))}
             <li className={styles.muted}>
-              <span>Frete</span>
-              <span>{order.shippingCost > 0 ? formatPrice(order.shippingCost) : "A combinar"}</span>
+              <span>Frete{order.shippingService ? ` · ${order.shippingService}` : ""}</span>
+              <span>
+                {order.shippingService
+                  ? order.shippingCost > 0
+                    ? formatPrice(order.shippingCost)
+                    : "Grátis"
+                  : "A combinar"}
+              </span>
             </li>
             <li className={styles.total}>
               <span>Total</span>
