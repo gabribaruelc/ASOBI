@@ -58,7 +58,18 @@ export default function PedidoPage() {
       }
     }
 
-    load();
+    // Voltando do Mercado Pago (?payment_id=...): pede ao backend para conferir
+    // o pagamento na hora, sem depender só do webhook.
+    const paymentId = new URLSearchParams(window.location.search).get("payment_id");
+    const sync =
+      paymentId && /^\d+$/.test(paymentId)
+        ? apiFetch(`/api/orders/${encodeURIComponent(id)}/payment-sync`, {
+            method: "POST",
+            body: JSON.stringify({ paymentId }),
+          }).catch(() => {})
+        : Promise.resolve();
+
+    sync.then(load);
     return () => {
       active = false;
       clearTimeout(timer);

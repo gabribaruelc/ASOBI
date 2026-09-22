@@ -139,6 +139,14 @@ class OrderFlowTests {
 	}
 
 	@Test
+	void malformedJsonReturnsProblemDetail() throws Exception {
+		mockMvc.perform(post("/api/orders").contentType(MediaType.APPLICATION_JSON).content("{oops"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.status").value(400))
+				.andExpect(jsonPath("$.title").value("Bad Request"));
+	}
+
+	@Test
 	void publicOrderStatusHidesPersonalData() throws Exception {
 		String id = placeOrder("[{\"slug\": \"alvo-certeiro\", \"quantity\": 1}]");
 		mockMvc.perform(get("/api/orders/{id}", id))

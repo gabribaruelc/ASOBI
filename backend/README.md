@@ -35,6 +35,10 @@ Testes: `.\mvnw.cmd test`
 | `FRONTEND_ORIGINS` | `https://asobi.com.br,https://www.asobi.com.br` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | credenciais OAuth do Google (login do painel) |
 | `ADMIN_BOOTSTRAP_EMAIL` | conta Google do primeiro admin (usado só se ainda não houver nenhum) |
+| `STORE_URL` | `https://asobi.com.br` (loja; retorno do pagamento e links do painel) |
+| `PUBLIC_URL` | URL pública deste backend no Cloud Run (monta o webhook do Mercado Pago) |
+| `MERCADO_PAGO_ACCESS_TOKEN` | `TEST-...` (sandbox) ou `APP_USR-...` (produção). Vazio = modo manual |
+| `MERCADO_PAGO_WEBHOOK_SECRET` | "assinatura secreta" gerada ao configurar Webhooks no painel do Mercado Pago |
 
 Nunca commitar essas credenciais.
 
@@ -62,11 +66,27 @@ gcloud run deploy asobi-backend \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
-  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,ADMIN_BOOTSTRAP_EMAIL=<email-google-da-donna> \
-  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest
+  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,ADMIN_BOOTSTRAP_EMAIL=<email-google-da-donna> \
+  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest
 ```
 
 `--min-instances 0` mantém o custo perto de zero (o primeiro acesso após um período parado leva alguns segundos para acordar).
+
+## Pagamentos (Mercado Pago Checkout Pro)
+
+1. `POST /api/orders` calcula o total com os preços do banco, confere o estoque e cria a
+   preferência no Mercado Pago (`external_reference` = id público do pedido). A loja redireciona
+   o cliente para o `checkoutUrl` (Pix, cartão, boleto — nenhum dado de cartão passa pela ASOBI).
+2. O Mercado Pago avisa em `POST /api/webhooks/mercadopago` (assinatura `x-signature` conferida
+   com `MERCADO_PAGO_WEBHOOK_SECRET`). O backend **consulta o pagamento na API** do Mercado Pago —
+   nunca confia no corpo da notificação — e marca o pedido como pago, baixando o estoque uma única vez.
+3. Quando o cliente volta para `/pedido/<id>?payment_id=...`, a loja chama
+   `POST /api/orders/<id>/payment-sync`, que faz a mesma consulta (útil em localhost, onde o webhook não chega).
+
+Configuração no [painel do Mercado Pago](https://www.mercadopago.com.br/developers/panel/app):
+Webhooks → URL `https://<url-do-cloud-run>/api/webhooks/mercadopago`, evento **Pagamentos**.
+Sem `MERCADO_PAGO_ACCESS_TOKEN`, a loja funciona em **modo manual**: o cliente vê o pedido e a Donna
+confirma o pagamento no painel (também serve para Pix direto).
 
 ## Estrutura
 

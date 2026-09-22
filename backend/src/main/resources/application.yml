@@ -42,6 +42,12 @@ asobi:
   frontend-origins: ${FRONTEND_ORIGINS:http://localhost:3000}
   # Endereço público da loja (links "ver na loja" no painel, retorno do pagamento).
   store-url: ${STORE_URL:http://localhost:3000}
+  # Endereço público deste backend (usado no webhook do Mercado Pago).
+  public-url: ${PUBLIC_URL:http://localhost:8080}
+  mercado-pago:
+    # Vazio = modo manual (pagamentos confirmados pelo painel).
+    access-token: ${MERCADO_PAGO_ACCESS_TOKEN:}
+    webhook-secret: ${MERCADO_PAGO_WEBHOOK_SECRET:}
   admin:
     # Primeiro admin, criado na subida só se a tabela admin_users estiver vazia.
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}

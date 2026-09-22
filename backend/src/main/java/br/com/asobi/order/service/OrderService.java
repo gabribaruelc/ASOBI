@@ -110,6 +110,21 @@ public class OrderService {
 		}
 	}
 
+	/**
+	 * Cliente voltou do Mercado Pago com o id do pagamento: consulta o
+	 * pagamento na API (não confia na URL) e aplica, se for deste pedido.
+	 * Garante a atualização mesmo quando o webhook atrasa ou não chega (ex.: localhost).
+	 */
+	public OrderStatusResponse syncPayment(UUID publicId, String paymentId) {
+		PaymentUpdate update = paymentGateway.fetchPayment(paymentId)
+				.orElseThrow(() -> new BusinessException("Pagamento não encontrado."));
+		if (!update.orderPublicId().equals(publicId)) {
+			throw new BusinessException("Esse pagamento não pertence a este pedido.");
+		}
+		applyPayment(update);
+		return getOrderStatus(publicId);
+	}
+
 	/** "Marcar como pago" no painel (Pix direto, transferência, modo manual). */
 	public void markPaidManually(Long id) {
 		Order order = getForAdmin(id);

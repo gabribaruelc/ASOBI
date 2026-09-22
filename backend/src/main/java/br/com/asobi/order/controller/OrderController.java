@@ -16,6 +16,8 @@ import br.com.asobi.order.dto.OrderCreatedResponse;
 import br.com.asobi.order.dto.OrderRequest;
 import br.com.asobi.order.dto.OrderStatusResponse;
 import br.com.asobi.order.service.OrderService;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -36,5 +38,16 @@ public class OrderController {
 	@GetMapping("/{orderId}")
 	public OrderStatusResponse getOrder(@PathVariable UUID orderId) {
 		return orderService.getOrderStatus(orderId);
+	}
+
+	/** Chamado pela página do pedido quando o cliente volta do Mercado Pago (?payment_id=...). */
+	@PostMapping("/{orderId}/payment-sync")
+	public OrderStatusResponse syncPayment(@PathVariable UUID orderId,
+			@Validated @RequestBody PaymentSyncRequest request) {
+		return orderService.syncPayment(orderId, request.paymentId());
+	}
+
+	public record PaymentSyncRequest(
+			@NotBlank @Pattern(regexp = "^\\d{1,20}$", message = "Pagamento inválido.") String paymentId) {
 	}
 }
