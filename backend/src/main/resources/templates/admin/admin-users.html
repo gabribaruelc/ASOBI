@@ -25,7 +25,7 @@
         <tbody>
           <tr th:each="admin : ${admins}">
             <td>
-              <span th:text="${admin.email}">dona@asobi.com.br</span>
+              <span th:text="${admin.email}">priscila@asobi.com.br</span>
               <span class="badge blue" th:if="${admin.email == currentAdminEmail}">você</span>
             </td>
             <td class="muted" th:text="${admin.createdByEmail ?: '—'}">—</td>

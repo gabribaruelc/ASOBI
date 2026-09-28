@@ -34,7 +34,7 @@ import br.com.asobi.review.repository.ReviewRepository;
 @Transactional
 class ReviewFlowTests {
 
-	private static final String ADMIN = "dona@asobi.com.br";
+	private static final String ADMIN = "priscila@asobi.com.br";
 
 	@Autowired
 	private MockMvc mockMvc;

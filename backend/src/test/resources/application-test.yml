@@ -6,5 +6,5 @@ spring:
 
 asobi:
   admin:
-    bootstrap-email: dona@asobi.com.br
+    bootstrap-email: priscila@asobi.com.br
     dev-login-enabled: true

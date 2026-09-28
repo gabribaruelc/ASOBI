@@ -6,7 +6,7 @@ import br.com.asobi.order.model.Order;
 
 /**
  * Sem Mercado Pago configurado: o cliente vai direto para a página do pedido
- * e a Donna confirma o pagamento pelo painel ("Marcar como pago").
+ * e a Priscila confirma o pagamento pelo painel ("Marcar como pago").
  * Escolhido em PaymentConfig.
  */
 public class ManualPaymentGateway implements PaymentGateway {

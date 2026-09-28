@@ -189,7 +189,7 @@ public class OrderService {
 			if (product.getStock() >= item.getQuantity()) {
 				product.setStock(product.getStock() - item.getQuantity());
 			} else {
-				// Dois clientes pagaram o último item: zera e avisa a Donna no painel.
+				// Dois clientes pagaram o último item: zera e avisa a Priscila no painel.
 				product.setStock(0);
 				order.flagStockIssue();
 				log.warn("Pedido #{} pago sem estoque suficiente de {}", order.getId(), item.getProductSlug());

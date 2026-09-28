@@ -7,8 +7,8 @@ const ADMINS_KEY = "asobi-admins";
 const SESSION_KEY = "asobi-admin-session";
 
 // Lista inicial de e-mails com acesso ao painel. Primeiro acesso: entre com
-// esse e-mail e depois cadastre o e-mail real da Donna em /admin/admins.
-const DEFAULT_ADMINS = ["dona@asobi.com.br"];
+// esse e-mail e depois cadastre o e-mail real da Priscila em /admin/admins.
+const DEFAULT_ADMINS = ["priscila@asobi.com.br"];
 
 export function AdminProvider({ children }) {
   const [admins, setAdmins] = useState(DEFAULT_ADMINS);
