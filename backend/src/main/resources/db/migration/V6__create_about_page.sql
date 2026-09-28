@@ -19,7 +19,7 @@ CREATE TABLE about_values (
     text          VARCHAR(1000) NOT NULL
 );
 
--- Texto provisório (o mesmo do frontend) até a Donna enviar o conteúdo real.
+-- Texto provisório (o mesmo do frontend) até a Priscila enviar o conteúdo real.
 INSERT INTO about_page (id, hero_text, mission_emoji, mission_title, mission_text) VALUES (1,
     'O nome ASOBI vem do japonês 遊び ("asobi"), que significa brincadeira. Acreditamos que é brincando que as crianças aprendem melhor — e é por isso que existimos: para levar até as famílias jogos de tabuleiro que unem diversão de verdade com desenvolvimento infantil.',
     '🎲',

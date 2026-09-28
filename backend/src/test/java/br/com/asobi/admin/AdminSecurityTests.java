@@ -29,7 +29,7 @@ import br.com.asobi.admin.repository.AdminUserRepository;
 @Transactional
 class AdminSecurityTests {
 
-	private static final String ADMIN = "dona@asobi.com.br";
+	private static final String ADMIN = "priscila@asobi.com.br";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -72,7 +72,7 @@ class AdminSecurityTests {
 
 	@Test
 	void devLoginWithAdminEmailOpensPanel() throws Exception {
-		mockMvc.perform(post("/admin/dev-login").param("email", " Dona@Asobi.com.br ").with(csrf()))
+		mockMvc.perform(post("/admin/dev-login").param("email", " Priscila@Asobi.com.br ").with(csrf()))
 				.andExpect(redirectedUrl("/admin"));
 	}
 

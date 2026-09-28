@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: shipping-service
+
+server:
+  # Porta padrão local: 8081 (o backend da loja usa 8080).
+  # No Cloud Run a porta vem da variável PORT.
+  port: ${PORT:8081}
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+shipping-service:
+  # Chave compartilhada com o backend (cabeçalho X-Api-Key). Vazia = sem conferência (local).
+  api-key: ${SHIPPING_SERVICE_API_KEY:}
+
+melhor-envio:
+  # Vazio = cotação indisponível (o painel da loja não deixa ligar o frete automático).
+  token: ${MELHOR_ENVIO_TOKEN:}
+  sandbox: ${MELHOR_ENVIO_SANDBOX:true}
+  contact-email: ${MELHOR_ENVIO_CONTACT_EMAIL:contato@asobi.com.br}

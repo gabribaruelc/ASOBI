@@ -36,7 +36,7 @@ import br.com.asobi.order.repository.OrderRepository;
 @Transactional
 class OrderFlowTests {
 
-	private static final String ADMIN = "dona@asobi.com.br";
+	private static final String ADMIN = "priscila@asobi.com.br";
 
 	private static final String CUSTOMER = """
 			"customer": {"name": "Maria Souza", "email": "Maria@Example.com", "phone": "(11) 98765-4321"},

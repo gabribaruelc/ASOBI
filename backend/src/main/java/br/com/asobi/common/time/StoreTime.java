@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
-/** Datas no fuso da loja (Brasília) — é assim que a Donna pensa "até dia 30". */
+/** Datas no fuso da loja (Brasília) — é assim que a Priscila pensa "até dia 30". */
 public final class StoreTime {
 
 	public static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");

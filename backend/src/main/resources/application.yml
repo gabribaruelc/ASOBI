@@ -1,12 +1,16 @@
 spring:
   application:
     name: asobi-backend
+  config:
+    # Credenciais locais (DB_URL, DB_PASSWORD...) em backend/.env — ver .env.example.
+    # No Cloud Run o arquivo não existe e as variáveis vêm do Secret Manager.
+    import: optional:file:.env[.properties]
   profiles:
     # Sem perfil informado, roda com o banco H2 local (não precisa instalar nada).
     # Em produção (Cloud Run) usar SPRING_PROFILES_ACTIVE=prod.
     default: local
     group:
-      prod: google
+      prod: google, supabase
   jpa:
     open-in-view: false
     hibernate:
@@ -48,11 +52,11 @@ asobi:
     # Vazio = modo manual (pagamentos confirmados pelo painel).
     access-token: ${MERCADO_PAGO_ACCESS_TOKEN:}
     webhook-secret: ${MERCADO_PAGO_WEBHOOK_SECRET:}
-  melhor-envio:
-    # Vazio = frete automático indisponível (o toggle no painel fica travado em "a combinar").
-    token: ${MELHOR_ENVIO_TOKEN:}
-    sandbox: ${MELHOR_ENVIO_SANDBOX:true}
-    contact-email: ${MELHOR_ENVIO_CONTACT_EMAIL:contato@asobi.com.br}
+  shipping-service:
+    # Microsserviço de frete (../shipping-service, porta 8081 local). Vazio = frete automático
+    # indisponível (o toggle no painel fica travado em "a combinar").
+    url: ${SHIPPING_SERVICE_URL:}
+    api-key: ${SHIPPING_SERVICE_API_KEY:}
   admin:
     # Primeiro admin, criado na subida só se a tabela admin_users estiver vazia.
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
@@ -76,7 +80,7 @@ spring:
 
 asobi:
   admin:
-    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:dona@asobi.com.br}
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:priscila@asobi.com.br}
     dev-login-enabled: true
 
 ---
@@ -96,10 +100,12 @@ spring:
             scope: openid, email, profile
 
 ---
+# Banco Supabase. Ativado automaticamente em prod; localmente, use
+# SPRING_PROFILES_ACTIVE=local,supabase (mantém o login de desenvolvimento).
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: supabase
   datasource:
     # Supabase: usar a connection string do "Session pooler" (IPv4), ex.:
     # jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require
@@ -110,6 +116,15 @@ spring:
       # Free tier do Supabase tem poucas conexões; o Cloud Run pode subir
       # mais de uma instância.
       maximum-pool-size: 3
+  flyway:
+    # db/postgresql tem o que só roda no Postgres (ex.: RLS), fora do H2.
+    locations: classpath:db/migration, classpath:db/postgresql
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
 
 server:
   # O Cloud Run termina o HTTPS no proxy; isso garante que os redirects do

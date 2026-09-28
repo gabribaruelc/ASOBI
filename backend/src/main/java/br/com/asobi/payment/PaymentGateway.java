@@ -6,7 +6,7 @@ import br.com.asobi.order.model.Order;
 
 /**
  * Provedor de pagamento. Em produção, Mercado Pago Checkout Pro; sem
- * credenciais configuradas, o modo manual (a Donna confirma no painel).
+ * credenciais configuradas, o modo manual (a Priscila confirma no painel).
  */
 public interface PaymentGateway {
 

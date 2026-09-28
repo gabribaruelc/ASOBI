@@ -9,7 +9,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * Com MERCADO_PAGO_ACCESS_TOKEN definido, usa o Mercado Pago; sem ele, o modo
- * manual (a Donna confirma os pagamentos no painel).
+ * manual (a Priscila confirma os pagamentos no painel).
  */
 @Configuration
 public class PaymentConfig {

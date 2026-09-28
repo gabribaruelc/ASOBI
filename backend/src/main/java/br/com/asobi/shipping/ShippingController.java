@@ -1,22 +1,20 @@
 package br.com.asobi.shipping;
 
-import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.asobi.order.dto.OrderRequest.ItemRequest;
-import br.com.asobi.settings.model.StoreSettings;
-import br.com.asobi.settings.service.StoreSettingsService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -24,18 +22,9 @@ import jakarta.validation.constraints.Size;
 public class ShippingController {
 
 	private final ShippingService shippingService;
-	private final StoreSettingsService settingsService;
 
-	public ShippingController(ShippingService shippingService, StoreSettingsService settingsService) {
+	public ShippingController(ShippingService shippingService) {
 		this.shippingService = shippingService;
-		this.settingsService = settingsService;
-	}
-
-	/** O que a loja precisa saber para montar o checkout. */
-	@GetMapping("/api/settings")
-	public StoreSettingsResponse getSettings() {
-		StoreSettings settings = settingsService.get();
-		return new StoreSettingsResponse(settings.isShippingEnabled(), settings.getFreeShippingThreshold());
 	}
 
 	@PostMapping("/api/shipping/quote")
@@ -45,9 +34,6 @@ public class ShippingController {
 		return shippingService.quote(request.postalCode(), quantities);
 	}
 
-	public record StoreSettingsResponse(boolean shippingEnabled, BigDecimal freeShippingThreshold) {
-	}
-
 	public record QuoteRequest(
 			@NotBlank(message = "Informe o CEP.")
 			@Pattern(regexp = "^\\d{5}-?\\d{3}$", message = "CEP inválido.")
@@ -55,6 +41,17 @@ public class ShippingController {
 
 			@NotEmpty(message = "O carrinho está vazio.")
 			@Size(max = 50, message = "Itens demais no carrinho.")
-			List<@Valid ItemRequest> items) {
+			List<@Valid CartItem> items) {
+	}
+
+	/** Item do carrinho: só slug e quantidade (preço e medidas vêm do servidor). */
+	public record CartItem(
+			@NotBlank(message = "Produto inválido.")
+			String slug,
+
+			@NotNull(message = "Informe a quantidade.")
+			@Min(value = 1, message = "Quantidade mínima é 1.")
+			@Max(value = 20, message = "Quantidade máxima é 20 por produto.")
+			Integer quantity) {
 	}
 }

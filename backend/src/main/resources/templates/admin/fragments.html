@@ -26,7 +26,7 @@
     <a th:href="@{/admin/admins}" th:classappend="${#strings.startsWith(currentPath, '/admin/admins')} ? 'active'">🔑 Admins</a>
   </nav>
   <div class="sidebar-footer">
-    <span class="muted" th:text="${currentAdminEmail}">dona@asobi.com.br</span>
+    <span class="muted" th:text="${currentAdminEmail}">priscila@asobi.com.br</span>
     <form th:action="@{/admin/logout}" method="post">
       <button type="submit" class="link-button">Sair</button>
     </form>

@@ -13,7 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * Formulário de produto do painel. Os preços seguem o jeito que a Donna pensa:
+ * Formulário de produto do painel. Os preços seguem o jeito que a Priscila pensa:
  * "preço normal" + (opcional) "preço promocional". No banco isso vira
  * price (quanto se paga) e original_price (preço riscado, só em promoção).
  */

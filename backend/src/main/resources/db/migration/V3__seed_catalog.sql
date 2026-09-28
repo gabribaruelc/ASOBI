@@ -1,4 +1,4 @@
--- Catálogo inicial (o mesmo de frontend/src/app/data/products.js), até a Donna
+-- Catálogo inicial (o mesmo de frontend/src/app/data/products.js), até a Priscila
 -- cadastrar os produtos reais pelo painel admin.
 INSERT INTO categories (slug, name, position) VALUES
     ('ate-3',   'Até 3 anos',  1),

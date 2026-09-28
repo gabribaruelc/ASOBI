@@ -1,0 +1,28 @@
+# Sobe os serviços Java localmente, cada um na sua porta:
+#   backend           http://localhost:8080  (API da loja + painel admin)
+#   shipping-service  http://localhost:8081  (cotação de frete)
+# A loja (frontend/) roda à parte com `npm run dev` em http://localhost:3000.
+#
+# Uso: docker compose up --build
+# Para cotar de verdade: MELHOR_ENVIO_TOKEN=<token-sandbox> docker compose up --build
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Perfil local: banco H2 dentro do container e login de desenvolvimento no painel.
+      SPRING_PROFILES_ACTIVE: local
+      SHIPPING_SERVICE_URL: http://shipping-service:8081
+      SHIPPING_SERVICE_API_KEY: dev-shipping-key
+    depends_on:
+      - shipping-service
+
+  shipping-service:
+    build: ./shipping-service
+    ports:
+      - "8081:8081"
+    environment:
+      SHIPPING_SERVICE_API_KEY: dev-shipping-key
+      MELHOR_ENVIO_TOKEN: ${MELHOR_ENVIO_TOKEN:-}
+      MELHOR_ENVIO_SANDBOX: "true"

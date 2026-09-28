@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 public class ShippingConfig {
 
 	@Bean
-	public ShippingQuoteProvider shippingQuoteProvider(MelhorEnvioProperties properties) {
-		return new MelhorEnvioClient(properties);
+	public ShippingQuoteProvider shippingQuoteProvider(ShippingServiceProperties properties) {
+		return new ShippingServiceClient(properties);
 	}
 }

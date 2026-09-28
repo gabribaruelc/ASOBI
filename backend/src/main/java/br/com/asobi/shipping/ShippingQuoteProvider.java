@@ -3,7 +3,7 @@ package br.com.asobi.shipping;
 import java.math.BigDecimal;
 import java.util.List;
 
-/** Cotação de frete numa transportadora/agregador (hoje: Melhor Envio). */
+/** Cotação de frete (hoje: microsserviço shipping-service, que fala com o Melhor Envio). */
 public interface ShippingQuoteProvider {
 
 	/** Tem credenciais para cotar? Sem isso o frete automático não pode ser ligado. */

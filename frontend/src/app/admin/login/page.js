@@ -55,8 +55,8 @@ export default function AdminLoginPage() {
         </form>
 
         <p className={styles.note}>
-          Primeiro acesso: use <strong>dona@asobi.com.br</strong> e depois
-          cadastre o e-mail real da Donna em Admins. Esse login por e-mail é
+          Primeiro acesso: use <strong>priscila@asobi.com.br</strong> e depois
+          cadastre o e-mail real da Priscila em Admins. Esse login por e-mail é
           provisório (localStorage) — quando o Supabase Auth entrar, ele
           continua checando a mesma lista de admins, só que no backend.
         </p>
