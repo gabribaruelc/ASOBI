@@ -22,6 +22,21 @@ Não precisa instalar Maven nem banco — o wrapper baixa o Maven e o perfil `lo
 
 Testes: `.\mvnw.cmd test`
 
+### Rodar localmente contra o Supabase
+
+1. Copie `.env.example` para `.env` (já ignorado pelo Git) e preencha `DB_URL` e `DB_PASSWORD`
+   (Supabase → **Connect** → *Session pooler*; a senha é a definida ao criar o projeto, ou em
+   *Project Settings → Database → Reset database password*).
+2. Rode com os perfis `local,supabase` — banco do Supabase, mas com o login de desenvolvimento do painel:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="local,supabase"; .\mvnw.cmd spring-boot:run
+```
+
+Na primeira subida o Flyway cria as tabelas e o catálogo inicial no Supabase. O callback
+`db/postgresql/afterMigrate.sql` liga o RLS em todas as tabelas, fechando a API REST automática do
+Supabase (a chave `anon` é pública); o backend conecta como dono das tabelas e não é afetado.
+
 > No Git Bash do Windows, use `mvnw.cmd` (o `mvnw` em shell falha ao instalar o Maven por permissão em `/tmp`).
 
 ## Variáveis de ambiente (perfil `prod`)
