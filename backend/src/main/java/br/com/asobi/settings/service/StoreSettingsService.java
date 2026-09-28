@@ -50,7 +50,8 @@ public class StoreSettingsService {
 		if (form.isShippingEnabled()) {
 			if (!shippingQuoteProvider.isConfigured()) {
 				throw new BusinessException(
-						"Para ligar o frete automático, configure o token do Melhor Envio (MELHOR_ENVIO_TOKEN).");
+						"Para ligar o frete automático, o serviço de frete precisa estar no ar (SHIPPING_SERVICE_URL) "
+								+ "com o token do Melhor Envio configurado (MELHOR_ENVIO_TOKEN).");
 			}
 			if (postalCode == null) {
 				throw new BusinessException("Informe o CEP de origem para ligar o frete automático.");

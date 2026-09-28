@@ -1,7 +1,7 @@
 # Contexto do Projeto — Loja de Jogos de Tabuleiro Infantis
 
 ## O que é
-E-commerce para venda de jogos de tabuleiro voltados ao público infantil. A dona do negócio precisa conseguir operar a loja sozinha no dia a dia, com baixa manutenção técnica.
+E-commerce para venda de jogos de tabuleiro voltados ao público infantil. A Priscila, responsável pelo negócio, precisa conseguir operar a loja sozinha no dia a dia, com baixa manutenção técnica.
 
 Referência de mercado: https://www.topgg.com.br
 
@@ -41,11 +41,11 @@ Já implementado em `frontend/` (Next.js, App Router), com dados **mockados** em
 - **Catálogo** (`/jogos`), com filtro por faixa etária e por "Cooperativos" via query params (`?idade=`, `?estilo=`).
 - **Ficha de produto** (`/jogos/[slug]`): foto (placeholder), descrição, idade recomendada, nº de jogadores, preço (com preço promocional quando houver), habilidade estimulada, avaliações (com aviso de que passam por aprovação antes de aparecer) e produtos relacionados.
 - **Novidades** (`/novidades`) e **Promoções** (`/promocoes`), filtrando o mesmo catálogo por `isNew` e `promo`.
-- **Sobre** (`/sobre`) com história/missão/valores — texto provisório até a Donna enviar o conteúdo real.
+- **Sobre** (`/sobre`) com história/missão/valores — texto provisório até a Priscila enviar o conteúdo real.
 - **Carrinho** (`/carrinho`), com quantidade e remoção funcionando no cliente (estado local em React; ainda sem persistência real).
 - **Login** (`/login`) e **Cadastro** (`/cadastro`), com botão "Continuar com Google" — hoje só visual; ativar de verdade é só habilitar o provedor Google no Supabase Auth (gratuito, sem custo extra).
 - **Painel admin** (`/admin/*`) — já construído e funcional, mas hoje ainda em cima dos mesmos dados mockados/locais (ver aviso abaixo), sem Supabase por trás:
-  - `/admin/login`: acesso mockado por e-mail (sem senha real ainda), checado contra a lista de admins salva em `localStorage` (`asobi-admins`). E-mail seed: `dona@asobi.com.br`.
+  - `/admin/login`: acesso mockado por e-mail (sem senha real ainda), checado contra a lista de admins salva em `localStorage` (`asobi-admins`). E-mail seed: `priscila@asobi.com.br`.
   - `/admin` (dashboard), `/admin/produtos` (lista com estoque editável inline, badge "Esgotado", status de promoção e de Novidades) + `/admin/produtos/novo` e `/admin/produtos/[slug]` (formulário de criar/editar, incluindo promoção e "dias em Novidades").
   - `/admin/sobre`: edita o texto da história, os 4 cards de valores e o bloco de missão da página `/sobre` — reflete no site na hora.
   - `/admin/avaliacoes`: fila de moderação (aprovar/rejeitar) das avaliações enviadas pelo formulário na ficha de produto — o formulário já manda a avaliação como pendente de verdade, e só aparece no produto depois de aprovada.
@@ -58,19 +58,20 @@ Já implementado em `frontend/` (Next.js, App Router), com dados **mockados** em
 Spring Boot 4.1 + Java 17, organizado por domínio (`catalog`, `review`, `order`, `payment`, `shipping`, `content`, `settings`, `admin`), cada um com controller/service/repository/model/dto. Esquema do banco em migrações Flyway (`src/main/resources/db/migration`). Detalhes de execução, variáveis de ambiente e deploy no `backend/README.md`.
 - **API REST para a loja** (`/api/**`, pública, CORS para o Next.js, erros em RFC 9457): catálogo e faixas etárias, conteúdo do Sobre, envio de avaliações (sempre entram pendentes), pedidos (preço e estoque calculados no servidor), acompanhamento do pedido, cotação de frete, webhook do Mercado Pago.
 - **Painel admin em Thymeleaf** (`/admin/**`): login com Google + e-mail na tabela `admin_users` (conferido no banco a cada requisição), sessão no banco (Spring Session JDBC). Telas: dashboard, pedidos, produtos, faixas etárias, avaliações, página Sobre, configurações (liga/desliga frete) e admins.
-- **Pagamento**: Mercado Pago Checkout Pro (webhook com assinatura conferida; o pagamento é sempre reconsultado na API). Sem token do Mercado Pago, roda em modo manual (a Donna marca como pago no painel).
+- **Pagamento**: Mercado Pago Checkout Pro (webhook com assinatura conferida; o pagamento é sempre reconsultado na API). Sem token do Mercado Pago, roda em modo manual (a Priscila marca como pago no painel).
 - **Estoque** baixa só quando o pagamento é aprovado, com lock na linha do produto.
 - **Frontend** usa a API quando `NEXT_PUBLIC_API_URL` está definido (ver `frontend/.env.example`); sem ela, continua no modo antigo (mock + `localStorage`). Nesse modo antigo o admin em Next.js ainda funciona; com a API ligada, `/admin` redireciona para o painel do Spring. O admin em Next.js e os mocks só devem ser apagados depois que a versão Java for confirmada.
 - Pendências conhecidas: fotos de produto (hoje só emoji; plano é Supabase Storage), login/cadastro de cliente (checkout é sem cadastro), e-mail transacional (Resend), dashboard de métricas (Fase 2).
 
-## Ideias de microsserviço (escolher 1 para implementar "de verdade" isolado)
-1. Cálculo de frete (recomendado — desacopla de uma API externa instável).
-2. Recomendação de produto por idade/habilidade.
-3. Moderação de comentários (filtro de conteúdo antes da fila de aprovação).
+## Microsserviços
+- **Implementado: `shipping-service/`** (Spring Boot, porta 8081 local, Cloud Run próprio, sem banco). Só ele fala com o Melhor Envio (guarda o `MELHOR_ENVIO_TOKEN`); o backend chama `POST /api/quotes` via `ShippingServiceClient` com `X-Api-Key` e mantém as regras comerciais (toggle, frete grátis). Detalhes em `shipping-service/README.md`.
+- Portas locais: frontend 3000, backend 8080, shipping-service 8081 (`docker-compose.yml` na raiz sobe os dois Java).
+- Análise completa (necessidades → requisitos → funcionalidades → processos → domínios → serviços, limites, dependências, fluxos, portas) em `docs/arquitetura.md` — manter atualizado ao mudar a arquitetura.
+- Candidatos futuros: moderação de comentários (filtro antes da fila) e recomendação por idade/habilidade.
 
 ## Convenções e decisões já tomadas
 - Nenhum servidor próprio/VPS — só serviços gerenciados, para a cliente conseguir manter sozinha.
-- Toda decisão de arquitetura deve priorizar "a dona consegue operar sem depender de programador no dia a dia".
+- Toda decisão de arquitetura deve priorizar "a Priscila consegue operar sem depender de programador no dia a dia".
 - Paleta e tom visual: lúdico, colorido, pensado para pais navegando com/para crianças (não usar visual corporativo/sério).
 
 ## Convenção de nomes (padrão de mercado)

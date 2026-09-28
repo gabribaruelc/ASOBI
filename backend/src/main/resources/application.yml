@@ -48,11 +48,11 @@ asobi:
     # Vazio = modo manual (pagamentos confirmados pelo painel).
     access-token: ${MERCADO_PAGO_ACCESS_TOKEN:}
     webhook-secret: ${MERCADO_PAGO_WEBHOOK_SECRET:}
-  melhor-envio:
-    # Vazio = frete automático indisponível (o toggle no painel fica travado em "a combinar").
-    token: ${MELHOR_ENVIO_TOKEN:}
-    sandbox: ${MELHOR_ENVIO_SANDBOX:true}
-    contact-email: ${MELHOR_ENVIO_CONTACT_EMAIL:contato@asobi.com.br}
+  shipping-service:
+    # Microsserviço de frete (../shipping-service, porta 8081 local). Vazio = frete automático
+    # indisponível (o toggle no painel fica travado em "a combinar").
+    url: ${SHIPPING_SERVICE_URL:}
+    api-key: ${SHIPPING_SERVICE_API_KEY:}
   admin:
     # Primeiro admin, criado na subida só se a tabela admin_users estiver vazia.
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
@@ -76,7 +76,7 @@ spring:
 
 asobi:
   admin:
-    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:dona@asobi.com.br}
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:priscila@asobi.com.br}
     dev-login-enabled: true
 
 ---

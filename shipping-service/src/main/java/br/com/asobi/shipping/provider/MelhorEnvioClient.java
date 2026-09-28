@@ -1,4 +1,4 @@
-package br.com.asobi.shipping;
+package br.com.asobi.shipping.provider;
 
 import java.math.BigDecimal;
 import java.net.http.HttpClient;
@@ -19,7 +19,8 @@ import org.springframework.web.client.RestClientException;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import br.com.asobi.common.exception.BusinessException;
+import br.com.asobi.shipping.quote.QuoteRequest;
+import br.com.asobi.shipping.quote.ShippingOption;
 
 /** Cotação no Melhor Envio (POST /api/v2/me/shipment/calculate). */
 public class MelhorEnvioClient implements ShippingQuoteProvider {
@@ -56,6 +57,11 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 	}
 
 	@Override
+	public String name() {
+		return "melhor-envio";
+	}
+
+	@Override
 	public boolean isConfigured() {
 		return StringUtils.hasText(properties.token());
 	}
@@ -63,7 +69,7 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 	@Override
 	public List<ShippingOption> quote(QuoteRequest request) {
 		if (!isConfigured()) {
-			throw new BusinessException("Cálculo de frete indisponível no momento.");
+			throw new ProviderUnavailableException("Cálculo de frete indisponível no momento.");
 		}
 		Map<String, Object> body = Map.of(
 				"from", Map.of("postal_code", digits(request.originPostalCode())),
@@ -91,7 +97,8 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 					.toList();
 		} catch (RestClientException ex) {
 			log.error("Falha ao cotar frete no Melhor Envio", ex);
-			throw new BusinessException("Não foi possível calcular o frete agora. Tente novamente em instantes.");
+			throw new ProviderFailureException(
+					"Não foi possível calcular o frete agora. Tente novamente em instantes.", ex);
 		}
 	}
 
@@ -117,7 +124,7 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 
 		ShippingOption toOption() {
 			BigDecimal value = new BigDecimal(StringUtils.hasText(customPrice) ? customPrice : price);
-			return new ShippingOption(String.valueOf(id), name, company == null ? null : company.name(), value, null,
+			return new ShippingOption(String.valueOf(id), name, company == null ? null : company.name(), value,
 					customDeliveryTime != null ? customDeliveryTime : deliveryTime);
 		}
 	}

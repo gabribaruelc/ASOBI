@@ -21,7 +21,7 @@
           </span>
         </label>
         <p class="alert error" th:unless="${shippingProviderConfigured}">
-          O Melhor Envio ainda não está conectado (falta o token MELHOR_ENVIO_TOKEN no servidor).
+          O serviço de frete não está conectado (confira SHIPPING_SERVICE_URL no backend e o token MELHOR_ENVIO_TOKEN no shipping-service).
           Enquanto isso, o frete fica "a combinar".
         </p>
 

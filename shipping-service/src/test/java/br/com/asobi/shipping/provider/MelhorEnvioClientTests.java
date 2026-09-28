@@ -1,4 +1,4 @@
-package br.com.asobi.shipping;
+package br.com.asobi.shipping.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,15 +18,16 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-import br.com.asobi.common.exception.BusinessException;
+import br.com.asobi.shipping.quote.QuoteRequest;
+import br.com.asobi.shipping.quote.ShippingOption;
 
 class MelhorEnvioClientTests {
 
 	private static final String URL = "https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate";
 
-	private static final ShippingQuoteProvider.QuoteRequest REQUEST = new ShippingQuoteProvider.QuoteRequest(
-			"01310-100", "20040-002", List.of(new ShippingQuoteProvider.Parcel("corrida-dos-sapos", 2,
-					new BigDecimal("89.90"), new BigDecimal("1.000"), 30, 8, 30)));
+	private static final QuoteRequest REQUEST = new QuoteRequest("01310-100", "20040-002",
+			List.of(new QuoteRequest.Parcel("corrida-dos-sapos", 2, new BigDecimal("89.90"), new BigDecimal("1.000"),
+					30, 8, 30)));
 
 	private final RestClient.Builder builder = RestClient.builder();
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
@@ -57,9 +58,9 @@ class MelhorEnvioClientTests {
 
 		assertThat(options).extracting(ShippingOption::id).containsExactly("1", "2");
 		assertThat(options.get(0).price()).isEqualByComparingTo("25.50");
+		assertThat(options.get(0).company()).isEqualTo("Correios");
 		assertThat(options.get(1).price()).as("usa o custom_price").isEqualByComparingTo("39.90");
 		assertThat(options.get(1).deliveryDays()).isEqualTo(3);
-		assertThat(options.get(0).label()).isEqualTo("Correios PAC · 6 dias úteis");
 		server.verify();
 	}
 
@@ -67,7 +68,7 @@ class MelhorEnvioClientTests {
 	void turnsApiFailureIntoFriendlyError() {
 		server.expect(requestTo(URL)).andRespond(withServerError());
 		assertThatThrownBy(() -> client.quote(REQUEST))
-				.isInstanceOf(BusinessException.class)
+				.isInstanceOf(ProviderFailureException.class)
 				.hasMessageContaining("Não foi possível calcular o frete agora");
 	}
 
@@ -75,6 +76,6 @@ class MelhorEnvioClientTests {
 	void isNotConfiguredWithoutToken() {
 		MelhorEnvioClient withoutToken = new MelhorEnvioClient(new MelhorEnvioProperties("", true, null));
 		assertThat(withoutToken.isConfigured()).isFalse();
-		assertThatThrownBy(() -> withoutToken.quote(REQUEST)).isInstanceOf(BusinessException.class);
+		assertThatThrownBy(() -> withoutToken.quote(REQUEST)).isInstanceOf(ProviderUnavailableException.class);
 	}
 }
