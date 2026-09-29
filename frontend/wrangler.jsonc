@@ -1,0 +1,19 @@
+// Deploy da loja no Cloudflare Workers via OpenNext (plano gratuito, uso comercial liberado).
+// Build e deploy: `npm run deploy` (ou Workers Builds conectado ao GitHub, ver README).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "asobi-frontend",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "asobi-frontend"
+    }
+  ]
+}

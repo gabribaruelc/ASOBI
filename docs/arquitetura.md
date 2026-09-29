@@ -20,7 +20,7 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 - loja virtual pensada para pais escolherem jogos pela idade da criança;
 - checkout com pagamento terceirizado (Mercado Pago), sem guardar dados de cartão;
 - **painel administrativo** que dá à Priscila controle total do site sem depender de programador;
-- somente **serviços gerenciados em tier gratuito** (Cloudflare Pages, Google Cloud Run, Supabase), sem
+- somente **serviços gerenciados em tier gratuito** (Cloudflare Workers, Google Cloud Run, Supabase), sem
   servidor próprio para manter.
 
 ---
@@ -143,7 +143,7 @@ da loja, e *generic* é um problema comum que pode ser terceirizado.
 | N1 Vender com segurança | RF03, RF04, RF05, RNF04 | F04, F06, F07 | order, payment | backend + Mercado Pago |
 | N2 Achar o jogo certo | RF01, RF02, RNF08 | F01, F02, F03 | catalog | backend + frontend |
 | N3 Operar sozinha | RF09, RF10, RF11, RF07 | F11, F12, F13, F16 | catalog, content, settings | backend (painel) |
-| N4 Custo ≈ zero | RNF01, RNF02 | — (transversal) | — | todos (Cloud Run a zero, Pages, Supabase free) |
+| N4 Custo ≈ zero | RNF01, RNF02 | — (transversal) | — | todos (Cloud Run a zero, Workers, Supabase free) |
 | N5 Proteger crianças | RF08, RNF05 | F09, F10 | review | backend |
 | N6 Custo de entrega | RF07, RNF06, RNF07 | F05, F16 | shipping, settings | **shipping-service** + backend |
 | N7 Estoque e pedidos | RF04, RF06, RF13 | F06, F08, F15 | order, catalog | backend |
@@ -179,7 +179,7 @@ flowchart LR
     cliente([Cliente / pais]) -->|HTTPS| loja
     priscila([Priscila / admins]) -->|HTTPS| painel
 
-    subgraph CF[Cloudflare Pages]
+    subgraph CF[Cloudflare Workers]
         loja[frontend<br/>Next.js<br/>:3000 local]
     end
 
@@ -740,7 +740,7 @@ sequenceDiagram
 
 | Componente | Porta local | Produção | Exposição |
 |---|---|---|---|
-| frontend (Next.js) | **3000** | Cloudflare Pages, HTTPS 443 | Pública |
+| frontend (Next.js) | **3000** | Cloudflare Workers (OpenNext), HTTPS 443 | Pública |
 | backend (Spring Boot) | **8080** | Cloud Run, HTTPS 443 (`PORT` injetada) | Pública (`/api/**`), painel protegido por login |
 | shipping-service (Spring Boot) | **8081** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
 | H2 console (dev) | 8080 `/h2-console` | desligado | Local |

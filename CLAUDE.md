@@ -9,7 +9,7 @@ Referência de mercado: https://www.topgg.com.br
 Custo mensal de infraestrutura deve ficar **bem abaixo de R$110/mês** (na prática, próximo de R$0, usando tiers gratuitos). Nunca sugerir serviços pagos como padrão sem justificar.
 
 ## Stack (arquitetura de baixa manutenção — usar serviços gerenciados, nunca servidor próprio/VPS)
-- **Frontend**: Next.js, hospedado no **Cloudflare Pages** (free tier permite uso comercial).
+- **Frontend**: Next.js, hospedado no **Cloudflare Workers** via adaptador OpenNext (`@opennextjs/cloudflare`; free tier permite uso comercial). Não é Cloudflare Pages porque as rotas dinâmicas (`/jogos/[slug]`, `/pedido/[id]`) precisam de servidor. Config em `frontend/wrangler.jsonc`, deploy em `frontend/README.md`.
 - **Backend**: **Java 17 + Spring Boot** (exigência do professor: backend em Java), na pasta `backend/`, hospedado no **Google Cloud Run** (free tier, escala a zero). Substitui os Cloudflare Workers do plano original, que não rodam Java. Expõe API REST (JSON) para a loja em Next.js e renderiza o **painel admin com Thymeleaf** (o admin em Next.js em `frontend/src/app/admin` fica só até a versão Thymeleaf ser confirmada).
 - **Banco de dados**: **Supabase** (free tier: 500 MB), acessado pelo backend via JDBC/JPA (Session pooler), com esquema versionado por Flyway. Localmente o backend usa H2 em modo PostgreSQL.
 - **Login do admin**: "Entrar com Google" direto no Spring Security (OAuth2), autorizando pelo e-mail cadastrado na tabela de admins.

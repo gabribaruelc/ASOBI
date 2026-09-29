@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ASOBI — loja (frontend)
 
-## Getting Started
+Next.js (App Router). Mostra a loja para o cliente; os dados e as regras ficam no [backend](../backend/README.md).
 
-First, run the development server:
+## Rodar localmente
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # aponta para o backend em http://localhost:8080
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sem `NEXT_PUBLIC_API_URL`, a loja roda no modo antigo (dados mockados + `localStorage`).
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Deploy no Cloudflare Workers (OpenNext)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A loja roda no **Cloudflare Workers** (plano gratuito, uso comercial liberado) através do adaptador
+[OpenNext](https://opennext.js.org/cloudflare). O Cloudflare Pages não serve aqui porque a loja tem
+páginas dinâmicas (`/jogos/[slug]`, `/pedido/[id]`) que precisam ser montadas no servidor.
 
-## Learn More
+- `wrangler.jsonc`: nome do Worker (`asobi-frontend`) e configuração do Cloudflare.
+- `open-next.config.ts`: configuração do adaptador (sem cache R2, porque a loja não usa ISR).
 
-To learn more about Next.js, take a look at the following resources:
+`NEXT_PUBLIC_API_URL` é embutida **na hora do build**, então precisa estar definida no ambiente de build,
+não só no Worker.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Opção 1 — automático pelo GitHub (recomendado)
+No painel da Cloudflare: *Workers & Pages → Create → Import a repository*, escolha este repositório e configure:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Campo | Valor |
+|---|---|
+| Root directory | `frontend` |
+| Build command | `npx opennextjs-cloudflare build` |
+| Deploy command | `npx opennextjs-cloudflare deploy` |
+| Variável de build | `NEXT_PUBLIC_API_URL=<url-do-backend-no-cloud-run>` |
 
-## Deploy on Vercel
+A cada push na `main`, a loja é publicada sozinha.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Opção 2 — pela linha de comando
+```bash
+npx wrangler login
+NEXT_PUBLIC_API_URL=<url-do-backend> npm run deploy
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Para testar o build do Cloudflare localmente antes de publicar: `npm run preview` (http://localhost:8787).
+
+Depois do primeiro deploy, coloque a URL da loja em `FRONTEND_ORIGINS` e `STORE_URL` no backend.
