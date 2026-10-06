@@ -25,7 +25,8 @@
           </tr>
           <tr th:each="p : ${products}">
             <td>
-              <span class="product-icon" th:text="${p.icon ?: '🎲'}">🎲</span>
+              <img class="product-thumb" th:if="${p.imageUrl != null}" th:src="${p.imageUrl}" alt="" loading="lazy">
+              <span class="product-icon" th:if="${p.imageUrl == null}" th:text="${p.icon ?: '🎲'}">🎲</span>
               <strong th:text="${p.name}">Corrida dos Sapos</strong>
               <div class="muted small" th:text="${p.categoryName}">4 a 6 anos</div>
             </td>

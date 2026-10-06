@@ -1,0 +1,25 @@
+// Deploy da loja na Cloudflare (Workers) pelo OpenNext — ver README.md.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "asobi-frontend",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "asobi-frontend" }
+  ],
+  // Cache das páginas (o "cache curto" de 1 minuto do catálogo) fica neste bucket R2.
+  // Crie antes do primeiro deploy: npx wrangler r2 bucket create asobi-frontend-cache
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "asobi-frontend-cache" }
+  ],
+  // Fila que refaz as páginas quando o cache vence.
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }]
+}

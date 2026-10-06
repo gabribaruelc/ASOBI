@@ -1,5 +1,7 @@
 package br.com.asobi.catalog.controller;
 
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -10,12 +12,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import br.com.asobi.catalog.dto.ProductForm;
 import br.com.asobi.catalog.model.Product;
 import br.com.asobi.catalog.service.AdminProductService;
 import br.com.asobi.catalog.service.CategoryService;
+import br.com.asobi.catalog.service.ProductImageService;
 import br.com.asobi.common.exception.BusinessException;
 
 @Controller
@@ -23,10 +27,13 @@ import br.com.asobi.common.exception.BusinessException;
 public class AdminProductController {
 
 	private final AdminProductService productService;
+	private final ProductImageService imageService;
 	private final CategoryService categoryService;
 
-	public AdminProductController(AdminProductService productService, CategoryService categoryService) {
+	public AdminProductController(AdminProductService productService, ProductImageService imageService,
+			CategoryService categoryService) {
 		this.productService = productService;
+		this.imageService = imageService;
 		this.categoryService = categoryService;
 	}
 
@@ -42,14 +49,15 @@ public class AdminProductController {
 	}
 
 	@PostMapping
-	public String create(@Validated @ModelAttribute("form") ProductForm form, BindingResult result, Model model,
+	public String create(@Validated @ModelAttribute("form") ProductForm form, BindingResult result,
+			@RequestParam(name = "photos", required = false) List<MultipartFile> photos, Model model,
 			RedirectAttributes redirect) {
 		checkPrices(form, result);
 		if (result.hasErrors()) {
 			return renderForm(model, form, null);
 		}
 		try {
-			Product product = productService.create(form);
+			Product product = productService.create(form, photos);
 			redirect.addFlashAttribute("success", "Produto \"" + product.getName() + "\" cadastrado.");
 			return "redirect:/admin/produtos";
 		} catch (BusinessException ex) {
@@ -65,13 +73,14 @@ public class AdminProductController {
 
 	@PostMapping("/{id}")
 	public String update(@PathVariable Long id, @Validated @ModelAttribute("form") ProductForm form,
-			BindingResult result, Model model, RedirectAttributes redirect) {
+			BindingResult result, @RequestParam(name = "photos", required = false) List<MultipartFile> photos,
+			Model model, RedirectAttributes redirect) {
 		checkPrices(form, result);
 		if (result.hasErrors()) {
 			return renderForm(model, form, productService.getProduct(id));
 		}
 		try {
-			Product product = productService.update(id, form);
+			Product product = productService.update(id, form, photos);
 			redirect.addFlashAttribute("success", "Produto \"" + product.getName() + "\" atualizado.");
 			return "redirect:/admin/produtos";
 		} catch (BusinessException ex) {
@@ -98,6 +107,20 @@ public class AdminProductController {
 		return "redirect:/admin/produtos";
 	}
 
+	@PostMapping("/{id}/fotos/{imageId}/capa")
+	public String makeCoverPhoto(@PathVariable Long id, @PathVariable Long imageId, RedirectAttributes redirect) {
+		imageService.makeCover(id, imageId);
+		redirect.addFlashAttribute("success", "Foto de capa atualizada.");
+		return "redirect:/admin/produtos/" + id + "/editar";
+	}
+
+	@PostMapping("/{id}/fotos/{imageId}/excluir")
+	public String deletePhoto(@PathVariable Long id, @PathVariable Long imageId, RedirectAttributes redirect) {
+		imageService.delete(id, imageId);
+		redirect.addFlashAttribute("success", "Foto excluída.");
+		return "redirect:/admin/produtos/" + id + "/editar";
+	}
+
 	@PostMapping("/{id}/excluir")
 	public String delete(@PathVariable Long id, RedirectAttributes redirect) {
 		productService.delete(id);
@@ -108,6 +131,8 @@ public class AdminProductController {
 	private String renderForm(Model model, ProductForm form, Product product) {
 		model.addAttribute("form", form);
 		model.addAttribute("product", product);
+		model.addAttribute("images", product == null ? List.of() : imageService.list(product.getId()));
+		model.addAttribute("maxImages", ProductImageService.MAX_IMAGES);
 		model.addAttribute("categories", categoryService.listForSelect());
 		return "admin/product-form";
 	}

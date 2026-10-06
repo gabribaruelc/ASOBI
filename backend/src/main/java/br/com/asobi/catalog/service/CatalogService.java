@@ -30,13 +30,15 @@ public class CatalogService {
 	private final CategoryRepository categoryRepository;
 	private final ProductRepository productRepository;
 	private final ReviewRepository reviewRepository;
+	private final ProductImageService imageService;
 	private final Clock clock;
 
 	public CatalogService(CategoryRepository categoryRepository, ProductRepository productRepository,
-			ReviewRepository reviewRepository, Clock clock) {
+			ReviewRepository reviewRepository, ProductImageService imageService, Clock clock) {
 		this.categoryRepository = categoryRepository;
 		this.productRepository = productRepository;
 		this.reviewRepository = reviewRepository;
+		this.imageService = imageService;
 		this.clock = clock;
 	}
 
@@ -69,7 +71,7 @@ public class CatalogService {
 				.findByProductIdInAndStatusOrderByCreatedAtAsc(ids, ReviewStatus.APPROVED).stream()
 				.collect(Collectors.groupingBy(review -> review.getProduct().getId()));
 		return products.stream()
-				.map(product -> ProductResponse.from(product,
+				.map(product -> ProductResponse.from(product, imageService.urls(product),
 						reviewsByProduct.getOrDefault(product.getId(), List.of()), now))
 				.toList();
 	}

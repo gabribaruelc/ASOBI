@@ -22,6 +22,12 @@
   background: var(--color-primary-tint);
 }
 
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .badgeNew {
   position: absolute;
   top: 12px;

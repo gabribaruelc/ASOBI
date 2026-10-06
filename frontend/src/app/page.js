@@ -1,5 +1,7 @@
 import Link from "next/link";
 import styles from "./page.module.css";
+import ProductCard from "./components/ProductCard";
+import { getAgeFilters, getProducts } from "./lib/catalog";
 
 const SKILLS = [
   {
@@ -28,46 +30,34 @@ const SKILLS = [
   },
 ];
 
-const CATEGORIES = [
-  { icon: "🍼", label: "Até 3 anos", color: "#2e7cf6" },
-  { icon: "🧸", label: "4 a 6 anos", color: "#ff5fa2" },
-  { icon: "🧩", label: "7 a 10 anos", color: "#1e5fd1" },
-  { icon: "🚀", label: "+10 anos", color: "#e8408a" },
-  { icon: "🤝", label: "Cooperativos", color: "#2e7cf6" },
+// Visual dos cards de faixa etária (as faixas em si vêm do painel).
+const CATEGORY_STYLES = [
+  { icon: "🍼", color: "#2e7cf6" },
+  { icon: "🧸", color: "#ff5fa2" },
+  { icon: "🧩", color: "#1e5fd1" },
+  { icon: "🚀", color: "#e8408a" },
 ];
 
-const PRODUCTS = [
-  {
-    icon: "🐸",
-    skill: "Raciocínio lógico",
-    name: "Corrida dos Sapos",
-    age: "6+ anos · 2 a 4 jogadores",
-    price: "R$ 89,90",
-  },
-  {
-    icon: "🏰",
-    skill: "Trabalho em equipe",
-    name: "Missão no Castelo",
-    age: "7+ anos · 2 a 6 jogadores",
-    price: "R$ 119,90",
-  },
-  {
-    icon: "🔤",
-    skill: "Vocabulário",
-    name: "Palavras Mágicas",
-    age: "8+ anos · 2 a 4 jogadores",
-    price: "R$ 74,90",
-  },
-  {
-    icon: "🎯",
-    skill: "Coordenação motora",
-    name: "Alvo Certeiro",
-    age: "4+ anos · 1 a 4 jogadores",
-    price: "R$ 64,90",
-  },
-];
+const FEATURED_COUNT = 4;
 
-export default function Home() {
+export default async function Home() {
+  const [products, ageFilters] = await Promise.all([
+    getProducts(),
+    getAgeFilters(),
+  ]);
+  const categories = [
+    ...ageFilters.map((filter, index) => ({
+      ...CATEGORY_STYLES[index % CATEGORY_STYLES.length],
+      label: filter.label,
+      href: `/jogos?idade=${filter.key}`,
+    })),
+    { icon: "🤝", color: "#2e7cf6", label: "Cooperativos", href: "/jogos?estilo=cooperativos" },
+  ];
+  // Destaques: primeiro os que têm estoque.
+  const featured = (products || [])
+    .filter((product) => product.inStock)
+    .slice(0, FEATURED_COUNT);
+
   return (
     <main>
       <section className={styles.hero}>
@@ -83,7 +73,7 @@ export default function Home() {
               escolher o presente certo.
             </p>
             <div className={styles.heroActions}>
-              <Link href="/catalogo" className={styles.btnPrimary}>
+              <Link href="/jogos" className={styles.btnPrimary}>
                 Ver catálogo
               </Link>
               <Link href="/sobre" className={styles.btnSecondary}>
@@ -143,10 +133,10 @@ export default function Home() {
           </div>
 
           <div className={styles.categoriesGrid}>
-            {CATEGORIES.map((category) => (
+            {categories.map((category) => (
               <Link
                 key={category.label}
-                href="/categorias"
+                href={category.href}
                 className={styles.categoryCard}
                 style={{ background: category.color }}
               >
@@ -160,33 +150,22 @@ export default function Home() {
         </div>
       </section>
 
-      <section className={styles.section}>
-        <div className="container">
-          <div className={styles.sectionHead}>
-            <p className={styles.kicker}>Destaques</p>
-            <h2>Mais queridinhos da turma</h2>
-          </div>
+      {featured.length > 0 && (
+        <section className={styles.section}>
+          <div className="container">
+            <div className={styles.sectionHead}>
+              <p className={styles.kicker}>Destaques</p>
+              <h2>Mais queridinhos da turma</h2>
+            </div>
 
-          <div className={styles.productsGrid}>
-            {PRODUCTS.map((product) => (
-              <div key={product.name} className={styles.productCard}>
-                <div className={styles.productImage} aria-hidden="true">
-                  {product.icon}
-                </div>
-                <div className={styles.productBody}>
-                  <span className={styles.productSkill}>{product.skill}</span>
-                  <h3>{product.name}</h3>
-                  <p className={styles.productMeta}>{product.age}</p>
-                  <div className={styles.productFooter}>
-                    <span className={styles.productPrice}>{product.price}</span>
-                    <button className={styles.productButton}>Ver mais</button>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div className={styles.productsGrid}>
+              {featured.map((product) => (
+                <ProductCard key={product.slug} product={product} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className={styles.section}>
         <div className="container">

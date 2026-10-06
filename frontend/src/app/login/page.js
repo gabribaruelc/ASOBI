@@ -18,34 +18,14 @@ export default function LoginPage() {
 
         <h1>Entrar na sua conta</h1>
         <p className={styles.subtitle}>
-          Acompanhe seus pedidos e finalize suas compras mais rápido.
+          Acompanhe seus pedidos e finalize suas compras mais rápido. É a
+          primeira vez? Sua conta é criada na hora, com o seu Google.
         </p>
 
-        <GoogleButton label="Entrar com Google" />
-
-        <div className={styles.divider}>
-          <span>ou entre com e-mail</span>
-        </div>
-
-        <form className={styles.form}>
-          <label className={styles.field}>
-            <span>E-mail</span>
-            <input type="email" name="email" placeholder="voce@email.com" required />
-          </label>
-          <label className={styles.field}>
-            <span>Senha</span>
-            <input type="password" name="password" placeholder="••••••••" required />
-          </label>
-          <Link href="/esqueci-minha-senha" className={styles.forgot}>
-            Esqueci minha senha
-          </Link>
-          <button type="submit" className={styles.submit}>
-            Entrar
-          </button>
-        </form>
+        <GoogleButton label="Continuar com Google" />
 
         <p className={styles.switch}>
-          Ainda não tem conta? <Link href="/cadastro">Cadastre-se</Link>
+          Prefere não criar conta? <Link href="/jogos">Compre sem cadastro</Link>
         </p>
       </div>
     </main>

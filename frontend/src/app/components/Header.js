@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import styles from "./Header.module.css";
 import { useCart } from "../context/CartContext";
-import { useProducts } from "../context/ProductsContext";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_LINKS = [
   { href: "/jogos", label: "Jogos" },
@@ -15,10 +15,17 @@ const NAV_LINKS = [
 
 const COOPERATIVE_RANGE = { href: "/jogos?estilo=cooperativos", label: "Cooperativos" };
 
-export default function Header() {
+// ageFilters ({ key, label }) vem do servidor (layout), já com as faixas do painel.
+export default function Header({ ageFilters }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { count } = useCart();
-  const { ageFilters } = useProducts();
+  const { user, isAuthEnabled } = useAuth();
+  // Logado: "Meus pedidos". Sem login configurado, o link some (compra sem cadastro).
+  const accountLink = user
+    ? { href: "/conta", label: "Meus pedidos" }
+    : isAuthEnabled
+      ? { href: "/login", label: "Entrar" }
+      : null;
   const ageRanges = [
     ...ageFilters.map((filter) => ({ href: `/jogos?idade=${filter.key}`, label: filter.label })),
     COOPERATIVE_RANGE,
@@ -50,12 +57,11 @@ export default function Header() {
         </div>
 
         <div className={styles.actions}>
-          <Link href="/login" className={styles.loginLink}>
-            Entrar
-          </Link>
-          <Link href="/cadastro" className={styles.signupLink}>
-            Cadastrar
-          </Link>
+          {accountLink && (
+            <Link href={accountLink.href} className={styles.loginLink}>
+              {accountLink.label}
+            </Link>
+          )}
           <Link href="/carrinho" className={styles.iconButton} aria-label="Carrinho de compras">
             🛒
             {count > 0 && <span className={styles.badge}>{count}</span>}
@@ -91,11 +97,13 @@ export default function Header() {
                 </Link>
               </li>
             ))}
-            <li>
-              <Link href="/cadastro" style={{ display: "block", padding: "10px 0", fontWeight: 600 }}>
-                Cadastrar
-              </Link>
-            </li>
+            {accountLink && (
+              <li>
+                <Link href={accountLink.href} style={{ display: "block", padding: "10px 0", fontWeight: 600 }}>
+                  {accountLink.label}
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
       )}

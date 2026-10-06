@@ -1,12 +1,12 @@
-"use client";
-
 import styles from "./page.module.css";
 import ProductCard from "../components/ProductCard";
-import { useProducts, isProductNew } from "../context/ProductsContext";
+import CatalogUnavailable from "../components/CatalogUnavailable";
+import { getProducts } from "../lib/catalog";
+import { isProductNew } from "../lib/products";
 
-export default function NovidadesPage() {
-  const { products } = useProducts();
-  const novidades = products.filter(isProductNew);
+export default async function NovidadesPage() {
+  const products = await getProducts();
+  const novidades = (products || []).filter(isProductNew);
 
   return (
     <main>
@@ -23,7 +23,9 @@ export default function NovidadesPage() {
 
       <section className={styles.section}>
         <div className="container">
-          {novidades.length > 0 ? (
+          {!products ? (
+            <CatalogUnavailable />
+          ) : novidades.length > 0 ? (
             <div className={styles.grid}>
               {novidades.map((product) => (
                 <ProductCard key={product.slug} product={product} />

@@ -45,6 +45,10 @@ public class Order {
 	@Embedded
 	private ShippingAddress shippingAddress;
 
+	/** Conta do cliente (Supabase Auth) quando o pedido foi feito logado; null = sem cadastro. */
+	@Column(name = "customer_user_id")
+	private UUID customerUserId;
+
 	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderItem> items = new ArrayList<>();
 
@@ -99,6 +103,10 @@ public class Order {
 	public Order(Customer customer, ShippingAddress shippingAddress) {
 		this.customer = customer;
 		this.shippingAddress = shippingAddress;
+	}
+
+	public void assignToCustomer(UUID customerUserId) {
+		this.customerUserId = customerUserId;
 	}
 
 	public void addItem(Product product, int quantity) {
@@ -170,6 +178,10 @@ public class Order {
 
 	public Customer getCustomer() {
 		return customer;
+	}
+
+	public UUID getCustomerUserId() {
+		return customerUserId;
 	}
 
 	public ShippingAddress getShippingAddress() {

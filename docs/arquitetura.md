@@ -20,7 +20,7 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 - loja virtual pensada para pais escolherem jogos pela idade da criança;
 - checkout com pagamento terceirizado (Mercado Pago), sem guardar dados de cartão;
 - **painel administrativo** que dá à Priscila controle total do site sem depender de programador;
-- somente **serviços gerenciados em tier gratuito** (Cloudflare Pages, Google Cloud Run, Supabase), sem
+- somente **serviços gerenciados em tier gratuito** (Cloudflare Workers, Google Cloud Run, Supabase), sem
   servidor próprio para manter.
 
 ---
@@ -179,7 +179,7 @@ flowchart LR
     cliente([Cliente / pais]) -->|HTTPS| loja
     priscila([Priscila / admins]) -->|HTTPS| painel
 
-    subgraph CF[Cloudflare Pages]
+    subgraph CF[Cloudflare Workers · OpenNext]
         loja[frontend<br/>Next.js<br/>:3000 local]
     end
 
@@ -187,7 +187,7 @@ flowchart LR
         subgraph BE[backend · Spring Boot · :8080]
             api[API REST /api/**]
             painel[Painel admin Thymeleaf /admin/**]
-            mods[catalog · order · review · content<br/>settings · payment · admin]
+            mods[catalog · order · review · content<br/>settings · payment · admin<br/>storage · notification · account]
         end
         ship[shipping-service<br/>Spring Boot · :8081]
     end
@@ -199,6 +199,9 @@ flowchart LR
     ship -->|REST| ME[(Melhor Envio)]
     mods -->|JDBC :5432| DB[(Supabase PostgreSQL)]
     mods -->|REST SDK| MP[(Mercado Pago)]
+    mods -->|REST| ST[(Supabase Storage)]
+    mods -->|REST| RS[(Resend)]
+    loja -.->|fotos por URL pública| ST
     MP -->|webhook assinado| api
     painel -->|OAuth2| G[(Google)]
 ```
@@ -230,6 +233,11 @@ O backend recota o frete ao fechar o pedido, de modo que o preço nunca vem do n
 | Mercado Pago → backend | Webhook assinado (`x-signature`) | Avisar mudança de pagamento | Reconsulta ao cliente voltar (`payment-sync`) |
 | backend → Supabase | JDBC (Session pooler) | Persistência | Indisponibilidade da loja |
 | backend → Google | OAuth2 / OIDC | Login do painel | Painel inacessível; a loja segue no ar |
+| backend → Supabase Storage | REST + chave secreta | Guardar e apagar as fotos de produto (bucket público `product-images`) | O upload falha com mensagem amigável no painel; o produto é salvo sem a foto nova |
+| frontend → Supabase Storage | HTTPS (URL pública) | Exibir as fotos sem passar pelo Cloud Run | As fotos não carregam até o storage voltar; o resto da loja segue no ar |
+| frontend → Supabase Auth | HTTPS (SDK no navegador) | Login do cliente com Google | Só o login falha; a compra sem cadastro segue |
+| backend → Supabase Auth | REST (`GET /auth/v1/user`) | Conferir o token do cliente em "Meus pedidos" e ao fechar pedido | "Meus pedidos" responde `401`; o pedido é fechado sem cadastro |
+| backend → Resend | REST + Bearer token | E-mails de pedido recebido, pago e enviado | Só o e-mail falha (vai para o log); o pedido segue normalmente |
 
 ### Fluxo P1 + P2: compra com frete e pagamento
 
@@ -289,12 +297,20 @@ sequenceDiagram
 | catalog ⇄ review | — | A ficha do produto exibe avaliações aprovadas; a avaliação referencia o produto |
 | content | admin | Registra qual admin editou |
 | admin | catalog, order, review | Dashboard com contagens de cada domínio |
+| catalog | storage | Guarda as fotos dos produtos e monta as URLs públicas |
+| account | order | "Meus pedidos" lista os pedidos da conta; o `order` recebe a identidade do cliente ao fechar pedido |
+| notification | order, admin | Escuta o evento `OrderEvent` e monta os e-mails; lê os e-mails dos admins para o aviso de pedido pago |
 
 Ciclos conhecidos que ainda restam: `catalog ⇄ review`, `order ⇄ payment` e `settings ⇄ shipping`. Eles são
 tolerados porque ficam **dentro do mesmo deploy**. Na extração do frete, o ciclo `order ⇄ shipping` foi
 removido (o endpoint de cotação agora tem DTO próprio) e o `GET /api/settings` passou para o domínio
 `settings`. Se algum desses domínios virar serviço, o ciclo vira evento (ex.: `PaymentApproved`) ou uma
 interface (porta) no lado dependente.
+
+O módulo `order` **não** depende de `notification`: ele só publica `OrderEvent` (`PLACED`, `PAID`, `SHIPPED`)
+e o `notification` escuta. O e-mail é montado dentro da transação do pedido, mas enviado só **depois do
+commit** (`EmailDispatcher`), de forma síncrona — no Cloud Run a CPU é cortada quando a resposta sai, então
+uma tarefa em segundo plano poderia não rodar.
 
 ---
 
@@ -311,6 +327,7 @@ módulo de domínio, e só esse módulo tem o repositório JPA que a acessa.
 erDiagram
     categories ||--o{ products : "classifica"
     products ||--o{ reviews : "recebe"
+    products ||--o{ product_images : "tem fotos"
     products |o--o{ order_items : "referência opcional (snapshot)"
     orders ||--|{ order_items : "contém"
     about_page ||--|{ about_values : "tem"
@@ -336,6 +353,12 @@ erDiagram
         boolean cooperative
         timestamptz new_until "fim do período em Novidades"
     }
+    product_images {
+        bigint id PK
+        bigint product_id FK "ON DELETE CASCADE"
+        varchar storage_key UK "caminho do arquivo no storage"
+        int position "a menor é a capa"
+    }
     reviews {
         bigint id PK
         bigint product_id FK
@@ -350,6 +373,7 @@ erDiagram
         varchar status "PENDING_PAYMENT | PAID | SHIPPED | CANCELED"
         varchar customer_name
         varchar customer_email
+        uuid customer_user_id "conta no Supabase Auth; NULL = sem cadastro"
         varchar shipping_postal_code
         numeric items_total
         numeric shipping_cost "snapshot da cotação"
@@ -402,7 +426,7 @@ erDiagram
 
 | Módulo (domínio) | Tabelas de que é dono | Entidades JPA |
 |---|---|---|
-| catalog | `categories`, `products` | `Category`, `Product` |
+| catalog | `categories`, `products`, `product_images` | `Category`, `Product`, `ProductImage` |
 | review | `reviews` | `Review` |
 | order | `orders`, `order_items` | `Order`, `OrderItem` (+ `Customer`, `Address` embutidos) |
 | content | `about_page`, `about_values` | `AboutPage`, `AboutValue` |
@@ -410,6 +434,8 @@ erDiagram
 | admin | `admin_users`, `spring_session`, `spring_session_attributes` | `AdminUser` (sessões via Spring Session JDBC) |
 | payment | — (o estado do pagamento é gravado no pedido: `payment_*`) | — |
 | shipping (adaptador) | — (o resultado vira snapshot no pedido: `shipping_cost`, `shipping_service`) | — |
+| storage (adaptador) | — (os arquivos ficam no Supabase Storage; o `catalog` guarda só a chave) | — |
+| notification (adaptador) | — (não guarda os e-mails enviados) | — |
 
 Todas as tabelas usam `snake_case` no plural e datas `TIMESTAMP WITH TIME ZONE`. Valores em dinheiro são
 `NUMERIC(10,2)`, nunca ponto flutuante.
@@ -562,15 +588,17 @@ Convenções comuns:
 | `POST /api/shipping/quote` | `{postalCode, items: [{slug, quantity (1–20)}] (1–50)}` | `200` `[ShippingOption]` | `400`, `422` (frete desligado, CEP sem entrega, serviço fora) |
 | `POST /api/orders` | `OrderRequest` (abaixo) | `201` `{orderId (uuid), number, total, checkoutUrl}` | `400`, `422` (esgotado, frete inválido), `502` (Mercado Pago) |
 | `GET /api/orders/{orderId}` | `orderId` = uuid público | `200` `OrderStatus` | `404` |
+| `GET /api/account/orders` | cabeçalho `Authorization: Bearer <token do Supabase Auth>` | `200` `[OrderStatus]`, do mais novo para o mais antigo | `401` |
 | `POST /api/orders/{orderId}/payment-sync` | `{paymentId}` (só dígitos) | `200` `OrderStatus` | `400`, `404`, `422` (pagamento de outro pedido) |
 | `POST /api/webhooks/mercadopago` | query `type`, `data.id`; cabeçalhos `x-signature`, `x-request-id` | `200` (sempre, inclusive se o evento for ignorado) | `401` (assinatura inválida) |
 | `GET /api/health` | — | `200` `{"status": "ok"}` | — |
 
-**`Product`** (o mesmo formato que a loja em Next.js já usava nos mocks):
+**`Product`**:
 
 ```json
 {
   "slug": "corrida-dos-sapos", "name": "Corrida dos Sapos", "icon": "🐸",
+  "images": [ "https://<id>.supabase.co/storage/v1/object/public/product-images/products/1/5f0c….jpg" ],
   "description": "…", "skill": "Coordenação motora",
   "ageKey": "4-6", "age": "4 a 6 anos", "players": "2 a 4 jogadores",
   "price": 79.90, "promo": { "originalPrice": 89.90 },
@@ -581,7 +609,8 @@ Convenções comuns:
 ```
 
 `promo` é `null` quando o produto não está em promoção. `reviews` traz **só as aprovadas**, e o estoque
-exato não é exposto (apenas `inStock`).
+exato não é exposto (apenas `inStock`). `images` são as URLs públicas das fotos, com a capa primeiro;
+quando vem vazio, a loja mostra o emoji de `icon`.
 
 **`OrderRequest`**:
 
@@ -596,7 +625,8 @@ exato não é exposto (apenas `inStock`).
 ```
 
 Os itens levam **só slug e quantidade**: preço, total e frete são calculados no servidor.
-`shippingOptionId` é obrigatório apenas com o frete automático ligado.
+`shippingOptionId` é obrigatório apenas com o frete automático ligado. Se a requisição trouxer
+`Authorization: Bearer <token>` de um cliente logado, o pedido fica ligado à conta dele.
 
 **`ShippingOption`** (backend → loja):
 `{"id": "1", "name": "PAC", "company": "Correios", "price": 0.00, "originalPrice": 25.50, "deliveryDays": 6}`.
@@ -650,7 +680,7 @@ CSRF), protegidas por login Google e pelo e-mail conferido em `admin_users`.
 | Rota | Ações |
 |---|---|
 | `/admin` | Dashboard |
-| `/admin/produtos` | listar, `novo`, `{id}/editar`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
+| `/admin/produtos` | listar, `novo`, `{id}/editar` (com envio de fotos, `multipart/form-data`), `{id}/fotos/{imageId}/capa`, `{id}/fotos/{imageId}/excluir`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
 | `/admin/categorias` | listar, criar, editar, excluir faixas etárias |
 | `/admin/avaliacoes` | fila de moderação, `{id}/aprovar`, `{id}/rejeitar`, `{id}/excluir` |
 | `/admin/pedidos` | listar/filtrar, `{id}`, `{id}/marcar-pago`, `{id}/marcar-enviado`, `{id}/cancelar` |
@@ -740,7 +770,7 @@ sequenceDiagram
 
 | Componente | Porta local | Produção | Exposição |
 |---|---|---|---|
-| frontend (Next.js) | **3000** | Cloudflare Pages, HTTPS 443 | Pública |
+| frontend (Next.js) | **3000** | Cloudflare Workers (OpenNext), HTTPS 443 | Pública |
 | backend (Spring Boot) | **8080** | Cloud Run, HTTPS 443 (`PORT` injetada) | Pública (`/api/**`), painel protegido por login |
 | shipping-service (Spring Boot) | **8081** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
 | H2 console (dev) | 8080 `/h2-console` | desligado | Local |

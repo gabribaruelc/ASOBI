@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import br.com.asobi.catalog.dto.AdminProductRow;
 import br.com.asobi.catalog.dto.ProductForm;
@@ -26,12 +27,14 @@ public class AdminProductService {
 
 	private final ProductRepository productRepository;
 	private final CategoryRepository categoryRepository;
+	private final ProductImageService imageService;
 	private final Clock clock;
 
 	public AdminProductService(ProductRepository productRepository, CategoryRepository categoryRepository,
-			Clock clock) {
+			ProductImageService imageService, Clock clock) {
 		this.productRepository = productRepository;
 		this.categoryRepository = categoryRepository;
+		this.imageService = imageService;
 		this.clock = clock;
 	}
 
@@ -39,7 +42,8 @@ public class AdminProductService {
 	public List<AdminProductRow> listProducts() {
 		Instant now = clock.instant();
 		return productRepository.findAllByOrderByNameAsc().stream()
-				.map(product -> AdminProductRow.from(product, now))
+				.map(product -> AdminProductRow.from(product, now,
+						imageService.urls(product).stream().findFirst().orElse(null)))
 				.toList();
 	}
 
@@ -69,17 +73,21 @@ public class AdminProductService {
 		return form;
 	}
 
-	public Product create(ProductForm form) {
+	public Product create(ProductForm form, List<MultipartFile> photos) {
+		imageService.validateForNewProduct(photos);
 		Product product = new Product();
 		product.setSlug(uniqueSlug(form.getName()));
 		apply(product, form);
-		return productRepository.save(product);
+		product = productRepository.save(product);
+		imageService.add(product, photos);
+		return product;
 	}
 
-	/** O slug não muda na edição: é o link público do produto. */
-	public Product update(Long id, ProductForm form) {
+	/** O slug não muda na edição: é o link público do produto. As fotos enviadas são acrescentadas. */
+	public Product update(Long id, ProductForm form, List<MultipartFile> photos) {
 		Product product = getProduct(id);
 		apply(product, form);
+		imageService.add(product, photos);
 		return product;
 	}
 
@@ -100,7 +108,9 @@ public class AdminProductService {
 	}
 
 	public void delete(Long id) {
-		productRepository.delete(getProduct(id));
+		Product product = getProduct(id);
+		imageService.deleteFiles(product);
+		productRepository.delete(product);
 	}
 
 	private void apply(Product product, ProductForm form) {
