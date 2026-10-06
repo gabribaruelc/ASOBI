@@ -9,12 +9,14 @@ import br.com.asobi.review.model.Review;
 
 /**
  * Produto como a loja enxerga. Não expõe a quantidade exata em estoque, só se
- * há estoque; e traz apenas as avaliações já aprovadas.
+ * há estoque; e traz apenas as avaliações já aprovadas. Sem fotos ("images" vazio),
+ * a loja mostra o emoji de "icon".
  */
 public record ProductResponse(
 		String slug,
 		String name,
 		String icon,
+		List<String> images,
 		String description,
 		String skill,
 		String ageKey,
@@ -38,11 +40,14 @@ public record ProductResponse(
 		}
 	}
 
-	public static ProductResponse from(Product product, List<Review> approvedReviews, Instant now) {
+	/** @param imageUrls URLs das fotos na ordem da galeria (a primeira é a capa) */
+	public static ProductResponse from(Product product, List<String> imageUrls, List<Review> approvedReviews,
+			Instant now) {
 		return new ProductResponse(
 				product.getSlug(),
 				product.getName(),
 				product.getIcon(),
+				imageUrls,
 				product.getDescription(),
 				product.getSkill(),
 				product.getCategory().getSlug(),

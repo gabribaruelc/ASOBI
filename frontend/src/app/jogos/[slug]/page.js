@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import styles from "./page.module.css";
 import ProductCard from "../../components/ProductCard";
 import AddToCartBox from "../../components/AddToCartBox";
+import ProductGallery from "../../components/ProductGallery";
 import { formatPrice } from "../../data/products";
 import { useProducts, isProductNew } from "../../context/ProductsContext";
 
@@ -95,15 +96,18 @@ export default function ProdutoPage() {
         </nav>
 
         <div className={styles.productLayout}>
-          <div className={styles.gallery}>
-            <div className={styles.galleryMain} aria-hidden="true">
-              {product.icon}
-              {isNew && <span className={styles.badgeNew}>Novo</span>}
-              {discount !== null && (
-                <span className={styles.badgePromo}>-{discount}%</span>
-              )}
-            </div>
-          </div>
+          {/* key: ao trocar de produto, a galeria volta para a primeira foto */}
+          <ProductGallery
+            key={product.slug}
+            images={product.images}
+            icon={product.icon}
+            name={product.name}
+          >
+            {isNew && <span className={styles.badgeNew}>Novo</span>}
+            {discount !== null && (
+              <span className={styles.badgePromo}>-{discount}%</span>
+            )}
+          </ProductGallery>
 
           <div className={styles.info}>
             <span className={styles.skill}>{product.skill}</span>

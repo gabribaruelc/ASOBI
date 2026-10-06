@@ -11,9 +11,14 @@
       Link na loja: <a th:href="${storeUrl + '/jogos/' + product.slug}" target="_blank" rel="noopener"
                        th:text="${'/jogos/' + product.slug}">/jogos/slug</a>
     </p>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <!-- Os botões "Tornar capa" e "Excluir" de cada foto enviam este formulário (atributo form=),
+         porque não dá para ter um <form> dentro do formulário do produto. -->
+    <form id="photoAction" th:action="@{/admin/produtos}" method="post" hidden></form>
 
     <form th:action="${product == null} ? @{/admin/produtos} : @{/admin/produtos/{id}(id=${product.id})}"
-          th:object="${form}" method="post" class="card" novalidate>
+          th:object="${form}" method="post" enctype="multipart/form-data" class="card" novalidate>
 
       <p class="alert error" th:if="${#fields.hasGlobalErrors()}" th:each="err : ${#fields.globalErrors()}" th:text="${err}">Erro</p>
 
@@ -23,7 +28,29 @@
           <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
         </label>
 
-        <label>Ícone <span class="hint">um emoji, enquanto não há foto</span>
+        <div class="full fieldset">
+          <label>Fotos
+            <span class="hint" th:text="${'Até ' + maxImages + ' fotos por produto (JPG, PNG ou WebP). A primeira é a capa, que aparece no catálogo.'}">Até 6 fotos</span>
+            <input type="file" name="photos" id="photos" accept="image/jpeg,image/png,image/webp" multiple
+                   th:data-max-images="${maxImages}" th:data-current-images="${#lists.size(images)}">
+          </label>
+          <p class="hint" id="photosStatus" hidden></p>
+          <div class="photo-grid" th:if="${!#lists.isEmpty(images)}">
+            <figure class="photo" th:each="img, stat : ${images}">
+              <img th:src="${img.url}" alt="" loading="lazy">
+              <span class="badge blue" th:if="${stat.first}">Capa</span>
+              <figcaption>
+                <button type="submit" form="photoAction" class="link-button" th:unless="${stat.first}"
+                        th:formaction="@{/admin/produtos/{id}/fotos/{imageId}/capa(id=${product.id},imageId=${img.id})}">Tornar capa</button>
+                <button type="submit" form="photoAction" class="link-button danger"
+                        th:formaction="@{/admin/produtos/{id}/fotos/{imageId}/excluir(id=${product.id},imageId=${img.id})}"
+                        onclick="return confirm('Excluir esta foto? As outras alterações não salvas do formulário serão perdidas.');">Excluir</button>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <label>Ícone <span class="hint">um emoji, usado enquanto o produto não tem foto</span>
           <input type="text" th:field="*{icon}" maxlength="16" placeholder="🎲">
           <span class="field-error" th:if="${#fields.hasErrors('icon')}" th:errors="*{icon}"></span>
         </label>
@@ -92,7 +119,7 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="button" th:text="${product == null ? 'Cadastrar produto' : 'Salvar alterações'}">Salvar</button>
+        <button type="submit" class="button" id="saveButton" th:text="${product == null ? 'Cadastrar produto' : 'Salvar alterações'}">Salvar</button>
         <a th:href="@{/admin/produtos}" class="button secondary">Cancelar</a>
       </div>
     </form>
@@ -116,6 +143,72 @@
       date.setDate(date.getDate() + days);
       newUntil.value = date.toLocaleDateString("sv-SE"); // yyyy-mm-dd no fuso local
     });
+  });
+
+  // Fotos: reduz no navegador antes de enviar (foto de celular tem vários MB), para o
+  // envio ser rápido e as fotos ocuparem pouco espaço e pouca banda no Supabase.
+  const photos = document.getElementById("photos");
+  const photosStatus = document.getElementById("photosStatus");
+  const saveButton = document.getElementById("saveButton");
+  const MAX_SIDE = 1600;
+  const MAX_BYTES = 5 * 1024 * 1024;
+
+  const showPhotosStatus = (text) => {
+    photosStatus.textContent = text;
+    photosStatus.hidden = !text;
+  };
+
+  async function shrinkPhoto(file) {
+    const bitmap = await createImageBitmap(file); // já respeita a rotação da foto do celular
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1 && file.size <= 400 * 1024) return file;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#FFFFFF"; // PNG transparente vira fundo branco no JPG
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  }
+
+  photos.addEventListener("change", async () => {
+    const selected = Array.from(photos.files);
+    showPhotosStatus("");
+    if (selected.length === 0) return;
+
+    const free = Number(photos.dataset.maxImages) - Number(photos.dataset.currentImages);
+    if (selected.length > free) {
+      photos.value = "";
+      showPhotosStatus(free > 0
+        ? "Só cabe(m) mais " + free + " foto(s) neste produto. Escolha de novo."
+        : "Este produto já tem o máximo de fotos. Exclua alguma antes de enviar outra.");
+      return;
+    }
+
+    saveButton.disabled = true;
+    showPhotosStatus("Preparando as fotos…");
+    try {
+      const prepared = new DataTransfer();
+      for (const file of selected) {
+        // Se o navegador não conseguir reduzir, manda o arquivo original mesmo.
+        prepared.items.add(await shrinkPhoto(file).catch(() => file));
+      }
+      photos.files = prepared.files;
+    } catch (error) {
+      // Navegador antigo: segue com os arquivos originais.
+    }
+    saveButton.disabled = false;
+
+    const tooBig = Array.from(photos.files).find((file) => file.size > MAX_BYTES);
+    if (tooBig) {
+      photos.value = "";
+      showPhotosStatus("\"" + tooBig.name + "\" é grande demais (máximo de 5 MB por foto).");
+      return;
+    }
+    showPhotosStatus(photos.files.length + " foto(s) pronta(s). Elas são enviadas ao salvar.");
   });
 </script>
 </body>

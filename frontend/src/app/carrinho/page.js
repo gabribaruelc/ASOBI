@@ -43,7 +43,12 @@ export default function CarrinhoPage() {
               {cartProducts.map((product) => (
                 <div key={product.slug} className={styles.item}>
                   <div className={styles.itemImage} aria-hidden="true">
-                    {product.icon}
+                    {product.images?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={product.images[0]} alt="" loading="lazy" />
+                    ) : (
+                      product.icon
+                    )}
                   </div>
 
                   <div className={styles.itemBody}>

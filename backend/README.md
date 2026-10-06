@@ -56,6 +56,9 @@ Supabase (a chave `anon` é pública); o backend conecta como dono das tabelas e
 | `MERCADO_PAGO_WEBHOOK_SECRET` | "assinatura secreta" gerada ao configurar Webhooks no painel do Mercado Pago |
 | `SHIPPING_SERVICE_URL` | URL do microsserviço de frete ([`../shipping-service`](../shipping-service/README.md)); local: `http://localhost:8081`. Vazio = frete "a combinar" |
 | `SHIPPING_SERVICE_API_KEY` | a mesma chave configurada no `shipping-service` (cabeçalho `X-Api-Key`) |
+| `SUPABASE_URL` | `https://<id-do-projeto>.supabase.co` (fotos de produto). Vazio = pasta local, que **some** a cada nova instância do Cloud Run |
+| `SUPABASE_SERVICE_KEY` | chave **secreta** do Supabase (Project Settings → API Keys → `service_role` / `sb_secret_...`). Nunca a `anon` |
+| `SUPABASE_STORAGE_BUCKET` | opcional; padrão `product-images` |
 
 Nunca commitar essas credenciais.
 
@@ -84,8 +87,10 @@ gcloud run deploy asobi-backend \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
   --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,ADMIN_BOOTSTRAP_EMAIL=<email-google-da-priscila>,SHIPPING_SERVICE_URL=<url-do-shipping-service> \
-  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest
+  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest
 ```
+
+Acrescente em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.co`.
 
 `--min-instances 0` mantém o custo perto de zero (o primeiro acesso após um período parado leva alguns segundos para acordar).
 
@@ -120,6 +125,22 @@ e aplica aqui as regras da loja (toggle e frete grátis). Só dá para ligar com
 (`SHIPPING_SERVICE_URL`) e com `MELHOR_ENVIO_TOKEN` configurado **nele** (token gerado em Melhor Envio →
 Integrações → Tokens de acesso, com permissão `shipping-calculate`).
 
+## Fotos de produto (Supabase Storage)
+
+No formulário de produto (`/admin/produtos`), a Priscila envia até **6 fotos** (JPG, PNG ou WebP, 5 MB cada).
+A primeira é a capa; dá para trocar a capa e excluir fotos na tela de edição. Produto sem foto continua
+mostrando o emoji.
+
+- O navegador **reduz a foto antes de enviar** (lado maior de 1600 px, JPG): o envio fica rápido e as fotos
+  gastam pouco do free tier do Supabase (1 GB de arquivos, 5 GB de tráfego por mês).
+- O backend confere o tipo pelo conteúdo do arquivo (não pela extensão) e grava em
+  `products/<id>/<uuid>.<ext>` num bucket **público**; a loja carrega a foto direto do Supabase.
+- O bucket `product-images` é criado sozinho no primeiro envio. Em Storage → Buckets dá para conferir.
+- **Local**: sem `SUPABASE_URL`/`SUPABASE_SERVICE_KEY`, os arquivos vão para `backend/data/uploads`
+  (servidos em `/uploads/**`). Para testar o Supabase localmente, preencha as duas no `.env`.
+
+A `SUPABASE_SERVICE_KEY` dá acesso total ao projeto: fica só no backend (Secret Manager), nunca no frontend.
+
 ## Estrutura
 
 ```
@@ -128,6 +149,7 @@ src/main/java/br/com/asobi/
   common/     status/health, tratamento de erros
   <domínio>/  catalog, review, order, payment, content, admin, shipping, settings
               cada um com controller / service / repository / model / dto
+  storage/       onde as fotos ficam (Supabase Storage ou pasta local)
 src/main/resources/
   db/migration/  migrações Flyway (V1, V2, ...)
   templates/     páginas Thymeleaf (painel admin)

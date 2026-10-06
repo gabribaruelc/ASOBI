@@ -187,7 +187,7 @@ flowchart LR
         subgraph BE[backend · Spring Boot · :8080]
             api[API REST /api/**]
             painel[Painel admin Thymeleaf /admin/**]
-            mods[catalog · order · review · content<br/>settings · payment · admin]
+            mods[catalog · order · review · content<br/>settings · payment · admin<br/>storage]
         end
         ship[shipping-service<br/>Spring Boot · :8081]
     end
@@ -199,6 +199,8 @@ flowchart LR
     ship -->|REST| ME[(Melhor Envio)]
     mods -->|JDBC :5432| DB[(Supabase PostgreSQL)]
     mods -->|REST SDK| MP[(Mercado Pago)]
+    mods -->|REST| ST[(Supabase Storage)]
+    loja -.->|fotos por URL pública| ST
     MP -->|webhook assinado| api
     painel -->|OAuth2| G[(Google)]
 ```
@@ -230,6 +232,8 @@ O backend recota o frete ao fechar o pedido, de modo que o preço nunca vem do n
 | Mercado Pago → backend | Webhook assinado (`x-signature`) | Avisar mudança de pagamento | Reconsulta ao cliente voltar (`payment-sync`) |
 | backend → Supabase | JDBC (Session pooler) | Persistência | Indisponibilidade da loja |
 | backend → Google | OAuth2 / OIDC | Login do painel | Painel inacessível; a loja segue no ar |
+| backend → Supabase Storage | REST + chave secreta | Guardar e apagar as fotos de produto (bucket público `product-images`) | O upload falha com mensagem amigável no painel; o produto é salvo sem a foto nova |
+| frontend → Supabase Storage | HTTPS (URL pública) | Exibir as fotos sem passar pelo Cloud Run | As fotos não carregam até o storage voltar; o resto da loja segue no ar |
 
 ### Fluxo P1 + P2: compra com frete e pagamento
 
@@ -289,6 +293,7 @@ sequenceDiagram
 | catalog ⇄ review | — | A ficha do produto exibe avaliações aprovadas; a avaliação referencia o produto |
 | content | admin | Registra qual admin editou |
 | admin | catalog, order, review | Dashboard com contagens de cada domínio |
+| catalog | storage | Guarda as fotos dos produtos e monta as URLs públicas |
 
 Ciclos conhecidos que ainda restam: `catalog ⇄ review`, `order ⇄ payment` e `settings ⇄ shipping`. Eles são
 tolerados porque ficam **dentro do mesmo deploy**. Na extração do frete, o ciclo `order ⇄ shipping` foi
@@ -311,6 +316,7 @@ módulo de domínio, e só esse módulo tem o repositório JPA que a acessa.
 erDiagram
     categories ||--o{ products : "classifica"
     products ||--o{ reviews : "recebe"
+    products ||--o{ product_images : "tem fotos"
     products |o--o{ order_items : "referência opcional (snapshot)"
     orders ||--|{ order_items : "contém"
     about_page ||--|{ about_values : "tem"
@@ -335,6 +341,12 @@ erDiagram
         int stock "CHECK >= 0"
         boolean cooperative
         timestamptz new_until "fim do período em Novidades"
+    }
+    product_images {
+        bigint id PK
+        bigint product_id FK "ON DELETE CASCADE"
+        varchar storage_key UK "caminho do arquivo no storage"
+        int position "a menor é a capa"
     }
     reviews {
         bigint id PK
@@ -402,7 +414,7 @@ erDiagram
 
 | Módulo (domínio) | Tabelas de que é dono | Entidades JPA |
 |---|---|---|
-| catalog | `categories`, `products` | `Category`, `Product` |
+| catalog | `categories`, `products`, `product_images` | `Category`, `Product`, `ProductImage` |
 | review | `reviews` | `Review` |
 | order | `orders`, `order_items` | `Order`, `OrderItem` (+ `Customer`, `Address` embutidos) |
 | content | `about_page`, `about_values` | `AboutPage`, `AboutValue` |
@@ -410,6 +422,7 @@ erDiagram
 | admin | `admin_users`, `spring_session`, `spring_session_attributes` | `AdminUser` (sessões via Spring Session JDBC) |
 | payment | — (o estado do pagamento é gravado no pedido: `payment_*`) | — |
 | shipping (adaptador) | — (o resultado vira snapshot no pedido: `shipping_cost`, `shipping_service`) | — |
+| storage (adaptador) | — (os arquivos ficam no Supabase Storage; o `catalog` guarda só a chave) | — |
 
 Todas as tabelas usam `snake_case` no plural e datas `TIMESTAMP WITH TIME ZONE`. Valores em dinheiro são
 `NUMERIC(10,2)`, nunca ponto flutuante.
@@ -571,6 +584,7 @@ Convenções comuns:
 ```json
 {
   "slug": "corrida-dos-sapos", "name": "Corrida dos Sapos", "icon": "🐸",
+  "images": [ "https://<id>.supabase.co/storage/v1/object/public/product-images/products/1/5f0c….jpg" ],
   "description": "…", "skill": "Coordenação motora",
   "ageKey": "4-6", "age": "4 a 6 anos", "players": "2 a 4 jogadores",
   "price": 79.90, "promo": { "originalPrice": 89.90 },
@@ -581,7 +595,8 @@ Convenções comuns:
 ```
 
 `promo` é `null` quando o produto não está em promoção. `reviews` traz **só as aprovadas**, e o estoque
-exato não é exposto (apenas `inStock`).
+exato não é exposto (apenas `inStock`). `images` são as URLs públicas das fotos, com a capa primeiro;
+quando vem vazio, a loja mostra o emoji de `icon`.
 
 **`OrderRequest`**:
 
@@ -650,7 +665,7 @@ CSRF), protegidas por login Google e pelo e-mail conferido em `admin_users`.
 | Rota | Ações |
 |---|---|
 | `/admin` | Dashboard |
-| `/admin/produtos` | listar, `novo`, `{id}/editar`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
+| `/admin/produtos` | listar, `novo`, `{id}/editar` (com envio de fotos, `multipart/form-data`), `{id}/fotos/{imageId}/capa`, `{id}/fotos/{imageId}/excluir`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
 | `/admin/categorias` | listar, criar, editar, excluir faixas etárias |
 | `/admin/avaliacoes` | fila de moderação, `{id}/aprovar`, `{id}/rejeitar`, `{id}/excluir` |
 | `/admin/pedidos` | listar/filtrar, `{id}`, `{id}/marcar-pago`, `{id}/marcar-enviado`, `{id}/cancelar` |

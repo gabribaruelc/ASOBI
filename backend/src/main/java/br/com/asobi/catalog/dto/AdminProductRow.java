@@ -12,6 +12,7 @@ public record AdminProductRow(
 		Long id,
 		String slug,
 		String icon,
+		String imageUrl,
 		String name,
 		String categoryName,
 		BigDecimal price,
@@ -22,11 +23,13 @@ public record AdminProductRow(
 		LocalDate newUntil,
 		long newDaysRemaining) {
 
-	public static AdminProductRow from(Product product, Instant now) {
+	/** @param imageUrl foto de capa, ou null se o produto ainda não tem foto */
+	public static AdminProductRow from(Product product, Instant now, String imageUrl) {
 		return new AdminProductRow(
 				product.getId(),
 				product.getSlug(),
 				product.getIcon(),
+				imageUrl,
 				product.getName(),
 				product.getCategory().getName(),
 				product.getPrice(),
