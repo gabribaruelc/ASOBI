@@ -9,9 +9,10 @@ Referência de mercado: https://www.topgg.com.br
 Custo mensal de infraestrutura deve ficar **bem abaixo de R$110/mês** (na prática, próximo de R$0, usando tiers gratuitos). Nunca sugerir serviços pagos como padrão sem justificar.
 
 ## Stack (arquitetura de baixa manutenção — usar serviços gerenciados, nunca servidor próprio/VPS)
-- **Frontend**: Next.js, hospedado no **Cloudflare Pages** (free tier permite uso comercial).
-- **Backend**: **Java 17 + Spring Boot** (exigência do professor: backend em Java), na pasta `backend/`, hospedado no **Google Cloud Run** (free tier, escala a zero). Substitui os Cloudflare Workers do plano original, que não rodam Java. Expõe API REST (JSON) para a loja em Next.js e renderiza o **painel admin com Thymeleaf** (o admin em Next.js em `frontend/src/app/admin` fica só até a versão Thymeleaf ser confirmada).
+- **Frontend**: Next.js, hospedado na **Cloudflare** (Workers, pelo OpenNext; free tier permite uso comercial). Precisa de servidor porque o catálogo é renderizado no servidor; o cache das páginas fica num bucket R2.
+- **Backend**: **Java 17 + Spring Boot** (exigência do professor: backend em Java), na pasta `backend/`, hospedado no **Google Cloud Run** (free tier, escala a zero). Substitui os Cloudflare Workers do plano original, que não rodam Java. Expõe API REST (JSON) para a loja em Next.js e renderiza o **painel admin com Thymeleaf**.
 - **Banco de dados**: **Supabase** (free tier: 500 MB), acessado pelo backend via JDBC/JPA (Session pooler), com esquema versionado por Flyway. Localmente o backend usa H2 em modo PostgreSQL.
+- **Login do cliente**: "Continuar com Google" pelo **Supabase Auth** (gratuito), no navegador; o backend confere o token no próprio Supabase. Sem senha e sem tela de cadastro. Comprar sem cadastro continua possível.
 - **Login do admin**: "Entrar com Google" direto no Spring Security (OAuth2), autorizando pelo e-mail cadastrado na tabela de admins.
 - **Pagamentos**: **Mercado Pago Checkout Pro** — Pix, cartão, boleto. Nunca armazenar dados de cartão.
 - **E-mail transacional**: **Resend** (free tier: 100 e-mails/dia).
@@ -35,34 +36,23 @@ Custo mensal de infraestrutura deve ficar **bem abaixo de R$110/mês** (na prát
 - Cálculo automático de frete por CEP (ex: via Melhor Envio), com **toggle no admin para ligar/desligar** essa função.
 - Dashboard admin com métricas: faturamento, número de pedidos, cliques/visualizações por produto.
 
-## Progresso do frontend (visão do cliente)
-Já implementado em `frontend/` (Next.js, App Router), com dados **mockados** em `frontend/src/app/data/products.js` — hoje sem Supabase conectado, tudo estático/local:
-- **Home** (`/`), **Header** e **Footer** com a identidade visual definida abaixo.
-- **Catálogo** (`/jogos`), com filtro por faixa etária e por "Cooperativos" via query params (`?idade=`, `?estilo=`).
-- **Ficha de produto** (`/jogos/[slug]`): foto (placeholder), descrição, idade recomendada, nº de jogadores, preço (com preço promocional quando houver), habilidade estimulada, avaliações (com aviso de que passam por aprovação antes de aparecer) e produtos relacionados.
-- **Novidades** (`/novidades`) e **Promoções** (`/promocoes`), filtrando o mesmo catálogo por `isNew` e `promo`.
-- **Sobre** (`/sobre`) com história/missão/valores — texto provisório até a Priscila enviar o conteúdo real.
-- **Carrinho** (`/carrinho`), com quantidade e remoção funcionando no cliente (estado local em React; ainda sem persistência real).
-- **Login** (`/login`) e **Cadastro** (`/cadastro`), com botão "Continuar com Google" — hoje só visual; ativar de verdade é só habilitar o provedor Google no Supabase Auth (gratuito, sem custo extra).
-- **Painel admin** (`/admin/*`) — já construído e funcional, mas hoje ainda em cima dos mesmos dados mockados/locais (ver aviso abaixo), sem Supabase por trás:
-  - `/admin/login`: acesso mockado por e-mail (sem senha real ainda), checado contra a lista de admins salva em `localStorage` (`asobi-admins`). E-mail seed: `priscila@asobi.com.br`.
-  - `/admin` (dashboard), `/admin/produtos` (lista com estoque editável inline, badge "Esgotado", status de promoção e de Novidades) + `/admin/produtos/novo` e `/admin/produtos/[slug]` (formulário de criar/editar, incluindo promoção e "dias em Novidades").
-  - `/admin/sobre`: edita o texto da história, os 4 cards de valores e o bloco de missão da página `/sobre` — reflete no site na hora.
-  - `/admin/avaliacoes`: fila de moderação (aprovar/rejeitar) das avaliações enviadas pelo formulário na ficha de produto — o formulário já manda a avaliação como pendente de verdade, e só aparece no produto depois de aprovada.
-  - `/admin/admins`: adicionar/remover e-mails com acesso de admin.
-  - O painel roda isolado do Header/Footer da loja (`SiteChrome.js` esconde o chrome público em rotas `/admin/*`) e tem sidebar própria (`AdminShell.js`).
-  - **Catálogo agora é mutável**: `PRODUCTS` virou `INITIAL_PRODUCTS` (seed) em `data/products.js`; o catálogo "de verdade" vive em `ProductsContext` (client-side, persistido em `localStorage` sob `asobi-products`) — é isso que o admin edita e é isso que as páginas de cliente (`/jogos`, `/novidades`, `/promocoes`, ficha de produto, carrinho) leem via `useProducts()`. Produto ganhou campo `stock` (estoque) e trocou `isNew: boolean` por `newUntil: string | null` (data de expiração), com `isProductNew()`/`daysRemaining()` calculando o resto em `ProductsContext.js`.
-  - Como isso ainda não é Supabase, essas páginas de catálogo tiveram que virar Client Components (antes eram Server Components com `generateStaticParams`/`generateMetadata` dinâmica por produto) — perderam SSG e metadata por-produto nessa fase; isso volta quando o catálogo migrar para o Supabase com Server Components lendo do banco.
+## Progresso do frontend (`frontend/`, Next.js App Router)
+Todos os dados vêm da API do backend (`NEXT_PUBLIC_API_URL`, padrão `http://localhost:8080`). O admin em Next.js, os dados mockados e o modo `localStorage` foram **removidos**; `/admin` na loja só redireciona para o painel do Spring. Detalhes de execução, variáveis e deploy no `frontend/README.md`.
+- **Catálogo em Server Components** (`src/app/lib/catalog.js`, cache de 1 minuto): home (destaques e faixas etárias reais), `/jogos` (filtros `?idade=` e `?estilo=cooperativos` resolvidos no servidor), `/novidades`, `/promocoes`, `/sobre` e a ficha `/jogos/[slug]` (com `generateStaticParams` e `generateMetadata`: título, descrição e imagem por produto). Se o backend não responde, as listas mostram um aviso em vez de quebrar.
+- **Componentes de cliente** só onde há interação: Header (carrinho, menu, link da conta), galeria de fotos, "adicionar ao carrinho", formulário de avaliação (`ReviewForm`), carrinho, checkout e página do pedido. Carrinho e checkout buscam preço/estoque na hora (`src/app/lib/useProducts.js`).
+- **Conta do cliente**: `/login` (Google), `/conta` ("Meus pedidos") e checkout enviando o token quando logado (`AuthContext`, `src/app/lib/supabase.js`). Só aparece com `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` definidos.
+- **Deploy**: `npm run deploy` (OpenNext → Cloudflare Workers; `wrangler.jsonc`, `open-next.config.ts`).
 
 ## Progresso do backend (`backend/`, branch `feat/backend-java`)
-Spring Boot 4.1 + Java 17, organizado por domínio (`catalog`, `review`, `order`, `payment`, `shipping`, `content`, `settings`, `admin`, `storage`), cada um com controller/service/repository/model/dto. Esquema do banco em migrações Flyway (`src/main/resources/db/migration`). Detalhes de execução, variáveis de ambiente e deploy no `backend/README.md`.
+Spring Boot 4.1 + Java 17, organizado por domínio (`catalog`, `review`, `order`, `payment`, `shipping`, `content`, `settings`, `admin`, `storage`, `notification`, `account`), cada um com controller/service/repository/model/dto. Esquema do banco em migrações Flyway (`src/main/resources/db/migration`). Detalhes de execução, variáveis de ambiente e deploy no `backend/README.md`.
 - **API REST para a loja** (`/api/**`, pública, CORS para o Next.js, erros em RFC 9457): catálogo e faixas etárias, conteúdo do Sobre, envio de avaliações (sempre entram pendentes), pedidos (preço e estoque calculados no servidor), acompanhamento do pedido, cotação de frete, webhook do Mercado Pago.
 - **Painel admin em Thymeleaf** (`/admin/**`): login com Google + e-mail na tabela `admin_users` (conferido no banco a cada requisição), sessão no banco (Spring Session JDBC). Telas: dashboard, pedidos, produtos, faixas etárias, avaliações, página Sobre, configurações (liga/desliga frete) e admins.
 - **Pagamento**: Mercado Pago Checkout Pro (webhook com assinatura conferida; o pagamento é sempre reconsultado na API). Sem token do Mercado Pago, roda em modo manual (a Priscila marca como pago no painel).
 - **Estoque** baixa só quando o pagamento é aprovado, com lock na linha do produto.
-- **Frontend** usa a API quando `NEXT_PUBLIC_API_URL` está definido (ver `frontend/.env.example`); sem ela, continua no modo antigo (mock + `localStorage`). Nesse modo antigo o admin em Next.js ainda funciona; com a API ligada, `/admin` redireciona para o painel do Spring. O admin em Next.js e os mocks só devem ser apagados depois que a versão Java for confirmada.
+- **Conta do cliente** (módulo `account`): `GET /api/account/orders` exige `Authorization: Bearer <token do Supabase>`; `POST /api/orders` aceita o token como opcional e grava `orders.customer_user_id`. "Meus pedidos" traz os pedidos da conta e os feitos sem cadastro com o mesmo e-mail confirmado. Sem `SUPABASE_URL`/`SUPABASE_SERVICE_KEY`, o login de cliente fica desligado.
 - **Fotos de produto** (módulo `storage` + tabela `product_images`): até 6 por produto, enviadas no formulário do painel (o navegador reduz a foto antes de enviar), com capa e exclusão. Ficam no **Supabase Storage** (bucket público `product-images`, criado sozinho) quando `SUPABASE_URL` e `SUPABASE_SERVICE_KEY` estão definidos; sem eles, numa pasta local (`data/uploads`, só para desenvolvimento). A API devolve `images` (URLs, capa primeiro); sem foto, a loja mostra o emoji de `icon`.
-- Pendências conhecidas: login/cadastro de cliente (checkout é sem cadastro), e-mail transacional (Resend), dashboard de métricas (Fase 2), recuperar SSG/metadata por produto nas páginas de catálogo, remover o admin em Next.js e os mocks depois de confirmar a versão Java.
+- **E-mails de pedido** (módulo `notification`, Resend): pedido recebido, pagamento confirmado e pedido enviado para o cliente, mais um aviso de pedido pago para os admins. O `order` só publica `OrderEvent`; o envio acontece depois do commit e nunca derruba o pedido. Sem `RESEND_API_KEY`, os e-mails só aparecem no log.
+- Pendências conhecidas: dashboard de métricas (Fase 2); busca do Header e newsletter da home ainda são só visuais.
 
 ## Microsserviços
 - **Implementado: `shipping-service/`** (Spring Boot, porta 8081 local, Cloud Run próprio, sem banco). Só ele fala com o Melhor Envio (guarda o `MELHOR_ENVIO_TOKEN`); o backend chama `POST /api/quotes` via `ShippingServiceClient` com `X-Api-Key` e mantém as regras comerciais (toggle, frete grátis). Detalhes em `shipping-service/README.md`.

@@ -5,16 +5,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import br.com.asobi.account.CustomerIdentity;
 import br.com.asobi.catalog.model.Product;
 import br.com.asobi.catalog.repository.ProductRepository;
 import br.com.asobi.common.exception.BusinessException;
@@ -22,6 +25,7 @@ import br.com.asobi.common.exception.NotFoundException;
 import br.com.asobi.order.dto.OrderCreatedResponse;
 import br.com.asobi.order.dto.OrderRequest;
 import br.com.asobi.order.dto.OrderStatusResponse;
+import br.com.asobi.order.event.OrderEvent;
 import br.com.asobi.order.model.Customer;
 import br.com.asobi.order.model.Order;
 import br.com.asobi.order.model.OrderItem;
@@ -43,14 +47,17 @@ public class OrderService {
 	private final ProductRepository productRepository;
 	private final PaymentGateway paymentGateway;
 	private final ShippingService shippingService;
+	private final ApplicationEventPublisher events;
 	private final Clock clock;
 
 	public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-			PaymentGateway paymentGateway, ShippingService shippingService, Clock clock) {
+			PaymentGateway paymentGateway, ShippingService shippingService, ApplicationEventPublisher events,
+			Clock clock) {
 		this.orderRepository = orderRepository;
 		this.productRepository = productRepository;
 		this.paymentGateway = paymentGateway;
 		this.shippingService = shippingService;
+		this.events = events;
 		this.clock = clock;
 	}
 
@@ -58,12 +65,13 @@ public class OrderService {
 	 * Cria o pedido com preços do banco e confere o estoque. O estoque só é
 	 * baixado quando o pagamento é aprovado (ver {@link #applyPayment}).
 	 */
-	public OrderCreatedResponse placeOrder(OrderRequest request) {
+	public OrderCreatedResponse placeOrder(OrderRequest request, Optional<CustomerIdentity> customer) {
 		Map<String, Integer> quantities = mergeQuantities(request.items());
 		Map<String, Product> products = productRepository.findBySlugIn(quantities.keySet()).stream()
 				.collect(Collectors.toMap(Product::getSlug, Function.identity()));
 
 		Order order = new Order(toCustomer(request.customer()), toAddress(request.shippingAddress()));
+		customer.ifPresent(identity -> order.assignToCustomer(identity.userId()));
 		quantities.forEach((slug, quantity) -> {
 			Product product = products.get(slug);
 			if (product == null) {
@@ -93,6 +101,7 @@ public class OrderService {
 		String checkoutUrl = paymentGateway.createCheckout(order);
 		order.recordPayment(paymentGateway.name(), null, null, null);
 		log.info("Pedido #{} criado ({} itens, total {})", order.getId(), order.getItems().size(), order.getTotal());
+		events.publishEvent(new OrderEvent(OrderEvent.Type.PLACED, order));
 		return new OrderCreatedResponse(order.getPublicId(), order.getId(), order.getTotal(), checkoutUrl);
 	}
 
@@ -100,6 +109,18 @@ public class OrderService {
 	public OrderStatusResponse getOrderStatus(UUID publicId) {
 		return OrderStatusResponse.from(orderRepository.findByPublicId(publicId)
 				.orElseThrow(() -> new NotFoundException("Pedido não encontrado.")));
+	}
+
+	/**
+	 * "Meus pedidos": os feitos logado e, se o e-mail da conta é confirmado, também os
+	 * feitos sem cadastro com esse mesmo e-mail.
+	 */
+	@Transactional(readOnly = true)
+	public List<OrderStatusResponse> listForCustomer(CustomerIdentity customer) {
+		List<Order> orders = customer.emailVerified()
+				? orderRepository.findForCustomer(customer.userId(), customer.email())
+				: orderRepository.findByCustomerUserIdOrderByCreatedAtDesc(customer.userId());
+		return orders.stream().map(OrderStatusResponse::from).toList();
 	}
 
 	/**
@@ -150,7 +171,9 @@ public class OrderService {
 	}
 
 	public void markShipped(Long id, String trackingCode) {
-		getForAdmin(id).markShipped(StringUtils.hasText(trackingCode) ? trackingCode.trim() : null, clock.instant());
+		Order order = getForAdmin(id);
+		order.markShipped(StringUtils.hasText(trackingCode) ? trackingCode.trim() : null, clock.instant());
+		events.publishEvent(new OrderEvent(OrderEvent.Type.SHIPPED, order));
 	}
 
 	public void cancel(Long id) {
@@ -196,6 +219,7 @@ public class OrderService {
 			}
 		}
 		log.info("Pedido #{} pago", order.getId());
+		events.publishEvent(new OrderEvent(OrderEvent.Type.PAID, order));
 	}
 
 	private static Map<String, Integer> mergeQuantities(List<OrderRequest.ItemRequest> items) {

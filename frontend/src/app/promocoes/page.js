@@ -1,12 +1,11 @@
-"use client";
-
 import styles from "./page.module.css";
 import ProductCard from "../components/ProductCard";
-import { useProducts } from "../context/ProductsContext";
+import CatalogUnavailable from "../components/CatalogUnavailable";
+import { getProducts } from "../lib/catalog";
 
-export default function PromocoesPage() {
-  const { products } = useProducts();
-  const promocoes = products.filter((product) => product.promo);
+export default async function PromocoesPage() {
+  const products = await getProducts();
+  const promocoes = (products || []).filter((product) => product.promo);
 
   return (
     <main>
@@ -23,7 +22,9 @@ export default function PromocoesPage() {
 
       <section className={styles.section}>
         <div className="container">
-          {promocoes.length > 0 ? (
+          {!products ? (
+            <CatalogUnavailable />
+          ) : promocoes.length > 0 ? (
             <div className={styles.grid}>
               {promocoes.map((product) => (
                 <ProductCard key={product.slug} product={product} />

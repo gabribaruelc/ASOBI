@@ -72,6 +72,19 @@ asobi:
     # Bucket público; criado sozinho no primeiro envio se ainda não existir.
     bucket: ${SUPABASE_STORAGE_BUCKET:product-images}
     local-dir: ./data/uploads
+  customer-auth:
+    # Login de cliente (Google pelo Supabase Auth): o backend confere o token no próprio
+    # Supabase. Usa as mesmas variáveis das fotos; vazio = login de cliente desligado.
+    supabase-url: ${SUPABASE_URL:}
+    supabase-key: ${SUPABASE_SERVICE_KEY:}
+  email:
+    # E-mails de pedido (recebido, pago, enviado) pelo Resend. Vazio = só aparecem no log.
+    resend-api-key: ${RESEND_API_KEY:}
+    # O domínio do remetente precisa estar verificado no Resend. O remetente de teste
+    # (onboarding@resend.dev) só entrega para o e-mail dono da conta do Resend.
+    from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
+    # Para onde vão as respostas dos clientes (e-mail de atendimento). Opcional.
+    reply-to: ${EMAIL_REPLY_TO:}
   admin:
     # Primeiro admin, criado na subida só se a tabela admin_users estiver vazia.
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import styles from "./page.module.css";
-import { formatPrice } from "../data/products";
+import { formatPrice } from "../lib/products";
 import { useCart } from "../context/CartContext";
-import { useProducts } from "../context/ProductsContext";
+import { useProducts } from "../lib/useProducts";
 
 export default function CarrinhoPage() {
   const { items, updateQuantity, removeItem } = useCart();
-  const { products } = useProducts();
+  const { products, loading, error } = useProducts();
 
   const cartProducts = items
     .map((item) => {
@@ -27,7 +27,11 @@ export default function CarrinhoPage() {
       <div className="container">
         <h1 className={styles.title}>Seu carrinho</h1>
 
-        {cartProducts.length === 0 ? (
+        {items.length > 0 && loading ? (
+          <p>Carregando seu carrinho…</p>
+        ) : items.length > 0 && error ? (
+          <p role="alert">{error}</p>
+        ) : cartProducts.length === 0 ? (
           <div className={styles.empty}>
             <span className={styles.emptyIcon} aria-hidden="true">
               🛒

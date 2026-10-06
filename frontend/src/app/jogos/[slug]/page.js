@@ -1,88 +1,56 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import styles from "./page.module.css";
 import ProductCard from "../../components/ProductCard";
 import AddToCartBox from "../../components/AddToCartBox";
 import ProductGallery from "../../components/ProductGallery";
-import { formatPrice } from "../../data/products";
-import { useProducts, isProductNew } from "../../context/ProductsContext";
+import ReviewForm from "./ReviewForm";
+import { getProduct, getProducts } from "../../lib/catalog";
+import { discountPercent, formatPrice, isProductNew } from "../../lib/products";
 
-export default function ProdutoPage() {
-  const { slug } = useParams();
-  const { products, addReview, loading } = useProducts();
-  const product = products.find((p) => p.slug === slug);
+// Gera as fichas dos produtos já cadastrados no build; produto novo é gerado na
+// primeira visita. Depois disso, cada ficha se atualiza sozinha (ver lib/catalog.js).
+export async function generateStaticParams() {
+  const products = await getProducts();
+  return (products || []).map((product) => ({ slug: product.slug }));
+}
 
-  const [reviewName, setReviewName] = useState("");
-  const [reviewRating, setReviewRating] = useState("5");
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewSent, setReviewSent] = useState(false);
-  const [reviewSending, setReviewSending] = useState(false);
-  const [reviewError, setReviewError] = useState(null);
-
-  if (!product && loading) {
-    return (
-      <main className={styles.main}>
-        <div className="container">
-          <p>Carregando…</p>
-        </div>
-      </main>
-    );
-  }
-
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const product = await getProduct(slug);
   if (!product) {
-    return (
-      <main className={styles.main}>
-        <div className="container">
-          <p>Jogo não encontrado.</p>
-          <Link href="/jogos">Voltar para o catálogo</Link>
-        </div>
-      </main>
-    );
+    return { title: "Jogo não encontrado | ASOBI" };
+  }
+  const description = `${product.name}: ${product.age}, ${product.players}. Estimula ${product.skill.toLowerCase()}. ${product.description}`.slice(0, 160);
+  return {
+    title: `${product.name} | ASOBI`,
+    description,
+    openGraph: {
+      title: product.name,
+      description,
+      images: product.images.slice(0, 1),
+    },
+  };
+}
+
+export default async function ProdutoPage({ params }) {
+  const { slug } = await params;
+  const [product, products] = await Promise.all([getProduct(slug), getProducts()]);
+  if (!product) {
+    notFound();
   }
 
   const isNew = isProductNew(product);
-  const discount = product.promo
-    ? Math.round((1 - product.price / product.promo.originalPrice) * 100)
-    : null;
-
-  const related = products
+  const discount = discountPercent(product);
+  const related = (products || [])
     .filter((p) => p.ageKey === product.ageKey && p.slug !== product.slug)
     .slice(0, 4);
 
-  const approvedReviews = (product.reviews || []).filter(
-    (review) => review.status === "approved"
-  );
-  const averageRating = approvedReviews.length
-    ? approvedReviews.reduce((sum, r) => sum + r.rating, 0) /
-      approvedReviews.length
+  // A API só devolve avaliações já aprovadas no painel.
+  const reviews = product.reviews;
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : null;
-
-  async function handleReviewSubmit(event) {
-    event.preventDefault();
-    setReviewSending(true);
-    setReviewError(null);
-    try {
-      await addReview(product.slug, {
-        id: crypto.randomUUID(),
-        name: reviewName,
-        rating: Number(reviewRating),
-        comment: reviewComment,
-        status: "pending",
-      });
-    } catch (error) {
-      setReviewError(error.message);
-      return;
-    } finally {
-      setReviewSending(false);
-    }
-    setReviewName("");
-    setReviewRating("5");
-    setReviewComment("");
-    setReviewSent(true);
-  }
 
   return (
     <main className={styles.main}>
@@ -119,8 +87,7 @@ export default function ProdutoPage() {
                   {"★".repeat(Math.round(averageRating))}
                   {"☆".repeat(5 - Math.round(averageRating))}
                 </span>
-                {averageRating.toFixed(1)} · {approvedReviews.length}{" "}
-                avaliação(ões)
+                {averageRating.toFixed(1)} · {reviews.length} avaliação(ões)
               </p>
             ) : (
               <p className={styles.ratingEmpty}>Ainda sem avaliações</p>
@@ -147,14 +114,12 @@ export default function ProdutoPage() {
                   {formatPrice(product.promo.originalPrice)}
                 </span>
               )}
-              <span className={styles.price}>
-                {formatPrice(product.price)}
-              </span>
+              <span className={styles.price}>{formatPrice(product.price)}</span>
             </div>
 
             <p className={styles.description}>{product.description}</p>
 
-            <AddToCartBox slug={product.slug} outOfStock={product.stock <= 0} />
+            <AddToCartBox slug={product.slug} outOfStock={!product.inStock} />
 
             <div className={styles.paymentBadges}>
               <span>Pix</span>
@@ -167,9 +132,9 @@ export default function ProdutoPage() {
         <section className={styles.reviewsSection}>
           <h2>Avaliações de quem já comprou</h2>
 
-          {approvedReviews.length > 0 ? (
+          {reviews.length > 0 ? (
             <div className={styles.reviewsList}>
-              {approvedReviews.map((review) => (
+              {reviews.map((review) => (
                 <div key={review.id} className={styles.reviewCard}>
                   <div className={styles.reviewHead}>
                     <span className={styles.reviewName}>{review.name}</span>
@@ -189,72 +154,7 @@ export default function ProdutoPage() {
             </p>
           )}
 
-          {reviewSent ? (
-            <p className={styles.reviewNote}>
-              Recebemos sua avaliação! Ela aparece aqui depois que a nossa
-              equipe aprovar.
-            </p>
-          ) : (
-            <form className={styles.reviewForm} onSubmit={handleReviewSubmit}>
-              <h3>Deixe sua avaliação</h3>
-              <div className={styles.reviewFormRow}>
-                <label className={styles.field}>
-                  <span>Seu nome</span>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Seu nome"
-                    value={reviewName}
-                    onChange={(e) => setReviewName(e.target.value)}
-                    maxLength={80}
-                    required
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Nota</span>
-                  <select
-                    name="rating"
-                    value={reviewRating}
-                    onChange={(e) => setReviewRating(e.target.value)}
-                  >
-                    <option value="5">★★★★★</option>
-                    <option value="4">★★★★☆</option>
-                    <option value="3">★★★☆☆</option>
-                    <option value="2">★★☆☆☆</option>
-                    <option value="1">★☆☆☆☆</option>
-                  </select>
-                </label>
-              </div>
-              <label className={styles.field}>
-                <span>Comentário</span>
-                <textarea
-                  name="comment"
-                  rows={3}
-                  placeholder="Conte como foi a experiência com esse jogo"
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  maxLength={1000}
-                  required
-                />
-              </label>
-              {reviewError && (
-                <p className={styles.reviewNote} role="alert">
-                  {reviewError}
-                </p>
-              )}
-              <button
-                type="submit"
-                className={styles.reviewSubmit}
-                disabled={reviewSending}
-              >
-                {reviewSending ? "Enviando…" : "Enviar avaliação"}
-              </button>
-              <p className={styles.reviewNote}>
-                Sua avaliação passa por aprovação da nossa equipe antes de
-                aparecer na página.
-              </p>
-            </form>
-          )}
+          <ReviewForm slug={product.slug} />
         </section>
 
         {related.length > 0 && (

@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ASOBI — loja (Next.js)
 
-## Getting Started
+Loja da ASOBI vista pelo cliente: catálogo, ficha de produto, carrinho, checkout, acompanhamento
+do pedido e "Meus pedidos". Todos os dados vêm da API do backend ([`../backend`](../backend/README.md));
+o painel admin também fica lá (`/admin` aqui só redireciona para ele).
 
-First, run the development server:
+- Next.js 16 (App Router) · React 19 · CSS Modules
+- Hospedagem: Cloudflare Workers, pelo [OpenNext](https://opennext.js.org/cloudflare)
+
+## Rodar localmente
+
+Suba o backend antes (porta 8080) e depois:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local   # ajuste se o backend não estiver em localhost:8080
+npm install
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`npm run lint` confere o código; `npm run build` gera a versão de produção.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Variáveis de ambiente
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variável | Para quê |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | URL do backend. Padrão: `http://localhost:8080` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Login de cliente: `https://<id-do-projeto>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Login de cliente: chave **pública** do Supabase (`anon` / `publishable`), nunca a secreta |
 
-## Learn More
+Sem as duas variáveis do Supabase a loja funciona normalmente, só sem o link "Entrar"
+(a compra sem cadastro continua valendo).
 
-To learn more about Next.js, take a look at the following resources:
+## Como as páginas buscam os dados
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Catálogo no servidor** (`src/app/lib/catalog.js`): home, `/jogos`, `/novidades`, `/promocoes`, `/sobre`
+  e a ficha `/jogos/[slug]` são Server Components. As respostas da API ficam em cache por **1 minuto**,
+  então o que a Priscila muda no painel aparece na loja em até esse tempo. Cada ficha tem título e
+  descrição próprios (SEO).
+- **Carrinho e checkout no navegador** (`src/app/lib/useProducts.js`): buscam preço e estoque na hora.
+- Se o backend não responder, as listas mostram um aviso em vez de quebrar a página (e o build).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Login de cliente (Google, pelo Supabase Auth)
 
-## Deploy on Vercel
+`/login` → "Continuar com Google" → volta para `/conta` ("Meus pedidos"). Não há senha nem tela de
+cadastro: a conta nasce no primeiro login. No checkout, quem está logado tem o pedido ligado à conta;
+pedidos antigos feitos sem cadastro com o mesmo e-mail também aparecem em "Meus pedidos".
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Para ligar (uma vez só, no painel do Supabase):
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Authentication → Sign In / Providers → Google**: ative e cole o *Client ID* e o *Client Secret* de um
+   "ID do cliente OAuth" do [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   (tipo *Aplicativo da Web*, com a URI de redirecionamento que o Supabase mostra nessa tela:
+   `https://<id-do-projeto>.supabase.co/auth/v1/callback`).
+2. **Authentication → URL Configuration**: em *Site URL* ponha o endereço da loja e, em *Redirect URLs*,
+   `http://localhost:3000/**` e `https://<dominio-da-loja>/**`.
+3. Preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` aqui, e `SUPABASE_URL` e
+   `SUPABASE_SERVICE_KEY` no backend (é ele que confere o login).
+
+## Deploy na Cloudflare
+
+A loja precisa de um servidor para renderizar o catálogo, então vai para **Workers** (free tier), não
+para o Pages estático. Configuração em `wrangler.jsonc` e `open-next.config.ts`.
+
+```bash
+npx wrangler login
+npx wrangler r2 bucket create asobi-frontend-cache   # só na primeira vez
+npm run deploy
+```
+
+- As variáveis `NEXT_PUBLIC_*` entram no build: defina-as em `.env.production` (ou no ambiente) **antes**
+  de `npm run deploy`.
+- O cache das páginas fica num bucket **R2** (10 GB e 1 milhão de gravações por mês no plano gratuito;
+  a Cloudflare pede um cartão cadastrado para ativar o R2, sem cobrança dentro desse limite).
+- `npm run preview` roda a versão da Cloudflare localmente. No Windows, o OpenNext recomenda usar o WSL
+  se o build apresentar problemas.
