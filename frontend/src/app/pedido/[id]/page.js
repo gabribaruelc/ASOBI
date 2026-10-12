@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import styles from "./page.module.css";
-import { formatPrice } from "../../data/products";
-import { apiFetch, isApiEnabled } from "../../lib/api";
+import { formatPrice } from "../../lib/products";
+import { apiFetch } from "../../lib/api";
 
 const STATUS_MESSAGES = {
   PENDING_PAYMENT: {
@@ -40,7 +40,6 @@ export default function PedidoPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!isApiEnabled) return;
     let polls = 0;
     let timer;
     let active = true;

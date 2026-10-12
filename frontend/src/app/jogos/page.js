@@ -1,35 +1,26 @@
-"use client";
-
-import { Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import styles from "./page.module.css";
 import ProductCard from "../components/ProductCard";
-import { useProducts } from "../context/ProductsContext";
+import CatalogUnavailable from "../components/CatalogUnavailable";
+import { getAgeFilters, getProducts } from "../lib/catalog";
 
-export default function JogosPage() {
-  return (
-    <Suspense fallback={null}>
-      <JogosContent />
-    </Suspense>
-  );
-}
+export default async function JogosPage({ searchParams }) {
+  const { idade, estilo } = await searchParams;
+  const [products, ageFilters] = await Promise.all([
+    getProducts(),
+    getAgeFilters(),
+  ]);
 
-function JogosContent() {
-  const searchParams = useSearchParams();
-  const idade = searchParams.get("idade");
-  const estilo = searchParams.get("estilo");
-  const { products, ageFilters } = useProducts();
-
-  const filtered = products.filter((product) => {
+  const cooperativeOnly = estilo === "cooperativos";
+  const filtered = (products || []).filter((product) => {
     if (idade && product.ageKey !== idade) return false;
-    if (estilo && product.estilo !== estilo) return false;
+    if (cooperativeOnly && !product.cooperative) return false;
     return true;
   });
 
   const activeLabel =
     ageFilters.find((f) => f.key === idade)?.label ||
-    (estilo === "cooperativos" ? "Cooperativos" : null);
+    (cooperativeOnly ? "Cooperativos" : null);
 
   return (
     <main>
@@ -49,7 +40,7 @@ function JogosContent() {
           <div className={styles.filters}>
             <Link
               href="/jogos"
-              className={`${styles.pill} ${!idade && !estilo ? styles.pillActive : ""}`}
+              className={`${styles.pill} ${!idade && !cooperativeOnly ? styles.pillActive : ""}`}
             >
               Todos
             </Link>
@@ -64,20 +55,22 @@ function JogosContent() {
             ))}
             <Link
               href="/jogos?estilo=cooperativos"
-              className={`${styles.pill} ${estilo === "cooperativos" ? styles.pillActive : ""}`}
+              className={`${styles.pill} ${cooperativeOnly ? styles.pillActive : ""}`}
             >
               Cooperativos
             </Link>
           </div>
 
-          {activeLabel && (
+          {activeLabel && products && (
             <p className={styles.resultCount}>
               Mostrando <strong>{filtered.length}</strong> jogo(s) em{" "}
               <strong>{activeLabel}</strong>
             </p>
           )}
 
-          {filtered.length > 0 ? (
+          {!products ? (
+            <CatalogUnavailable />
+          ) : filtered.length > 0 ? (
             <div className={styles.grid}>
               {filtered.map((product) => (
                 <ProductCard key={product.slug} product={product} />

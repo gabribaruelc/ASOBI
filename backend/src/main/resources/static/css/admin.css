@@ -207,6 +207,12 @@ td.actions > * + * { margin-left: 12px; }
 /* Produtos e categorias */
 .page-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .product-icon { font-size: 1.4rem; margin-right: 6px; vertical-align: middle; }
+.product-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 10px; margin-right: 8px; vertical-align: middle; float: left; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+.photo { position: relative; margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--white); }
+.photo img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: var(--blue-tint); }
+.photo .badge { position: absolute; top: 8px; left: 8px; }
+.photo figcaption { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; font-size: .875rem; }
 .strike { text-decoration: line-through; }
 td.badges { display: table-cell; }
 td.badges .badge { margin: 2px 4px 2px 0; }

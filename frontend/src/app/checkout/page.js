@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
-import { formatPrice } from "../data/products";
+import { formatPrice } from "../lib/products";
 import { useCart } from "../context/CartContext";
-import { useProducts } from "../context/ProductsContext";
-import { apiFetch, isApiEnabled } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { useProducts } from "../lib/useProducts";
+import { apiFetch } from "../lib/api";
 
 const EMPTY_FORM = {
   name: "",
@@ -24,6 +25,7 @@ const EMPTY_FORM = {
 export default function CheckoutPage() {
   const { items, clearCart } = useCart();
   const { products, loading } = useProducts();
+  const { user, getAccessToken } = useAuth();
   const [form, setForm] = useState(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState(null);
@@ -37,11 +39,21 @@ export default function CheckoutPage() {
   const [shippingError, setShippingError] = useState(null);
 
   useEffect(() => {
-    if (!isApiEnabled) return;
     apiFetch("/api/settings")
       .then((settings) => setShippingEnabled(settings.shippingEnabled))
       .catch(() => setShippingEnabled(false));
   }, []);
+
+  // Logado: já começa com o nome e o e-mail da conta (dá para trocar).
+  useEffect(() => {
+    if (!user) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- a sessão só é conhecida no navegador, depois da hidratação
+    setForm((prev) => ({
+      ...prev,
+      name: prev.name || user.name,
+      email: prev.email || user.email,
+    }));
+  }, [user?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cartProducts = items
     .map((item) => {
@@ -50,7 +62,7 @@ export default function CheckoutPage() {
     })
     .filter(Boolean);
   const subtotal = cartProducts.reduce((sum, p) => sum + p.price * p.quantity, 0);
-  const unavailable = cartProducts.filter((p) => p.stock <= 0);
+  const unavailable = cartProducts.filter((p) => !p.inStock);
   const selectedShipping = shippingOptions.find((o) => o.id === shippingOptionId);
   const total = subtotal + (selectedShipping ? selectedShipping.price : 0);
   const needsShippingChoice = shippingEnabled && !selectedShipping;
@@ -112,8 +124,11 @@ export default function CheckoutPage() {
     setError(null);
     setFieldErrors({});
     try {
+      // Com login, o pedido fica na conta ("Meus pedidos"); sem login, segue sem cadastro.
+      const token = await getAccessToken();
       const order = await apiFetch("/api/orders", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: JSON.stringify({
           customer: { name: form.name, email: form.email, phone: form.phone },
           shippingAddress: {
@@ -137,18 +152,6 @@ export default function CheckoutPage() {
       setFieldErrors(err.fieldErrors || {});
       setSubmitting(false);
     }
-  }
-
-  if (!isApiEnabled) {
-    return (
-      <main className={styles.main}>
-        <div className="container">
-          <p className={styles.notice}>
-            O checkout precisa do backend ligado (defina NEXT_PUBLIC_API_URL).
-          </p>
-        </div>
-      </main>
-    );
   }
 
   if (!loading && cartProducts.length === 0) {
@@ -179,6 +182,12 @@ export default function CheckoutPage() {
                 Dados do adulto responsável pela compra. Usamos só para entregar o
                 pedido e falar com você sobre ele.
               </p>
+              {user && (
+                <p className={styles.hint}>
+                  Comprando como <strong>{user.email}</strong> — este pedido vai
+                  aparecer em <Link href="/conta">Meus pedidos</Link>.
+                </p>
+              )}
               <label className={styles.field}>
                 <span>Nome completo</span>
                 <input
@@ -351,7 +360,7 @@ export default function CheckoutPage() {
                 <li key={product.slug}>
                   <span>
                     {product.quantity}× {product.name}
-                    {product.stock <= 0 && <strong className={styles.soldOut}> esgotado</strong>}
+                    {!product.inStock && <strong className={styles.soldOut}> esgotado</strong>}
                   </span>
                   <span>{formatPrice(product.price * product.quantity)}</span>
                 </li>

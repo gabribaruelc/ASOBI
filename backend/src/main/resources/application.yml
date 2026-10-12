@@ -23,6 +23,13 @@ spring:
     jdbc:
       # Tabelas criadas pelo Flyway (V5__create_spring_session_tables.sql).
       initialize-schema: never
+  servlet:
+    multipart:
+      # Upload de fotos no painel. O limite "de verdade" (5 MB por foto) é conferido no
+      # ProductImageService, com mensagem amigável; estes ficam um pouco acima.
+      # O Cloud Run aceita no máximo 32 MB por requisição.
+      max-file-size: 8MB
+      max-request-size: 32MB
 
 server:
   # O Cloud Run informa a porta pela variável PORT.
@@ -57,6 +64,27 @@ asobi:
     # indisponível (o toggle no painel fica travado em "a combinar").
     url: ${SHIPPING_SERVICE_URL:}
     api-key: ${SHIPPING_SERVICE_API_KEY:}
+  storage:
+    # Fotos de produto no Supabase Storage. Vazio = pasta local (só para desenvolvimento;
+    # no Cloud Run o disco some a cada nova instância).
+    supabase-url: ${SUPABASE_URL:}
+    supabase-key: ${SUPABASE_SERVICE_KEY:}
+    # Bucket público; criado sozinho no primeiro envio se ainda não existir.
+    bucket: ${SUPABASE_STORAGE_BUCKET:product-images}
+    local-dir: ./data/uploads
+  customer-auth:
+    # Login de cliente (Google pelo Supabase Auth): o backend confere o token no próprio
+    # Supabase. Usa as mesmas variáveis das fotos; vazio = login de cliente desligado.
+    supabase-url: ${SUPABASE_URL:}
+    supabase-key: ${SUPABASE_SERVICE_KEY:}
+  email:
+    # E-mails de pedido (recebido, pago, enviado) pelo Resend. Vazio = só aparecem no log.
+    resend-api-key: ${RESEND_API_KEY:}
+    # O domínio do remetente precisa estar verificado no Resend. O remetente de teste
+    # (onboarding@resend.dev) só entrega para o e-mail dono da conta do Resend.
+    from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
+    # Para onde vão as respostas dos clientes (e-mail de atendimento). Opcional.
+    reply-to: ${EMAIL_REPLY_TO:}
   admin:
     # Primeiro admin, criado na subida só se a tabela admin_users estiver vazia.
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}

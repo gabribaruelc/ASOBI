@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<!-- E-mails de pedido (recebido, pago, enviado e aviso para os admins). Montado pelo
+     OrderEmailComposer. Estilos inline e tabelas: é o que os programas de e-mail entendem. -->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${heading}">ASOBI</title>
+</head>
+<body style="margin:0;padding:0;background:#EAF2FF;color:#1E2A45;font-family:'Trebuchet MS',Verdana,Arial,sans-serif;font-size:16px;line-height:1.5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EAF2FF;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:20px;">
+        <tr>
+          <td style="padding:28px 32px 0;font-size:34px;font-weight:bold;letter-spacing:-1px;">
+            <span style="color:#2E7CF6;">aso</span><span style="color:#FF5FA2;">bi</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px 32px 0;">
+            <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3;color:#1E2A45;" th:text="${heading}">Recebemos seu pedido!</h1>
+            <p style="margin:0 0 10px;" th:each="paragraph : ${paragraphs}" th:text="${paragraph}">Oi! Seu pedido chegou.</p>
+            <p style="margin:14px 0 0;padding:12px 16px;background:#FFEAF3;border-radius:12px;font-weight:bold;"
+               th:if="${highlight != null}" th:text="${highlight}">Código de rastreio: AA123456789BR</p>
+            <p style="margin:10px 0 0;color:#5B6680;" th:if="${contact != null}" th:text="${'Contato: ' + contact}">Contato: maria@example.com</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:2px solid #EAF2FF;">
+              <tr>
+                <td colspan="2" style="padding:14px 0 6px;font-size:13px;font-weight:bold;text-transform:uppercase;color:#5B6680;"
+                    th:text="${'Pedido nº ' + order.id}">Pedido nº 12</td>
+              </tr>
+              <tr th:each="item : ${order.items}">
+                <td style="padding:6px 0;" th:text="${item.quantity + ' × ' + item.productName}">2 × Corrida dos Sapos</td>
+                <td align="right" style="padding:6px 0;white-space:nowrap;"
+                    th:text="${'R$ ' + #numbers.formatDecimal(item.lineTotal, 1, 'POINT', 2, 'COMMA')}">R$ 179,80</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#5B6680;" th:text="${order.shippingService != null ? 'Frete — ' + order.shippingService : 'Frete'}">Frete</td>
+                <td align="right" style="padding:6px 0;color:#5B6680;white-space:nowrap;">
+                  <span th:if="${order.shippingService == null}">A combinar</span>
+                  <span th:if="${order.shippingService != null and order.shippingCost.signum() == 0}">Grátis</span>
+                  <span th:if="${order.shippingService != null and order.shippingCost.signum() > 0}"
+                        th:text="${'R$ ' + #numbers.formatDecimal(order.shippingCost, 1, 'POINT', 2, 'COMMA')}">R$ 25,50</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0 0;border-top:2px solid #EAF2FF;font-weight:bold;">Total</td>
+                <td align="right" style="padding:10px 0 0;border-top:2px solid #EAF2FF;font-weight:bold;font-size:18px;color:#2E7CF6;white-space:nowrap;"
+                    th:text="${'R$ ' + #numbers.formatDecimal(order.total, 1, 'POINT', 2, 'COMMA')}">R$ 205,30</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px 0;font-size:14px;color:#5B6680;">
+            <strong style="color:#1E2A45;">Entrega:</strong> <span th:text="${address}">Av. Paulista, 1000 — Bela Vista, São Paulo/SP · CEP 01310-100</span>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:26px 32px 0;">
+            <a th:href="${buttonUrl}" href="#" th:text="${buttonLabel}"
+               style="display:inline-block;background:#FF5FA2;color:#FFFFFF;font-weight:bold;text-decoration:none;padding:12px 28px;border-radius:999px;">Acompanhar pedido</a>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:24px 32px 28px;font-size:12px;color:#5B6680;" th:text="${footerNote}">
+            Você recebeu este e-mail porque fez um pedido na ASOBI.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
