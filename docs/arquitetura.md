@@ -161,6 +161,9 @@ Cada domínio foi avaliado como candidato a serviço independente:
 | catalog-service | catalog | Produtos, estoque, promoção | ⏸ Mantido no backend | A baixa de estoque precisa estar na **mesma transação** da confirmação do pagamento (lock na linha do produto). Separar exigiria saga/compensação, complexidade injustificável para um negócio com uma operadora. |
 | order-service | order | Pedidos | ⏸ Mantido no backend | Mesmo motivo acima: pedido + estoque + pagamento formam uma unidade transacional. |
 | payment-service | payment | Mercado Pago | ⏸ Mantido no backend | Já é terceirizado (o Mercado Pago é o "serviço"). O módulo local só adapta, atrás da interface `PaymentGateway`. |
+| two-factor-service | (novo) autenticação | Gerar, enviar por e-mail e conferir código de uso único | 🔜 Planejado | Sem dependência transacional com pedido ou estoque. Guarda só o hash do código, com validade curta e limite de tentativas. |
+| admin-auth-service | admin | Login Google do painel e lista de e-mails de admin | 🔜 Planejado | Extrai o que hoje é o módulo `admin` do backend e passa a ser o dono da tabela de admins. |
+| notification-service | (novo) notification | Avisar por e-mail que um produto entrou em promoção ou voltou ao estoque | 🔜 Planejado | Recebe eventos de preço/estoque do backend e envia de forma assíncrona; uma falha não afeta a venda. Guarda as inscrições com consentimento (LGPD) e link de descadastro. |
 | review-moderation-service | review | Filtro de conteúdo antes da fila | 🔜 Candidato futuro | Bom candidato quando houver filtro automático (lista de palavras, IA). Hoje é só CRUD + aprovação. |
 | recommendation-service | catalog (leitura) | Sugerir jogos por idade/habilidade | 🔜 Candidato futuro | Só leitura do catálogo; pode consumir a API pública. |
 | content / settings / admin | — | Conteúdo, parâmetros e acesso | ⏸ Mantidos | Pouco volume e nenhuma integração externa. Separar só adicionaria custo (cold start, mais conexões no Supabase free). |
@@ -773,6 +776,9 @@ sequenceDiagram
 | frontend (Next.js) | **3000** | Cloudflare Workers (OpenNext), HTTPS 443 | Pública |
 | backend (Spring Boot) | **8080** | Cloud Run, HTTPS 443 (`PORT` injetada) | Pública (`/api/**`), painel protegido por login |
 | shipping-service (Spring Boot) | **8081** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
+| two-factor-service (planejado) | **8082** | Cloud Run, HTTPS 443 | Só o backend (`X-Api-Key`) |
+| admin-auth-service (planejado) | **8083** | Cloud Run, HTTPS 443 | Só o backend (`X-Api-Key`) |
+| notification-service (planejado) | **8084** | Cloud Run, HTTPS 443 | Só o backend (`X-Api-Key`) |
 | H2 console (dev) | 8080 `/h2-console` | desligado | Local |
 | Supabase PostgreSQL | — | 5432 (Session pooler, SSL) | Só o backend |
 
