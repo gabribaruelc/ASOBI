@@ -4,7 +4,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
-import { getAgeFilters } from "./lib/catalog";
+import { getAgeFilters, getSiteInfo, getStoreSettings } from "./lib/catalog";
 
 const headingFont = Fredoka({
   variable: "--font-heading",
@@ -25,16 +25,23 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const ageFilters = await getAgeFilters();
+  const [ageFilters, siteInfo, settings] = await Promise.all([
+    getAgeFilters(),
+    getSiteInfo(),
+    getStoreSettings(),
+  ]);
 
   return (
     <html lang="pt-BR" className={`${headingFont.variable} ${bodyFont.variable}`}>
       <body>
         <AuthProvider>
           <CartProvider>
-            <Header ageFilters={ageFilters} />
+            <Header
+              ageFilters={ageFilters}
+              freeShippingThreshold={settings.freeShippingThreshold ?? null}
+            />
             {children}
-            <Footer />
+            <Footer siteInfo={siteInfo} />
           </CartProvider>
         </AuthProvider>
       </body>

@@ -1,0 +1,70 @@
+.main {
+  padding: 48px 0 64px;
+}
+
+.content {
+  max-width: 760px;
+}
+
+.content h1 {
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  margin-bottom: 24px;
+}
+
+.content h2 {
+  font-size: 1.25rem;
+  margin: 32px 0 10px;
+  color: var(--color-primary-dark);
+}
+
+.content p {
+  color: var(--color-text-soft);
+  line-height: 1.7;
+  margin-bottom: 14px;
+  white-space: pre-line;
+}
+
+.content a {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.content .updated {
+  margin-top: 32px;
+  font-size: 0.85rem;
+}
+
+.contactList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.contactCard {
+  background: var(--color-primary-tint);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contactCard:nth-child(even) {
+  background: var(--color-secondary-tint);
+}
+
+.contactIcon {
+  font-size: 1.8rem;
+}
+
+.contactLabel {
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.contactCard a,
+.contactCard span {
+  overflow-wrap: anywhere;
+}

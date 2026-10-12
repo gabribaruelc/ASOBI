@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Políticas')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Políticas</h1>
+    <p class="muted">Os textos das páginas do rodapé da loja. Deixe uma linha em branco entre os parágrafos;
+      uma linha começando com <strong>#</strong> vira subtítulo.</p>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <form th:action="@{/admin/politicas}" th:object="${form}" method="post" novalidate>
+      <section class="card" th:each="policy, stat : *{policies}">
+        <h2 th:text="${policy.title}">Política de Privacidade</h2>
+        <input type="hidden" th:field="*{policies[__${stat.index}__].slug}">
+        <input type="hidden" th:field="*{policies[__${stat.index}__].title}">
+        <label>Texto
+          <textarea th:field="*{policies[__${stat.index}__].body}" maxlength="20000" rows="16"></textarea>
+          <span class="field-error" th:if="${#fields.hasErrors('policies[__${stat.index}__].body')}"
+                th:errors="*{policies[__${stat.index}__].body}"></span>
+        </label>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit" class="button">Salvar políticas</button>
+      </div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

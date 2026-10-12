@@ -51,3 +51,18 @@ export async function getAgeFilters() {
 export function getAbout() {
   return fetchOr("/api/content/about", null);
 }
+
+/** Contato, redes sociais e dados da empresa (painel: Contato e rodapé). Campo vazio vem null. */
+export function getSiteInfo() {
+  return fetchOr("/api/content/site-info", {});
+}
+
+/** Texto de uma política (privacy, returns ou shipping); null se o backend não respondeu. */
+export function getPolicy(slug) {
+  return fetchOr(`/api/content/policies/${slug}`, null);
+}
+
+/** Configurações públicas da loja ({ shippingEnabled, freeShippingThreshold }). */
+export function getStoreSettings() {
+  return fetchOr("/api/settings", {});
+}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import styles from "./Header.module.css";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { formatPrice } from "../lib/products";
 
 const NAV_LINKS = [
   { href: "/jogos", label: "Jogos" },
@@ -15,8 +16,14 @@ const NAV_LINKS = [
 
 const COOPERATIVE_RANGE = { href: "/jogos?estilo=cooperativos", label: "Cooperativos" };
 
-// ageFilters ({ key, label }) vem do servidor (layout), já com as faixas do painel.
-export default function Header({ ageFilters }) {
+// "R$ 150" quando o valor é redondo, "R$ 149,90" quando não é.
+function formatThreshold(value) {
+  return Number.isInteger(value) ? `R$ ${value}` : formatPrice(value);
+}
+
+// ageFilters ({ key, label }) e freeShippingThreshold vêm do servidor (layout), já com o
+// que está no painel. Sem frete grátis configurado, a barra só fala das formas de pagamento.
+export default function Header({ ageFilters, freeShippingThreshold }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { count } = useCart();
   const { user, isAuthEnabled } = useAuth();
@@ -34,7 +41,9 @@ export default function Header({ ageFilters }) {
   return (
     <header className={styles.header}>
       <div className={styles.topBar}>
-        Frete grátis para compras acima de R$ 150 · Pix, cartão e boleto
+        {freeShippingThreshold != null &&
+          `Frete grátis para compras acima de ${formatThreshold(freeShippingThreshold)} · `}
+        Pix, cartão e boleto
       </div>
 
       <div className={`container ${styles.headerInner}`}>

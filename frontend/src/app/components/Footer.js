@@ -1,7 +1,21 @@
 import Link from "next/link";
 import styles from "./Footer.module.css";
 
-export default function Footer() {
+const SOCIAL_LINKS = [
+  { field: "instagramUrl", label: "Instagram", icon: "📸" },
+  { field: "facebookUrl", label: "Facebook", icon: "📘" },
+  { field: "tiktokUrl", label: "TikTok", icon: "🎵" },
+  { field: "whatsappUrl", label: "WhatsApp", icon: "💬" },
+];
+
+// siteInfo vem do servidor (layout), com o que a Priscila preencheu em "Contato e rodapé"
+// no painel. O que está vazio não aparece.
+export default function Footer({ siteInfo }) {
+  const social = SOCIAL_LINKS.filter((link) => siteInfo[link.field]);
+  const legalLine = [siteInfo.legalName, siteInfo.cnpj && `CNPJ ${siteInfo.cnpj}`]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <footer className={styles.footer}>
       <div className={`container ${styles.top}`}>
@@ -15,17 +29,21 @@ export default function Footer() {
             crianças através da brincadeira: raciocínio lógico, trabalho em
             equipe, coordenação motora e muito mais.
           </p>
-          <div className={styles.social}>
-            <a href="#" aria-label="Instagram">
-              📸
-            </a>
-            <a href="#" aria-label="Facebook">
-              📘
-            </a>
-            <a href="#" aria-label="WhatsApp">
-              💬
-            </a>
-          </div>
+          {social.length > 0 && (
+            <div className={styles.social}>
+              {social.map((link) => (
+                <a
+                  key={link.field}
+                  href={siteInfo[link.field]}
+                  aria-label={link.label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {link.icon}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -42,15 +60,26 @@ export default function Footer() {
         <div>
           <p className={styles.colTitle}>Atendimento</p>
           <div className={styles.links}>
-            <p className={styles.contactItem}>
-              <span aria-hidden="true">✉️</span> contato@asobi.com.br
-            </p>
-            <p className={styles.contactItem}>
-              <span aria-hidden="true">💬</span> (00) 00000-0000
-            </p>
-            <p className={styles.contactItem}>
-              <span aria-hidden="true">🕒</span> Seg. a sex., 9h às 18h
-            </p>
+            {siteInfo.contactEmail && (
+              <a className={styles.contactItem} href={`mailto:${siteInfo.contactEmail}`}>
+                <span aria-hidden="true">✉️</span> {siteInfo.contactEmail}
+              </a>
+            )}
+            {siteInfo.contactPhone && (
+              <a
+                className={styles.contactItem}
+                href={siteInfo.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span aria-hidden="true">💬</span> {siteInfo.contactPhone}
+              </a>
+            )}
+            {siteInfo.businessHours && (
+              <p className={styles.contactItem}>
+                <span aria-hidden="true">🕒</span> {siteInfo.businessHours}
+              </p>
+            )}
           </div>
         </div>
 
@@ -69,7 +98,7 @@ export default function Footer() {
 
       <div className={`container ${styles.bottom}`}>
         <span>© {new Date().getFullYear()} ASOBI. Todos os direitos reservados.</span>
-        <span>Razão social e CNPJ a definir</span>
+        {legalLine && <span>{legalLine}</span>}
       </div>
     </footer>
   );
