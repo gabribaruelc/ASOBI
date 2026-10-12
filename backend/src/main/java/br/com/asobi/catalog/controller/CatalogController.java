@@ -2,25 +2,31 @@ package br.com.asobi.catalog.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.asobi.catalog.dto.CategoryResponse;
 import br.com.asobi.catalog.dto.ProductResponse;
 import br.com.asobi.catalog.repository.ProductSpecifications.ProductFilter;
 import br.com.asobi.catalog.service.CatalogService;
+import br.com.asobi.catalog.service.ProductViewService;
 
 @RestController
 @RequestMapping("/api")
 public class CatalogController {
 
 	private final CatalogService catalogService;
+	private final ProductViewService productViewService;
 
-	public CatalogController(CatalogService catalogService) {
+	public CatalogController(CatalogService catalogService, ProductViewService productViewService) {
 		this.catalogService = catalogService;
+		this.productViewService = productViewService;
 	}
 
 	@GetMapping("/categories")
@@ -40,5 +46,12 @@ public class CatalogController {
 	@GetMapping("/products/{slug}")
 	public ProductResponse getProduct(@PathVariable String slug) {
 		return catalogService.getProduct(slug);
+	}
+
+	/** A loja chama ao abrir a ficha; alimenta "mais vistos" no dashboard do painel. */
+	@PostMapping("/products/{slug}/views")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void recordView(@PathVariable String slug) {
+		productViewService.recordView(slug);
 	}
 }

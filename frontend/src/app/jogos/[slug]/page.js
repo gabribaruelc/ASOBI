@@ -5,6 +5,7 @@ import ProductCard from "../../components/ProductCard";
 import AddToCartBox from "../../components/AddToCartBox";
 import ProductGallery from "../../components/ProductGallery";
 import ReviewForm from "./ReviewForm";
+import ViewTracker from "./ViewTracker";
 import { getProduct, getProducts } from "../../lib/catalog";
 import { discountPercent, formatPrice, isProductNew } from "../../lib/products";
 
@@ -54,6 +55,7 @@ export default async function ProdutoPage({ params }) {
 
   return (
     <main className={styles.main}>
+      <ViewTracker slug={product.slug} />
       <div className="container">
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
           <Link href="/">Início</Link>
