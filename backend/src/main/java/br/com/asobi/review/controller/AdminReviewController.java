@@ -14,12 +14,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import br.com.asobi.review.model.ReviewStatus;
 import br.com.asobi.review.service.ReviewService;
 
-/** Fila de moderação (/admin/avaliacoes). */
 @Controller
 @RequestMapping("/admin/avaliacoes")
 public class AdminReviewController {
 
-	/** Nome da aba na URL (?status=aprovadas) → status no banco. */
+	/** ?status=aprovadas -> ReviewStatus.APPROVED */
 	private static final Map<String, ReviewStatus> TABS = Map.of(
 			"pendentes", ReviewStatus.PENDING,
 			"aprovadas", ReviewStatus.APPROVED,

@@ -22,7 +22,6 @@ public class ReviewController {
 		this.reviewService = reviewService;
 	}
 
-	/** Recebe a avaliação como pendente; ela só aparece na loja depois de aprovada no painel. */
 	@PostMapping("/api/products/{slug}/reviews")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public Map<String, String> submit(@PathVariable String slug, @Validated @RequestBody ReviewRequest request) {

@@ -17,9 +17,8 @@ import br.com.asobi.admin.security.CurrentAdmin;
 import br.com.asobi.admin.service.AdminUserService;
 
 /**
- * - /api/**: loja (Next.js). Pública e sem sessão; CSRF desligado (não usa cookie de login).
- * - /admin/**: painel Thymeleaf. Exige login com Google E e-mail presente em admin_users,
- *   conferido no banco a cada requisição — remover um admin corta o acesso na hora.
+ * /api/** é público e sem sessão (sem CSRF). /admin/** confere o e-mail em
+ * admin_users a cada requisição, então remover um admin corta o acesso na hora.
  */
 @Configuration
 public class SecurityConfig {
@@ -46,12 +45,12 @@ public class SecurityConfig {
 				.securityContext(context -> context.securityContextRepository(securityContextRepository))
 				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
 				.cors(Customizer.withDefaults())
-				// Console do H2 (só no perfil local) usa frames.
+				// console do H2 usa frames
 				.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 				.exceptionHandling(exceptions -> exceptions
 						.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/admin/login"))
 						.accessDeniedHandler((request, response, denied) -> {
-							// Logado, mas sem permissão (ex.: e-mail removido da lista de admins).
+							// logado, mas o e-mail saiu da lista de admins
 							var session = request.getSession(false);
 							if (session != null) {
 								session.invalidate();

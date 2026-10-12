@@ -11,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** E-mail (conta Google) com acesso ao painel admin. */
 @Entity
 @Table(name = "admin_users")
 public class AdminUser {

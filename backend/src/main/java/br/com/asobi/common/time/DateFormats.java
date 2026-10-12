@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.stereotype.Component;
 
-/** Formatação de datas nas telas do painel, no horário de Brasília. Uso: ${@dates.dateTime(x)}. */
+/** Usado nos templates: ${@dates.dateTime(x)}. */
 @Component("dates")
 public class DateFormats {
 

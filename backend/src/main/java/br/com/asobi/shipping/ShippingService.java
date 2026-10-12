@@ -14,10 +14,7 @@ import br.com.asobi.common.exception.BusinessException;
 import br.com.asobi.settings.model.StoreSettings;
 import br.com.asobi.settings.service.StoreSettingsService;
 
-/**
- * Frete automático. Só funciona com o toggle ligado no painel. O preço sempre
- * vem de uma cotação feita pelo servidor — no checkout e de novo ao fechar o pedido.
- */
+/** O preço do frete sempre vem de cotação feita no servidor, nunca do navegador. */
 @Service
 @Transactional(readOnly = true)
 public class ShippingService {
@@ -37,10 +34,7 @@ public class ShippingService {
 		return settingsService.get().isShippingEnabled();
 	}
 
-	/**
-	 * @param quantities slug → quantidade
-	 * @return opções da mais barata para a mais cara; com frete grátis, a mais barata sai por R$ 0
-	 */
+	/** Com frete grátis, a opção mais barata sai por R$ 0. */
 	public List<ShippingOption> quote(String destinationPostalCode, Map<String, Integer> quantities) {
 		StoreSettings settings = settingsService.get();
 		if (!settings.isShippingEnabled()) {
@@ -71,7 +65,6 @@ public class ShippingService {
 		return options;
 	}
 
-	/** Recota e devolve a opção escolhida no checkout (o preço nunca vem do navegador). */
 	public ShippingOption resolve(String destinationPostalCode, Map<String, Integer> quantities, String optionId) {
 		return quote(destinationPostalCode, quantities).stream()
 				.filter(option -> option.id().equals(optionId))

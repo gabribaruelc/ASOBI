@@ -19,11 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import br.com.asobi.account.UnauthorizedException;
 import br.com.asobi.payment.PaymentException;
 
-/**
- * Erros da API REST no formato padrão RFC 9457 (application/problem+json),
- * inclusive os erros padrão do Spring (JSON malformado, método errado...).
- * Só vale para @RestController; o painel admin (Thymeleaf) trata os próprios erros.
- */
+/** Erros da API em RFC 9457 (problem+json). Não afeta o painel Thymeleaf. */
 @RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -47,7 +43,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, ex.getMessage());
 	}
 
-	/** Validação: devolve a mensagem de cada campo em "errors" (ex.: "customer.email"). */
+	/** Mensagens por campo em "errors", ex.: { "customer.email": "..." }. */
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {

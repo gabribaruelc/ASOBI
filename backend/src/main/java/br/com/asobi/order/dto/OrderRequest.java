@@ -12,10 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/**
- * Pedido enviado pela loja. Só slug e quantidade dos itens: preço e total
- * são calculados no servidor a partir do banco — nunca confiamos no navegador.
- */
+/** Itens vêm só com slug e quantidade; preço e total são calculados no servidor. */
 public record OrderRequest(
 		@NotNull(message = "Informe seus dados.") @Valid CustomerRequest customer,
 		@NotNull(message = "Informe o endereço de entrega.") @Valid AddressRequest shippingAddress,
@@ -23,7 +20,7 @@ public record OrderRequest(
 		@Size(max = 50, message = "Itens demais no carrinho.")
 		List<@Valid ItemRequest> items,
 
-		/** Opção escolhida na cotação de frete (obrigatória só com o frete automático ligado). */
+		/** Obrigatório só com o frete automático ligado. */
 		@Size(max = 40, message = "Opção de frete inválida.")
 		String shippingOptionId) {
 

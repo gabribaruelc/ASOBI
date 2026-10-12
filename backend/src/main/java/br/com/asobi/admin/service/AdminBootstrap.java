@@ -9,10 +9,7 @@ import org.springframework.util.StringUtils;
 
 import br.com.asobi.admin.AdminProperties;
 
-/**
- * Cria o primeiro admin (ADMIN_BOOTSTRAP_EMAIL) quando a tabela está vazia.
- * Depois disso, os demais admins são cadastrados pelo próprio painel.
- */
+/** Cria o primeiro admin (ADMIN_BOOTSTRAP_EMAIL) se a tabela estiver vazia. */
 @Component
 public class AdminBootstrap implements ApplicationRunner {
 

@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import br.com.asobi.catalog.model.Product;
 import br.com.asobi.common.time.StoreTime;
 
-/** Linha da lista de produtos do painel. */
 public record AdminProductRow(
 		Long id,
 		String slug,

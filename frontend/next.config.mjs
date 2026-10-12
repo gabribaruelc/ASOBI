@@ -17,5 +17,5 @@ const nextConfig = {
 
 export default nextConfig;
 
-// Deixa o `next dev` enxergar os bindings do Cloudflare (wrangler.jsonc).
+// bindings do Cloudflare no `next dev`
 initOpenNextCloudflareForDev();

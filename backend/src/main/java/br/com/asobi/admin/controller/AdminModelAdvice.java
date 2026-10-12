@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import br.com.asobi.admin.security.CurrentAdmin;
 import jakarta.servlet.http.HttpServletRequest;
 
-/** Dados comuns a todas as telas do painel (e-mail logado, item ativo do menu). */
 @ControllerAdvice(annotations = Controller.class)
 public class AdminModelAdvice {
 

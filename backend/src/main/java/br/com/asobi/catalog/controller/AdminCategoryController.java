@@ -16,7 +16,6 @@ import br.com.asobi.catalog.service.CategoryService;
 import br.com.asobi.common.exception.BusinessException;
 import br.com.asobi.common.exception.NotFoundException;
 
-/** Faixas etárias (/admin/categorias). */
 @Controller
 @RequestMapping("/admin/categorias")
 public class AdminCategoryController {

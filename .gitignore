@@ -1,0 +1,7 @@
+# Configurações locais de editor/ferramentas
+.claude/
+CLAUDE.md
+AGENTS.md
+
+# Arquivos temporários do Office
+~$*

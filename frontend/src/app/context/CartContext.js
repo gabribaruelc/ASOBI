@@ -12,10 +12,10 @@ export function CartProvider({ children }) {
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage só existe no client; lido após a hidratação para não gerar mismatch com o SSR
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage só no client, depois da hidratação
       if (stored) setItems(JSON.parse(stored));
     } catch {
-      // localStorage indisponível (ex: modo privado) — segue com carrinho vazio
+      // localStorage indisponível (ex.: aba anônima)
     }
     setHydrated(true);
   }, []);
@@ -25,7 +25,7 @@ export function CartProvider({ children }) {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch {
-      // ignora falha ao persistir
+      // ignora
     }
   }, [items, hydrated]);
 

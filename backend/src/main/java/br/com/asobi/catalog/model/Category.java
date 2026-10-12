@@ -7,7 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** Faixa etária usada para organizar o catálogo (ex.: "4 a 6 anos"). */
+/** Faixa etária (ex.: "4 a 6 anos"). */
 @Entity
 @Table(name = "categories")
 public class Category {

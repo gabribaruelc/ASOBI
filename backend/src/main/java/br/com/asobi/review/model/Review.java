@@ -17,7 +17,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/** Avaliação de cliente. Só aparece na loja depois de aprovada no painel admin. */
 @Entity
 @Table(name = "reviews")
 public class Review {

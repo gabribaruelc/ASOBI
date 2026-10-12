@@ -16,7 +16,6 @@ public class StoreSettingsController {
 		this.settingsService = settingsService;
 	}
 
-	/** O que a loja precisa saber para montar o checkout. */
 	@GetMapping("/api/settings")
 	public StoreSettingsResponse getSettings() {
 		StoreSettings settings = settingsService.get();

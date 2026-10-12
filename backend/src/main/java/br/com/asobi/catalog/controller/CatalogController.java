@@ -28,9 +28,6 @@ public class CatalogController {
 		return catalogService.listCategories();
 	}
 
-	/**
-	 * Ex.: /api/products?category=4-6, ?cooperative=true, ?isNew=true, ?onSale=true
-	 */
 	@GetMapping("/products")
 	public List<ProductResponse> listProducts(
 			@RequestParam(required = false) String category,

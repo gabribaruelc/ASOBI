@@ -19,7 +19,6 @@ import br.com.asobi.common.exception.NotFoundException;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-/** Gestão de quem tem acesso ao painel (/admin/admins). */
 @Controller
 @RequestMapping("/admin/admins")
 public class AdminUserController {
@@ -71,7 +70,6 @@ public class AdminUserController {
 			@Email(message = "E-mail inválido.")
 			String email) {
 
-		/** Tira espaços antes de validar (e-mail colado costuma vir com espaço). */
 		public AdminUserForm {
 			email = email == null ? null : email.trim();
 		}

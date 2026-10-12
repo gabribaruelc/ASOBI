@@ -55,11 +55,11 @@ public class Product {
 	@Column(nullable = false, length = 60)
 	private String players;
 
-	/** Preço de venda. Em promoção, é o preço promocional. */
+	/** Valor cobrado (em promoção, o preço promocional). */
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal price;
 
-	/** Preço "de" (riscado). Preenchido apenas quando o produto está em promoção. */
+	/** Preço riscado; só preenchido em promoção. */
 	@Column(name = "original_price", precision = 10, scale = 2)
 	private BigDecimal originalPrice;
 
@@ -69,7 +69,7 @@ public class Product {
 	@Column(nullable = false)
 	private boolean cooperative;
 
-	/** Até quando o produto aparece em Novidades; null = não é novidade. */
+	/** null = não é novidade. */
 	@Column(name = "new_until")
 	private Instant newUntil;
 

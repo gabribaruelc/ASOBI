@@ -12,7 +12,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/** Pedido de cotação: de onde, para onde e o que vai na caixa. */
 public record QuoteRequest(
 		@NotBlank(message = "Informe o CEP de origem.")
 		@Pattern(regexp = "^\\d{5}-?\\d{3}$", message = "CEP de origem inválido.")
@@ -26,7 +25,6 @@ public record QuoteRequest(
 		@Size(max = 50, message = "Volumes demais.")
 		List<@Valid @NotNull Parcel> parcels) {
 
-	/** Um produto do carrinho com as medidas da caixa. */
 	public record Parcel(
 			@NotBlank @Size(max = 100) String id,
 			@Min(1) int quantity,

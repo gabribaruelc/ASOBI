@@ -9,10 +9,7 @@ import org.springframework.stereotype.Component;
 
 import br.com.asobi.admin.service.AdminUserService;
 
-/**
- * Depois do "Entrar com Google", só deixa entrar quem tem e-mail verificado e
- * cadastrado em admin_users. Os demais voltam para a tela de login com erro.
- */
+/** Só aceita e-mail verificado e cadastrado em admin_users. */
 @Component
 public class AdminOidcUserService extends OidcUserService {
 

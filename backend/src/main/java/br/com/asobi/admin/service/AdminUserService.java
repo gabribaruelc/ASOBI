@@ -47,7 +47,7 @@ public class AdminUserService {
 		return adminUserRepository.save(new AdminUser(normalized, normalize(createdByEmail)));
 	}
 
-	/** Ninguém remove a si mesmo — evita o painel ficar sem nenhum admin. */
+	/** Não deixa remover a si mesmo, para o painel nunca ficar sem admin. */
 	@Transactional
 	public void removeAdmin(Long id, String currentEmail) {
 		AdminUser admin = adminUserRepository.findById(id)

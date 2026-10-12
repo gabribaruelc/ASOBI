@@ -22,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import br.com.asobi.shipping.quote.QuoteRequest;
 import br.com.asobi.shipping.quote.ShippingOption;
 
-/** Cotação no Melhor Envio (POST /api/v2/me/shipment/calculate). */
 public class MelhorEnvioClient implements ShippingQuoteProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(MelhorEnvioClient.class);
@@ -36,7 +35,6 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 		this(properties, RestClient.builder().requestFactory(timeoutRequestFactory()));
 	}
 
-	/** Construtor para testes (MockRestServiceServer). */
 	MelhorEnvioClient(MelhorEnvioProperties properties, RestClient.Builder builder) {
 		this.properties = properties;
 		String baseUrl = properties.sandbox() ? "https://sandbox.melhorenvio.com.br" : "https://melhorenvio.com.br";
@@ -106,7 +104,6 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 		return postalCode.replaceAll("\\D", "");
 	}
 
-	/** Um serviço na resposta do Melhor Envio (campos que usamos). */
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	record Service(
 			Integer id,

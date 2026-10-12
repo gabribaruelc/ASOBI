@@ -40,7 +40,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
 	List<Product> findBySlugIn(Collection<String> slugs);
 
-	/** Trava a linha do produto até o fim da transação (baixa de estoque sem corrida entre pagamentos). */
+	/** SELECT ... FOR UPDATE, para dois pagamentos não baixarem o mesmo estoque ao mesmo tempo. */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select p from Product p where p.id = :id")
 	Optional<Product> findByIdForUpdate(@Param("id") Long id);

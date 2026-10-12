@@ -47,7 +47,7 @@ public class AdminLoginController {
 		return "admin/login";
 	}
 
-	/** Entrar só com o e-mail, sem Google. Existe apenas com asobi.admin.dev-login-enabled=true (perfil local). */
+	/** Login sem Google, só no perfil local (asobi.admin.dev-login-enabled=true). */
 	@PostMapping("/admin/dev-login")
 	public String devLogin(@RequestParam String email, HttpServletRequest request, HttpServletResponse response) {
 		if (!adminProperties.devLoginEnabled()) {
@@ -61,7 +61,7 @@ public class AdminLoginController {
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);
-		// Nova sessão após o login (proteção contra session fixation).
+		// evita session fixation
 		if (request.getSession(false) != null) {
 			request.changeSessionId();
 		}

@@ -15,7 +15,6 @@ import br.com.asobi.admin.security.CurrentAdmin;
 import br.com.asobi.content.dto.AboutPageForm;
 import br.com.asobi.content.service.AboutPageService;
 
-/** Editor da página Sobre (/admin/sobre). */
 @Controller
 @RequestMapping("/admin/sobre")
 public class AdminAboutPageController {

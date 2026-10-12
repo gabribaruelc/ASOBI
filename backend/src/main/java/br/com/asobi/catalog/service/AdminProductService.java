@@ -20,7 +20,6 @@ import br.com.asobi.common.exception.NotFoundException;
 import br.com.asobi.common.text.Slugs;
 import br.com.asobi.common.time.StoreTime;
 
-/** Cadastro de produtos pelo painel admin. */
 @Service
 @Transactional
 public class AdminProductService {
@@ -98,7 +97,6 @@ public class AdminProductService {
 		getProduct(id).setStock(stock);
 	}
 
-	/** Tira da promoção: volta a cobrar o preço normal. */
 	public void endSale(Long id) {
 		Product product = getProduct(id);
 		if (product.isOnSale()) {
