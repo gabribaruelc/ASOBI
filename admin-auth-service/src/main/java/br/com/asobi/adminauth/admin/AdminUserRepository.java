@@ -1,10 +1,8 @@
-package br.com.asobi.admin.repository;
+package br.com.asobi.adminauth.admin;
 
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import br.com.asobi.admin.model.AdminUser;
 
 public interface AdminUserRepository extends JpaRepository<AdminUser, Long> {
 

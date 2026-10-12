@@ -12,13 +12,13 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 
+import br.com.asobi.admin.directory.AdminDirectory;
 import br.com.asobi.admin.security.AdminOidcUserService;
 import br.com.asobi.admin.security.CurrentAdmin;
-import br.com.asobi.admin.service.AdminUserService;
 
 /**
- * /api/** é público e sem sessão (sem CSRF). /admin/** confere o e-mail em
- * admin_users a cada requisição, então remover um admin corta o acesso na hora.
+ * /api/** é público e sem sessão (sem CSRF). /admin/** confere o e-mail no
+ * AdminDirectory a cada requisição, então remover um admin corta o acesso sem esperar a sessão expirar.
  */
 @Configuration
 public class SecurityConfig {
@@ -30,7 +30,7 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http,
-			AdminUserService adminUserService,
+			AdminDirectory adminDirectory,
 			AdminOidcUserService adminOidcUserService,
 			SecurityContextRepository securityContextRepository,
 			ObjectProvider<ClientRegistrationRepository> clientRegistrations) throws Exception {
@@ -39,7 +39,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/admin/login", "/admin/dev-login").permitAll()
 						.requestMatchers("/admin/**").access((authentication, context) ->
-								new AuthorizationDecision(adminUserService.isAdmin(
+								new AuthorizationDecision(adminDirectory.isAdmin(
 										CurrentAdmin.emailOf(authentication.get()))))
 						.anyRequest().permitAll())
 				.securityContext(context -> context.securityContextRepository(securityContextRepository))

@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: admin-auth-service
+  config:
+    # admin-auth-service/.env local; no Cloud Run vem do Secret Manager
+    import: optional:file:.env[.properties]
+  profiles:
+    # H2 local por padrão; em produção SPRING_PROFILES_ACTIVE=supabase
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      # esquema fica a cargo do Flyway
+      ddl-auto: validate
+
+server:
+  # 8080 backend, 8081 shipping-service, 8082 reservada ao two-factor-service
+  port: ${PORT:8083}
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+admin-auth-service:
+  # vazia = não confere o X-Api-Key (só local)
+  api-key: ${ADMIN_AUTH_SERVICE_API_KEY:}
+
+admin-auth:
+  # primeiro admin, criado na subida só se a lista estiver vazia
+  bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
+  google:
+    # o mesmo GOOGLE_CLIENT_ID do backend: o ID token precisa ter sido emitido para ele.
+    # vazio = login Google indisponível
+    client-id: ${GOOGLE_CLIENT_ID:}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    # modo PostgreSQL para usar as mesmas migrações do Supabase
+    url: jdbc:h2:file:./data/admin-auth;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+
+admin-auth:
+  bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:priscila@asobi.com.br}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: supabase
+  datasource:
+    # mesmo banco do backend (Session pooler), mas com usuário e esquema próprios
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+  flyway:
+    # criado pelo Flyway se não existir; fora do schema public, não aparece no PostgREST do Supabase
+    default-schema: ${DB_SCHEMA:admin_auth}
+  jpa:
+    properties:
+      hibernate:
+        default_schema: ${DB_SCHEMA:admin_auth}

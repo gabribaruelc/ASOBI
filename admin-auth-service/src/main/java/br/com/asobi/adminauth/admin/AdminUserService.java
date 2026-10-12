@@ -1,15 +1,10 @@
-package br.com.asobi.admin.service;
+package br.com.asobi.adminauth.admin;
 
 import java.util.List;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import br.com.asobi.admin.model.AdminUser;
-import br.com.asobi.admin.repository.AdminUserRepository;
-import br.com.asobi.common.exception.BusinessException;
-import br.com.asobi.common.exception.NotFoundException;
 
 @Service
 @Transactional(readOnly = true)
@@ -42,18 +37,18 @@ public class AdminUserService {
 	public AdminUser addAdmin(String email, String createdByEmail) {
 		String normalized = normalize(email);
 		if (adminUserRepository.existsByEmail(normalized)) {
-			throw new BusinessException("Esse e-mail já é admin.");
+			throw new AdminConflictException("Esse e-mail já é admin.");
 		}
 		return adminUserRepository.save(new AdminUser(normalized, normalize(createdByEmail)));
 	}
 
-	/** Não deixa remover a si mesmo, para o painel nunca ficar sem admin. */
+	/** Ninguém remove a si mesmo, para o painel nunca ficar sem admin. */
 	@Transactional
-	public void removeAdmin(Long id, String currentEmail) {
+	public void removeAdmin(Long id, String requestedByEmail) {
 		AdminUser admin = adminUserRepository.findById(id)
-				.orElseThrow(() -> new NotFoundException("Admin não encontrado."));
-		if (admin.getEmail().equals(normalize(currentEmail))) {
-			throw new BusinessException("Você não pode remover o seu próprio acesso.");
+				.orElseThrow(() -> new AdminNotFoundException("Admin não encontrado."));
+		if (admin.getEmail().equals(normalize(requestedByEmail))) {
+			throw new AdminConflictException("Você não pode remover o seu próprio acesso.");
 		}
 		adminUserRepository.delete(admin);
 	}

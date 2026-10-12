@@ -1,4 +1,4 @@
-package br.com.asobi.admin.service;
+package br.com.asobi.adminauth.admin;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,7 +7,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import br.com.asobi.admin.AdminProperties;
+import br.com.asobi.adminauth.config.AdminAuthProperties;
 
 /** Cria o primeiro admin (ADMIN_BOOTSTRAP_EMAIL) se a tabela estiver vazia. */
 @Component
@@ -16,11 +16,11 @@ public class AdminBootstrap implements ApplicationRunner {
 	private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
 	private final AdminUserService adminUserService;
-	private final AdminProperties adminProperties;
+	private final AdminAuthProperties properties;
 
-	public AdminBootstrap(AdminUserService adminUserService, AdminProperties adminProperties) {
+	public AdminBootstrap(AdminUserService adminUserService, AdminAuthProperties properties) {
 		this.adminUserService = adminUserService;
-		this.adminProperties = adminProperties;
+		this.properties = properties;
 	}
 
 	@Override
@@ -28,11 +28,11 @@ public class AdminBootstrap implements ApplicationRunner {
 		if (adminUserService.countAdmins() > 0) {
 			return;
 		}
-		if (!StringUtils.hasText(adminProperties.bootstrapEmail())) {
+		if (!StringUtils.hasText(properties.bootstrapEmail())) {
 			log.warn("Nenhum admin cadastrado. Defina ADMIN_BOOTSTRAP_EMAIL para liberar o primeiro acesso ao painel.");
 			return;
 		}
-		adminUserService.addAdmin(adminProperties.bootstrapEmail(), null);
-		log.info("Primeiro admin criado: {}", AdminUserService.normalize(adminProperties.bootstrapEmail()));
+		adminUserService.addAdmin(properties.bootstrapEmail(), null);
+		log.info("Primeiro admin criado: {}", AdminUserService.normalize(properties.bootstrapEmail()));
 	}
 }

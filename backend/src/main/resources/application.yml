@@ -77,8 +77,13 @@ asobi:
     from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
     # Para onde vão as respostas dos clientes (e-mail de atendimento). Opcional.
     reply-to: ${EMAIL_REPLY_TO:}
+  admin-auth-service:
+    # Dono da lista de admins e da conferência do login Google do painel.
+    # Vazio = lista em memória só com o bootstrap-email abaixo: some a cada reinício (testes).
+    url: ${ADMIN_AUTH_SERVICE_URL:}
+    api-key: ${ADMIN_AUTH_SERVICE_API_KEY:}
   admin:
-    # só é usado se admin_users estiver vazia
+    # só vale sem o admin-auth-service; com ele, o primeiro admin é configurado lá
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
     dev-login-enabled: false
 
@@ -97,6 +102,11 @@ spring:
       enabled: true
 
 asobi:
+  admin-auth-service:
+    # Localmente o painel já espera o admin-auth-service rodando (../admin-auth-service), que
+    # guarda a lista de admins em disco. Para rodar só o backend, com a lista em memória,
+    # defina ADMIN_AUTH_SERVICE_URL vazia.
+    url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
   admin:
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:priscila@asobi.com.br}
     dev-login-enabled: true

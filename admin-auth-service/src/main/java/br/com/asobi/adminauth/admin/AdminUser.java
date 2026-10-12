@@ -1,4 +1,4 @@
-package br.com.asobi.admin.model;
+package br.com.asobi.adminauth.admin;
 
 import java.time.Instant;
 

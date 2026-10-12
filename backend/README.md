@@ -49,7 +49,9 @@ Supabase (a chave `anon` é pública); o backend conecta como dono das tabelas e
 | `DB_PASSWORD` | senha do banco no Supabase |
 | `FRONTEND_ORIGINS` | `https://asobi.com.br,https://www.asobi.com.br` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | credenciais OAuth do Google (login do painel) |
-| `ADMIN_BOOTSTRAP_EMAIL` | conta Google do primeiro admin (usado só se ainda não houver nenhum) |
+| `ADMIN_AUTH_SERVICE_URL` | URL do `admin-auth-service` (dono da lista de admins). Vazio = lista em memória, só para desenvolvimento |
+| `ADMIN_AUTH_SERVICE_API_KEY` | a mesma chave configurada no `admin-auth-service` |
+| `ADMIN_BOOTSTRAP_EMAIL` | só vale sem `ADMIN_AUTH_SERVICE_URL`; em produção o primeiro admin é configurado no `admin-auth-service` |
 | `STORE_URL` | `https://asobi.com.br` (loja; retorno do pagamento e links do painel) |
 | `PUBLIC_URL` | URL pública deste backend no Cloud Run (monta o webhook do Mercado Pago) |
 | `MERCADO_PAGO_ACCESS_TOKEN` | `TEST-...` (sandbox) ou `APP_USR-...` (produção). Vazio = modo manual |
@@ -68,8 +70,21 @@ Nunca commitar essas credenciais.
 ## Painel admin
 
 `/admin` — Thymeleaf, renderizado pelo backend. Só entra quem faz login com Google **e** tem o
-e-mail cadastrado em `/admin/admins` (conferido no banco a cada requisição). A sessão fica no
-banco (Spring Session JDBC), então sobrevive ao Cloud Run desligar a instância.
+e-mail cadastrado em `/admin/admins`. A lista de admins e a conferência do login ficam no
+microsserviço [`admin-auth-service`](../admin-auth-service/README.md): o backend pergunta a ele a cada
+requisição (guardando a resposta por 30 segundos). A sessão fica no banco (Spring Session JDBC), então
+sobrevive ao Cloud Run desligar a instância.
+
+- **Localmente** o backend procura o serviço em `http://localhost:8083`: suba o `admin-auth-service` junto
+  (`.\mvnw.cmd spring-boot:run` na pasta dele). Os admins ficam gravados em `admin-auth-service/data/` e
+  continuam lá depois de reiniciar. Com o serviço parado ninguém entra no painel.
+- **Com `ADMIN_AUTH_SERVICE_URL` vazia** (`ADMIN_AUTH_SERVICE_URL=` no `.env`), a lista fica em memória, só com
+  `ADMIN_BOOTSTRAP_EMAIL`, e o que for adicionado some a cada reinício. É o modo dos testes automatizados.
+- **Dashboard** (`/admin`): contadores e métricas dos últimos 7, 30 ou 90 dias (faturamento pela data do
+  pagamento, pedidos pagos, valor médio, faturamento por dia, mais vendidos e mais vistos). As visualizações
+  são um contador por produto e por dia (`product_views`), somado quando a loja abre a ficha; não guarda quem viu.
+- **Políticas** (`/admin/politicas`) e **Contato e rodapé** (`/admin/contato`): textos das páginas de
+  Privacidade, Trocas e Frete, e telefone/WhatsApp, e-mail, redes sociais, razão social e CNPJ da loja.
 
 - **Local**: tela de login tem um "modo desenvolvimento" que entra só com o e-mail
   (admin inicial `priscila@asobi.com.br`). Nunca ligado em produção (`asobi.admin.dev-login-enabled`).
@@ -89,8 +104,8 @@ gcloud run deploy asobi-backend \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
-  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,ADMIN_BOOTSTRAP_EMAIL=<email-google-da-priscila>,SHIPPING_SERVICE_URL=<url-do-shipping-service> \
-  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest
+  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service> \
+  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest
 ```
 
 Acrescente em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.co` e
