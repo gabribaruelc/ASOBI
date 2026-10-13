@@ -4,11 +4,7 @@ import java.util.Optional;
 
 import br.com.asobi.order.model.Order;
 
-/**
- * Sem Mercado Pago configurado: o cliente vai direto para a página do pedido
- * e a Priscila confirma o pagamento pelo painel ("Marcar como pago").
- * Escolhido em PaymentConfig.
- */
+/** Sem Mercado Pago: o pagamento é confirmado à mão no painel. */
 public class ManualPaymentGateway implements PaymentGateway {
 
 	private final String storeUrl;

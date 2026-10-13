@@ -22,11 +22,10 @@ export async function apiFetch(path, options = {}) {
       if (problem.detail) detail = problem.detail;
       if (problem.errors) fieldErrors = problem.errors;
     } catch {
-      // resposta sem corpo JSON — mantém a mensagem genérica
+      // sem corpo JSON
     }
     const error = new Error(detail);
     error.status = response.status;
-    // Erros por campo (ex.: { "customer.email": "E-mail inválido." })
     error.fieldErrors = fieldErrors;
     throw error;
   }

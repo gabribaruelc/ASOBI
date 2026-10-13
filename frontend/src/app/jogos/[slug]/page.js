@@ -4,8 +4,10 @@ import styles from "./page.module.css";
 import ProductCard from "../../components/ProductCard";
 import AddToCartBox from "../../components/AddToCartBox";
 import ProductGallery from "../../components/ProductGallery";
+import ProductAlertForm from "./ProductAlertForm";
 import ReviewForm from "./ReviewForm";
-import { getProduct, getProducts } from "../../lib/catalog";
+import ViewTracker from "./ViewTracker";
+import { getProduct, getProducts, getStoreSettings } from "../../lib/catalog";
 import { discountPercent, formatPrice, isProductNew } from "../../lib/products";
 
 // Gera as fichas dos produtos já cadastrados no build; produto novo é gerado na
@@ -35,9 +37,20 @@ export async function generateMetadata({ params }) {
 
 export default async function ProdutoPage({ params }) {
   const { slug } = await params;
-  const [product, products] = await Promise.all([getProduct(slug), getProducts()]);
+  const [product, products, settings] = await Promise.all([
+    getProduct(slug),
+    getProducts(),
+    getStoreSettings(),
+  ]);
   if (!product) {
     notFound();
+  }
+
+  // Esgotado: aviso de volta ao estoque. Disponível e fora de promoção: aviso de promoção.
+  let alertType = null;
+  if (settings.productAlertsEnabled) {
+    if (!product.inStock) alertType = "BACK_IN_STOCK";
+    else if (!product.promo) alertType = "PROMOTION";
   }
 
   const isNew = isProductNew(product);
@@ -54,6 +67,7 @@ export default async function ProdutoPage({ params }) {
 
   return (
     <main className={styles.main}>
+      <ViewTracker slug={product.slug} />
       <div className="container">
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
           <Link href="/">Início</Link>
@@ -120,6 +134,14 @@ export default async function ProdutoPage({ params }) {
             <p className={styles.description}>{product.description}</p>
 
             <AddToCartBox slug={product.slug} outOfStock={!product.inStock} />
+
+            {alertType && (
+              <ProductAlertForm
+                key={`${product.slug}-${alertType}`}
+                slug={product.slug}
+                type={alertType}
+              />
+            )}
 
             <div className={styles.paymentBadges}>
               <span>Pix</span>

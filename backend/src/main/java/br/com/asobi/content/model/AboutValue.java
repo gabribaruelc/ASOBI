@@ -10,7 +10,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/** Card de valor da página Sobre (ícone + título + texto). */
 @Entity
 @Table(name = "about_values")
 public class AboutValue {

@@ -1,6 +1,9 @@
 # Sobe os serviços Java localmente, cada um na sua porta:
-#   backend           http://localhost:8080  (API da loja + painel admin)
-#   shipping-service  http://localhost:8081  (cotação de frete)
+#   backend               http://localhost:8080  (API da loja + painel admin)
+#   shipping-service      http://localhost:8081  (cotação de frete)
+#   two-factor-service    http://localhost:8082  (código de verificação por e-mail)
+#   admin-auth-service    http://localhost:8083  (lista de admins e login Google do painel)
+#   notification-service  http://localhost:8084  (avisos de promoção e de volta ao estoque)
 # A loja (frontend/) roda à parte com `npm run dev` em http://localhost:3000.
 #
 # Uso: docker compose up --build
@@ -15,8 +18,22 @@ services:
       SPRING_PROFILES_ACTIVE: local
       SHIPPING_SERVICE_URL: http://shipping-service:8081
       SHIPPING_SERVICE_API_KEY: dev-shipping-key
+      ADMIN_AUTH_SERVICE_URL: http://admin-auth-service:8083
+      ADMIN_AUTH_SERVICE_API_KEY: dev-admin-auth-key
+      # Com esta URL o painel pede, depois do login, o código enviado por e-mail. Sem RESEND_API_KEY
+      # o código aparece em `docker compose logs -f two-factor-service`. Apague a linha para entrar direto.
+      TWO_FACTOR_SERVICE_URL: http://two-factor-service:8082
+      TWO_FACTOR_SERVICE_API_KEY: dev-two-factor-key
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      NOTIFICATION_SERVICE_API_KEY: dev-notification-key
+    volumes:
+      # banco H2 e fotos: sobrevivem a `docker compose down` / `up --build`
+      - backend-data:/app/data
     depends_on:
       - shipping-service
+      - admin-auth-service
+      - two-factor-service
+      - notification-service
 
   shipping-service:
     build: ./shipping-service
@@ -26,3 +43,48 @@ services:
       SHIPPING_SERVICE_API_KEY: dev-shipping-key
       MELHOR_ENVIO_TOKEN: ${MELHOR_ENVIO_TOKEN:-}
       MELHOR_ENVIO_SANDBOX: "true"
+
+  admin-auth-service:
+    build: ./admin-auth-service
+    ports:
+      - "8083:8083"
+    environment:
+      # Perfil local: banco H2 dentro do container, com admin@asobi.com.br como admin inicial.
+      SPRING_PROFILES_ACTIVE: local
+      ADMIN_AUTH_SERVICE_API_KEY: dev-admin-auth-key
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-admin@asobi.com.br}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    volumes:
+      - admin-auth-data:/app/data
+
+  # Sem RESEND_API_KEY os e-mails dos dois serviços abaixo só aparecem no log de cada um.
+  two-factor-service:
+    build: ./two-factor-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      TWO_FACTOR_SERVICE_API_KEY: dev-two-factor-key
+      TWO_FACTOR_CODE_SECRET: dev-two-factor-code-secret
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    volumes:
+      - two-factor-data:/app/data
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NOTIFICATION_SERVICE_API_KEY: dev-notification-key
+      PUBLIC_URL: http://localhost:8084
+      STORE_URL: http://localhost:3000
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    volumes:
+      - notification-data:/app/data
+
+volumes:
+  backend-data:
+  admin-auth-data:
+  two-factor-data:
+  notification-data:

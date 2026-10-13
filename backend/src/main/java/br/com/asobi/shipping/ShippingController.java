@@ -44,7 +44,6 @@ public class ShippingController {
 			List<@Valid CartItem> items) {
 	}
 
-	/** Item do carrinho: só slug e quantidade (preço e medidas vêm do servidor). */
 	public record CartItem(
 			@NotBlank(message = "Produto inválido.")
 			String slug,

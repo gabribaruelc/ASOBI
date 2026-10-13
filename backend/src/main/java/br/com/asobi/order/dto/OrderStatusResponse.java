@@ -8,10 +8,7 @@ import java.util.UUID;
 import br.com.asobi.order.model.Order;
 import br.com.asobi.order.model.OrderStatus;
 
-/**
- * Acompanhamento do pedido pelo cliente (página "pedido recebido").
- * Sem e-mail, telefone ou endereço: só o necessário para acompanhar.
- */
+/** Público (qualquer um com o link), por isso sem e-mail, telefone ou endereço. */
 public record OrderStatusResponse(
 		UUID orderId,
 		Long number,

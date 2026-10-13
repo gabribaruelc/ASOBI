@@ -26,7 +26,6 @@ public class QuoteController {
 		return new ProviderStatusResponse(provider.name(), provider.isConfigured());
 	}
 
-	/** Opções da mais barata para a mais cara. */
 	@PostMapping("/quotes")
 	public List<ShippingOption> quote(@Validated @RequestBody QuoteRequest request) {
 		return provider.quote(request);

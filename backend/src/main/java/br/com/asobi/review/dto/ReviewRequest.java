@@ -6,11 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/**
- * Avaliação enviada pela loja. Não há campo de status: toda avaliação nova
- * entra como pendente, decidido no servidor. Só o primeiro nome é pedido
- * (LGPD — nada de dados pessoais além do necessário).
- */
+/** Sem campo de status (toda avaliação entra pendente) e só com o primeiro nome (LGPD). */
 public record ReviewRequest(
 		@NotBlank(message = "Informe seu nome.")
 		@Size(max = 80, message = "Nome muito longo.")

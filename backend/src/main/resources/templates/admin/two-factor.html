@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Código de verificação')}"></head>
+<body class="login-page">
+<main class="login-card">
+  <h1 class="logo big"><span class="aso">aso</span><span class="bi">bi</span></h1>
+  <p class="muted">Painel da loja</p>
+
+  <p class="alert error" th:if="${error}" th:text="${error}">Código incorreto.</p>
+  <p class="alert success" th:if="${success}" th:text="${success}">Enviamos um código novo.</p>
+
+  <form th:if="${codeSent}" th:action="@{/admin/verificacao}" method="post" class="code-form">
+    <p>Enviamos um código de 6 números para <strong th:text="${email}">admin@asobi.com.br</strong>. Ele vale por 10 minutos.</p>
+    <label>Código
+      <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="\s*\d{6}\s*"
+             maxlength="8" placeholder="000000" required autofocus>
+    </label>
+    <button type="submit" class="button">Entrar no painel</button>
+  </form>
+
+  <form th:action="@{/admin/verificacao/reenviar}" method="post">
+    <button type="submit" class="link-button" th:text="${codeSent} ? 'Não chegou? Enviar outro código' : 'Enviar código'">Enviar outro código</button>
+  </form>
+
+  <form th:action="@{/admin/logout}" method="post">
+    <button type="submit" class="link-button">Sair</button>
+  </form>
+</main>
+</body>
+</html>

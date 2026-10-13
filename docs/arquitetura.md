@@ -4,14 +4,15 @@ Este documento parte do problema que a loja resolve e chega até os serviços qu
 **necessidade → requisito → funcionalidade → processo → domínio → serviço → dados → contratos → fluxos**,
 e cada decisão de decomposição vem com a sua justificativa.
 
-Detalhes de execução e deploy ficam em [backend/README.md](../backend/README.md) e
-[shipping-service/README.md](../shipping-service/README.md).
+Detalhes de execução e deploy ficam no README de cada serviço: [backend](../backend/README.md),
+[shipping-service](../shipping-service/README.md), [admin-auth-service](../admin-auth-service/README.md),
+[two-factor-service](../two-factor-service/README.md) e [notification-service](../notification-service/README.md).
 
 ---
 
 ## 1. Contexto e intervenção
 
-**Problema.** Uma pequena empresária (a Priscila) quer vender jogos de tabuleiro infantis pela internet.
+**Problema.** Uma pequena empresa (o lojista) quer vender jogos de tabuleiro infantis pela internet.
 Ela não tem equipe técnica, o orçamento de infraestrutura é praticamente zero (bem abaixo de R$ 110/mês) e o
 público final envolve crianças, o que exige cuidado extra com conteúdo e dados (LGPD, art. 14).
 
@@ -19,7 +20,7 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 
 - loja virtual pensada para pais escolherem jogos pela idade da criança;
 - checkout com pagamento terceirizado (Mercado Pago), sem guardar dados de cartão;
-- **painel administrativo** que dá à Priscila controle total do site sem depender de programador;
+- **painel administrativo** que dá ao lojista controle total do site sem depender de programador;
 - somente **serviços gerenciados em tier gratuito** (Cloudflare Workers, Google Cloud Run, Supabase), sem
   servidor próprio para manter.
 
@@ -29,14 +30,14 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 
 | ID | Necessidade | Quem sente |
 |---|---|---|
-| N1 | Vender pela internet recebendo por Pix, cartão e boleto, com segurança | Priscila / cliente |
+| N1 | Vender pela internet recebendo por Pix, cartão e boleto, com segurança | Lojista / cliente |
 | N2 | Encontrar rápido jogos adequados à idade e ao perfil da criança | Cliente (pais) |
-| N3 | Operar a loja sozinha no dia a dia (produtos, preços, promoções, novidades, textos) | Priscila |
-| N4 | Custo mensal de infraestrutura próximo de zero | Priscila |
-| N5 | Proteger o público infantil: nada publicado sem moderação e dados mínimos | Priscila / famílias |
-| N6 | Saber o custo e o prazo da entrega antes de pagar, e poder desligar isso | Cliente / Priscila |
-| N7 | Não vender o que não tem em estoque e acompanhar cada pedido até o envio | Priscila |
-| N8 | Acesso administrativo seguro e que possa ser delegado a outras pessoas | Priscila |
+| N3 | Operar a loja por conta própria no dia a dia (produtos, preços, promoções, novidades, textos) | Lojista |
+| N4 | Custo mensal de infraestrutura próximo de zero | Lojista |
+| N5 | Proteger o público infantil: nada publicado sem moderação e dados mínimos | Lojista / famílias |
+| N6 | Saber o custo e o prazo da entrega antes de pagar, e poder desligar isso | Cliente / Lojista |
+| N7 | Não vender o que não tem em estoque e acompanhar cada pedido até o envio | Lojista |
+| N8 | Acesso administrativo seguro e que possa ser delegado a outras pessoas | Lojista |
 
 ---
 
@@ -60,7 +61,8 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 | RF12 | Adicionar e remover e-mails de administradores pelo painel | N8 |
 | RF13 | Gerenciar pedidos: marcar como pago (modo manual), enviado ou cancelado | N7 |
 | RF14 | Entrar no painel com conta Google autorizada pela lista de admins | N8 |
-| RF15 | *(Fase 2)* Dashboard com faturamento, pedidos e visualizações por produto | N3 |
+| RF15 | Dashboard com faturamento, pedidos e visualizações por produto | N3 |
+| RF16 | Editar pelo painel os textos das políticas e os dados de contato/rodapé (telefone, e-mail, redes, razão social e CNPJ) | N3 |
 
 ### Não funcionais
 
@@ -107,12 +109,12 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 |---|---|---|---|
 | P1 | **Compra** | Cliente, loja, backend, shipping-service, Mercado Pago | navegar → carrinho → informar CEP e cotar frete → preencher dados → criar pedido (preço, estoque e frete recalculados no servidor) → redirecionar ao Mercado Pago |
 | P2 | **Confirmação de pagamento** | Mercado Pago, backend | webhook assinado → backend **reconsulta** o pagamento na API → pedido `PAID` → baixa de estoque com lock na linha do produto (uma única vez) |
-| P3 | **Expedição** | Priscila | ver pedidos pagos → enviar → marcar `SHIPPED` (ou cancelar) |
-| P4 | **Moderação de avaliações** | Cliente, Priscila | cliente envia (entra `pendente`) → Priscila aprova ou rejeita → só aprovadas aparecem na ficha |
-| P5 | **Gestão de catálogo** | Priscila | cadastrar/editar produto → definir estoque, promoção e dias em Novidades → loja reflete na hora |
-| P6 | **Gestão de conteúdo** | Priscila | editar história, valores e missão da página Sobre |
-| P7 | **Gestão de acesso** | Admin | login Google → e-mail conferido em `admin_users` a cada requisição → adicionar/remover admins |
-| P8 | **Configuração de frete** | Priscila | ligar o frete automático (só se o shipping-service estiver no ar e com token) → definir CEP de origem, caixa padrão e valor de frete grátis |
+| P3 | **Expedição** | Lojista | ver pedidos pagos → enviar → marcar `SHIPPED` (ou cancelar) |
+| P4 | **Moderação de avaliações** | Cliente, Lojista | cliente envia (entra `pendente`) → o lojista aprova ou rejeita → só aprovadas aparecem na ficha |
+| P5 | **Gestão de catálogo** | Lojista | cadastrar/editar produto → definir estoque, promoção e dias em Novidades → loja reflete na hora |
+| P6 | **Gestão de conteúdo** | Lojista | editar a página Sobre, os textos das políticas e os dados de contato do rodapé |
+| P7 | **Gestão de acesso** | Admin, backend, admin-auth-service | login Google → o admin-auth-service confere o ID token e a lista de admins → e-mail reconferido a cada requisição → adicionar/remover admins |
+| P8 | **Configuração de frete** | Lojista | ligar o frete automático (só se o shipping-service estiver no ar e com token) → definir CEP de origem, caixa padrão e valor de frete grátis |
 
 Ciclo de vida do pedido: `PENDING_PAYMENT → PAID → SHIPPED`, com `CANCELED` possível antes do envio.
 
@@ -125,14 +127,15 @@ da loja, e *generic* é um problema comum que pode ser terceirizado.
 
 | Domínio | Tipo | Responsabilidade | Dados (tabelas) |
 |---|---|---|---|
-| **catalog** | core | Produtos, faixas etárias, preço/promoção, estoque, período de Novidades | `products`, `categories` |
+| **catalog** | core | Produtos, faixas etárias, preço/promoção, estoque, período de Novidades, visualizações por produto | `products`, `categories`, `product_views` |
 | **order** | core | Pedido, itens, cliente/endereço, status, total calculado no servidor | `orders`, `order_items` |
 | **review** | supporting | Avaliações e sua moderação | `reviews` |
-| **content** | supporting | Conteúdo institucional (página Sobre) | `about_page`, `about_values` |
+| **newsletter** | supporting | Inscrições na newsletter (só o e-mail do adulto) e exportação da lista | `newsletter_subscribers` |
+| **content** | supporting | Conteúdo institucional (página Sobre, políticas, contato e rodapé) | `about_page`, `about_values`, `policy_pages`, `site_info` |
 | **settings** | supporting | Parâmetros da loja (toggle de frete, frete grátis, caixa padrão, CEP de origem) | `store_settings` |
 | **shipping** | generic | Cotação de frete na transportadora | nenhum (stateless) |
 | **payment** | generic | Cobrança e confirmação via Mercado Pago | nenhum próprio (status fica no pedido) |
-| **admin** | generic | Identidade e acesso ao painel | `admin_users`, `spring_session*` |
+| **admin** | generic | Sessão do painel e dashboard; a lista de admins fica no admin-auth-service | `spring_session*` (backend), `admin_users` (admin-auth-service) |
 
 ---
 
@@ -142,8 +145,8 @@ da loja, e *generic* é um problema comum que pode ser terceirizado.
 |---|---|---|---|---|
 | N1 Vender com segurança | RF03, RF04, RF05, RNF04 | F04, F06, F07 | order, payment | backend + Mercado Pago |
 | N2 Achar o jogo certo | RF01, RF02, RNF08 | F01, F02, F03 | catalog | backend + frontend |
-| N3 Operar sozinha | RF09, RF10, RF11, RF07 | F11, F12, F13, F16 | catalog, content, settings | backend (painel) |
-| N4 Custo ≈ zero | RNF01, RNF02 | — (transversal) | — | todos (Cloud Run a zero, Pages, Supabase free) |
+| N3 Operar por conta própria | RF09, RF10, RF11, RF07 | F11, F12, F13, F16 | catalog, content, settings | backend (painel) |
+| N4 Custo ≈ zero | RNF01, RNF02 | — (transversal) | — | todos (Cloud Run a zero, Workers, Supabase free) |
 | N5 Proteger crianças | RF08, RNF05 | F09, F10 | review | backend |
 | N6 Custo de entrega | RF07, RNF06, RNF07 | F05, F16 | shipping, settings | **shipping-service** + backend |
 | N7 Estoque e pedidos | RF04, RF06, RF13 | F06, F08, F15 | order, catalog | backend |
@@ -161,14 +164,18 @@ Cada domínio foi avaliado como candidato a serviço independente:
 | catalog-service | catalog | Produtos, estoque, promoção | ⏸ Mantido no backend | A baixa de estoque precisa estar na **mesma transação** da confirmação do pagamento (lock na linha do produto). Separar exigiria saga/compensação, complexidade injustificável para um negócio com uma operadora. |
 | order-service | order | Pedidos | ⏸ Mantido no backend | Mesmo motivo acima: pedido + estoque + pagamento formam uma unidade transacional. |
 | payment-service | payment | Mercado Pago | ⏸ Mantido no backend | Já é terceirizado (o Mercado Pago é o "serviço"). O módulo local só adapta, atrás da interface `PaymentGateway`. |
+| **two-factor-service** | (novo) autenticação | Gerar, enviar por e-mail e conferir código de uso único | ✅ **Extraído** | Segundo passo do login do painel. Sem dependência transacional com pedido ou estoque. Guarda só o HMAC do código, com validade curta, uso único e limite de tentativas. |
+| **admin-auth-service** | admin | Conferir o login Google do painel e ser o dono da lista de e-mails de admin | ✅ **Extraído** | Identidade é um subdomínio *generic*, sem transação com pedido ou estoque. O serviço tem a própria tabela (`admin_users`, esquema `admin_auth`) e decide sozinho quem entra; o backend só mantém a sessão do navegador. |
+| **notification-service** | (novo) notification | Avisar por e-mail que um produto entrou em promoção ou voltou ao estoque | ✅ **Extraído** | Recebe eventos de preço/estoque do backend e envia os e-mails; uma falha não afeta a venda. Guarda as inscrições com consentimento (LGPD) e link de descadastro. |
 | review-moderation-service | review | Filtro de conteúdo antes da fila | 🔜 Candidato futuro | Bom candidato quando houver filtro automático (lista de palavras, IA). Hoje é só CRUD + aprovação. |
 | recommendation-service | catalog (leitura) | Sugerir jogos por idade/habilidade | 🔜 Candidato futuro | Só leitura do catálogo; pode consumir a API pública. |
 | content / settings / admin | — | Conteúdo, parâmetros e acesso | ⏸ Mantidos | Pouco volume e nenhuma integração externa. Separar só adicionaria custo (cold start, mais conexões no Supabase free). |
 
 **Por que não "um microsserviço por domínio"?** O free tier do Supabase tem poucas conexões (o backend já
-usa `maximum-pool-size: 3`). Cada serviço extra no Cloud Run também tem seu próprio *cold start*. E a Priscila
-precisa operar sozinha (RNF01, RNF02). A decomposição escolhida é um **backend modular** (fronteiras de
-domínio claras em pacotes) + **microsserviços onde há ganho real**. Hoje isso vale para o frete.
+usa `maximum-pool-size: 3`). Cada serviço extra no Cloud Run também tem seu próprio *cold start*. E o lojista
+precisa operar sem ajuda técnica (RNF01, RNF02). A decomposição escolhida é um **backend modular** (fronteiras de
+domínio claras em pacotes) + **microsserviços onde há ganho real**. Hoje isso vale para o frete e para a
+autenticação de admins, para o código por e-mail do painel e para os avisos de produto.
 
 ---
 
@@ -177,7 +184,7 @@ domínio claras em pacotes) + **microsserviços onde há ganho real**. Hoje isso
 ```mermaid
 flowchart LR
     cliente([Cliente / pais]) -->|HTTPS| loja
-    priscila([Priscila / admins]) -->|HTTPS| painel
+    lojista([Lojista / admins]) -->|HTTPS| painel
 
     subgraph CF[Cloudflare Workers · OpenNext]
         loja[frontend<br/>Next.js<br/>:3000 local]
@@ -187,9 +194,12 @@ flowchart LR
         subgraph BE[backend · Spring Boot · :8080]
             api[API REST /api/**]
             painel[Painel admin Thymeleaf /admin/**]
-            mods[catalog · order · review · content<br/>settings · payment · admin<br/>storage · notification · account]
+            mods[catalog · order · review · content<br/>settings · payment · admin<br/>storage · notification · account · alert]
         end
         ship[shipping-service<br/>Spring Boot · :8081]
+        auth[admin-auth-service<br/>Spring Boot · :8083]
+        twofa[two-factor-service<br/>Spring Boot · :8082]
+        notif[notification-service<br/>Spring Boot · :8084]
     end
 
     loja -->|REST JSON| api
@@ -197,11 +207,21 @@ flowchart LR
     painel --- mods
     mods -->|REST + X-Api-Key| ship
     ship -->|REST| ME[(Melhor Envio)]
+    mods -->|REST + X-Api-Key| auth
+    auth -->|JDBC :5432 · esquema admin_auth| DB
+    auth -->|chaves públicas JWKS| G
     mods -->|JDBC :5432| DB[(Supabase PostgreSQL)]
     mods -->|REST SDK| MP[(Mercado Pago)]
     mods -->|REST| ST[(Supabase Storage)]
     mods -->|REST| RS[(Resend)]
     loja -.->|fotos por URL pública| ST
+    mods -->|REST + X-Api-Key| twofa
+    mods -->|REST + X-Api-Key| notif
+    twofa -->|JDBC :5432 · esquema two_factor| DB
+    twofa -->|REST| RS
+    notif -->|JDBC :5432 · esquema notification| DB
+    notif -->|REST em lote| RS
+    cliente -.->|link de descadastro do e-mail| notif
     MP -->|webhook assinado| api
     painel -->|OAuth2| G[(Google)]
 ```
@@ -213,6 +233,10 @@ flowchart LR
 | **frontend** | Apresentação, carrinho no navegador, rotas públicas em português | Preços "verdadeiros" (sempre vêm da API), segredos |
 | **backend** | Regras da loja: catálogo, pedido, estoque, moderação, conteúdo, configurações, acesso; **política** de frete (toggle, frete grátis, caixa padrão) | Qual transportadora é usada e como a API dela funciona |
 | **shipping-service** | Integração com a transportadora: autenticação, formato da API, timeout, normalização e ordenação das opções | Produtos, preços de venda, pedidos, toggle, frete grátis, banco de dados |
+| **admin-auth-service** | Lista de e-mails de admin (tabela própria), conferência do ID token do Google, regra "ninguém remove a si mesmo", primeiro admin (`ADMIN_BOOTSTRAP_EMAIL`) | Sessão do navegador, telas do painel, produtos, pedidos |
+
+| **two-factor-service** | Código de uso único: sorteio, HMAC, validade, limite de tentativas e de pedidos, e-mail com o código | Quem é a pessoa, por que o código foi pedido, sessão, telas |
+| **notification-service** | Pedidos de aviso (e-mail + produto + tipo) com consentimento, envio dos avisos, intervalo mínimo entre avisos, descadastro | Catálogo (nome, preço e link vêm no evento), pedidos, newsletter |
 
 Não há sobreposição: a regra "frete grátis acima de R$ X" é **comercial** e fica no backend (domínio
 `settings`). A regra "como pedir preço ao Melhor Envio" é **técnica/integração** e fica no shipping-service.
@@ -227,17 +251,24 @@ O backend recota o frete ao fechar o pedido, de modo que o preço nunca vem do n
 | De → Para | Protocolo | Por quê | Se falhar |
 |---|---|---|---|
 | frontend → backend | REST/JSON (CORS) | Única fonte de verdade de preço, estoque e pedidos | Loja sem catálogo e sem checkout |
-| backend → shipping-service | REST/JSON + `X-Api-Key` | Cotar frete (F05) e recotar ao fechar pedido | Só a cotação falha (HTTP 422 com mensagem amigável); o resto da loja segue no ar, e a Priscila pode desligar o frete no painel para voltar ao "a combinar" |
+| backend → shipping-service | REST/JSON + `X-Api-Key` | Cotar frete (F05) e recotar ao fechar pedido | Só a cotação falha (HTTP 422 com mensagem amigável); o resto da loja segue no ar, e o lojista pode desligar o frete no painel para voltar ao "a combinar" |
 | shipping-service → Melhor Envio | REST + Bearer token | Preço e prazo reais | `502` com mensagem amigável (timeout de 8 s) |
-| backend → Mercado Pago | REST (SDK) | Criar preferência e consultar pagamento | Modo manual: Priscila confirma no painel |
+| backend → Mercado Pago | REST (SDK) | Criar preferência e consultar pagamento | Modo manual: o lojista confirma no painel |
 | Mercado Pago → backend | Webhook assinado (`x-signature`) | Avisar mudança de pagamento | Reconsulta ao cliente voltar (`payment-sync`) |
 | backend → Supabase | JDBC (Session pooler) | Persistência | Indisponibilidade da loja |
-| backend → Google | OAuth2 / OIDC | Login do painel | Painel inacessível; a loja segue no ar |
+| backend → Google | OAuth2 / OIDC | Redirecionamento do login do painel | Painel inacessível; a loja segue no ar |
+| backend → admin-auth-service | REST/JSON + `X-Api-Key` | Conferir o login Google, perguntar se o e-mail logado continua admin (resposta guardada por 30 s) e gerenciar a lista | Ninguém entra no painel (nunca libera na dúvida); a loja segue no ar. O aviso de pedido pago aos admins não é enviado |
+| admin-auth-service → Google | HTTPS (JWKS) | Baixar as chaves públicas para conferir a assinatura do ID token | Login recusado (`401`) |
 | backend → Supabase Storage | REST + chave secreta | Guardar e apagar as fotos de produto (bucket público `product-images`) | O upload falha com mensagem amigável no painel; o produto é salvo sem a foto nova |
 | frontend → Supabase Storage | HTTPS (URL pública) | Exibir as fotos sem passar pelo Cloud Run | As fotos não carregam até o storage voltar; o resto da loja segue no ar |
 | frontend → Supabase Auth | HTTPS (SDK no navegador) | Login do cliente com Google | Só o login falha; a compra sem cadastro segue |
 | backend → Supabase Auth | REST (`GET /auth/v1/user`) | Conferir o token do cliente em "Meus pedidos" e ao fechar pedido | "Meus pedidos" responde `401`; o pedido é fechado sem cadastro |
 | backend → Resend | REST + Bearer token | E-mails de pedido recebido, pago e enviado | Só o e-mail falha (vai para o log); o pedido segue normalmente |
+| backend → two-factor-service | REST/JSON + `X-Api-Key` | Depois do login do painel: pedir um código para o e-mail do admin e conferir o que ele digitou (finalidade `admin-login`) | Ninguém passa da tela do código (nunca libera na dúvida); a loja segue no ar. Sem `TWO_FACTOR_SERVICE_URL`, o painel pede só o login |
+| two-factor-service → Resend | REST + Bearer token | Enviar o código | `503`; o desafio é apagado e nenhum código fica valendo |
+| backend → notification-service | REST/JSON + `X-Api-Key` | Gravar o "avise-me" feito na ficha do jogo; depois do commit, publicar "entrou em promoção" / "voltou ao estoque" e apagar as inscrições de produto excluído | O "avise-me" responde 422 com mensagem amigável; a falha ao publicar só vai para o log. O que o lojista salvou no painel não é desfeito. Sem `NOTIFICATION_SERVICE_URL`, a loja não mostra o "avise-me" |
+| notification-service → Resend | REST + Bearer token (lote de até 100) | Enviar os avisos | O lote conta como `failed` e ninguém é marcado como avisado; o evento pode ser repetido |
+| navegador → notification-service | HTTPS, sem chave (token no link) | Página de descadastro do e-mail | A pessoa tenta de novo depois; o cabeçalho `List-Unsubscribe` aponta para a mesma rota |
 
 ### Fluxo P1 + P2: compra com frete e pagamento
 
@@ -275,7 +306,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor C as Cliente
-    actor D as Priscila
+    actor D as Lojista
     participant F as frontend
     participant B as backend
     C->>F: escreve avaliação
@@ -296,7 +327,7 @@ sequenceDiagram
 | settings | shipping, admin | Só deixa ligar o frete se o provedor estiver configurado; registra qual admin alterou |
 | catalog ⇄ review | — | A ficha do produto exibe avaliações aprovadas; a avaliação referencia o produto |
 | content | admin | Registra qual admin editou |
-| admin | catalog, order, review | Dashboard com contagens de cada domínio |
+| admin | catalog, order, review | Dashboard com contagens e métricas (faturamento, pedidos, mais vendidos, mais vistos) de cada domínio |
 | catalog | storage | Guarda as fotos dos produtos e monta as URLs públicas |
 | account | order | "Meus pedidos" lista os pedidos da conta; o `order` recebe a identidade do cliente ao fechar pedido |
 | notification | order, admin | Escuta o evento `OrderEvent` e monta os e-mails; lê os e-mails dos admins para o aviso de pedido pago |
@@ -417,21 +448,41 @@ erDiagram
         int package_height_cm
         int package_length_cm
     }
-    admin_users {
-        bigint id PK
-        varchar email UK
-        varchar created_by_email
+    site_info {
+        bigint id PK "sempre 1"
+        varchar contact_email
+        varchar contact_phone
+        varchar business_hours
+        varchar instagram_url
+        varchar facebook_url
+        varchar tiktok_url
+        varchar legal_name
+        varchar cnpj
+        varchar address
     }
+    policy_pages {
+        varchar slug PK "privacy, returns, shipping"
+        varchar title
+        varchar body
+    }
+    product_views {
+        bigint id PK
+        bigint product_id FK
+        date view_date
+        bigint views
+    }
+    products ||--o{ product_views : "visualizações por dia"
 ```
 
 | Módulo (domínio) | Tabelas de que é dono | Entidades JPA |
 |---|---|---|
-| catalog | `categories`, `products`, `product_images` | `Category`, `Product`, `ProductImage` |
+| catalog | `categories`, `products`, `product_images`, `product_views` | `Category`, `Product`, `ProductImage`, `ProductView` |
 | review | `reviews` | `Review` |
+| newsletter | `newsletter_subscribers` | `NewsletterSubscriber` |
 | order | `orders`, `order_items` | `Order`, `OrderItem` (+ `Customer`, `Address` embutidos) |
-| content | `about_page`, `about_values` | `AboutPage`, `AboutValue` |
+| content | `about_page`, `about_values`, `policy_pages`, `site_info` | `AboutPage`, `AboutValue`, `PolicyPage`, `SiteInfo` |
 | settings | `store_settings` | `StoreSettings` |
-| admin | `admin_users`, `spring_session`, `spring_session_attributes` | `AdminUser` (sessões via Spring Session JDBC) |
+| admin | `spring_session`, `spring_session_attributes` | — (sessões via Spring Session JDBC; a lista de admins vem do admin-auth-service pela interface `AdminDirectory`) |
 | payment | — (o estado do pagamento é gravado no pedido: `payment_*`) | — |
 | shipping (adaptador) | — (o resultado vira snapshot no pedido: `shipping_cost`, `shipping_service`) | — |
 | storage (adaptador) | — (os arquivos ficam no Supabase Storage; o `catalog` guarda só a chave) | — |
@@ -488,6 +539,60 @@ classDiagram
 A única configuração do serviço (token, sandbox, chave de API) vem de variáveis de ambiente e
 segredos do Cloud Run, e não de um banco.
 
+### 11.3 admin-auth-service: Supabase PostgreSQL (esquema `admin_auth`)
+
+Uma única tabela, versionada pelo Flyway do próprio serviço:
+
+```mermaid
+erDiagram
+    admin_users {
+        bigint id PK
+        varchar email UK
+        varchar created_by_email
+        timestamptz created_at
+    }
+```
+
+O e-mail é sempre guardado em minúsculas e sem espaços. Não há chave estrangeira para o banco do backend:
+os campos `updated_by_email` das tabelas do backend guardam o e-mail como texto.
+
+### 11.4 two-factor-service: Supabase PostgreSQL (esquema `two_factor`)
+
+```mermaid
+erDiagram
+    challenges {
+        uuid id PK
+        varchar email
+        varchar purpose
+        varchar code_hash
+        int attempts
+        timestamptz created_at
+        timestamptz expires_at
+        timestamptz consumed_at
+    }
+```
+
+O código nunca é gravado: `code_hash` é o HMAC-SHA256 dele com uma chave que só o serviço tem
+(`TWO_FACTOR_CODE_SECRET`). Linhas vencidas há mais de um dia são apagadas a cada novo pedido de código.
+
+### 11.5 notification-service: Supabase PostgreSQL (esquema `notification`)
+
+```mermaid
+erDiagram
+    subscriptions {
+        bigint id PK
+        varchar email
+        bigint product_id
+        varchar alert_type
+        varchar unsubscribe_token UK
+        timestamptz consented_at
+        timestamptz last_notified_at
+    }
+```
+
+`(email, product_id, alert_type)` é único. `product_id` é o id do produto no backend, guardado como número
+solto, sem chave estrangeira. `consented_at` é o registro do consentimento (LGPD); o descadastro apaga a linha.
+
 ---
 
 ## 12. Autonomia dos dados e bancos previstos
@@ -498,6 +603,9 @@ segredos do Cloud Run, e não de um banco.
 |---|---|---|---|
 | backend | Supabase PostgreSQL (free, 500 MB), banco `postgres`, esquema `public`, via Session pooler :5432. Local: H2 em modo PostgreSQL | **Só o backend** (credenciais `DB_USER`/`DB_PASSWORD` só nele) | Em uso |
 | shipping-service | **Nenhum.** Sem estado, tudo vem na requisição | — | Em uso |
+| admin-auth-service | Mesmo projeto Supabase, esquema `admin_auth` (fora do `public`, não aparece no PostgREST), com usuário próprio. Local: H2 em modo PostgreSQL (`data/admin-auth`) | **Só o admin-auth-service** | Em uso |
+| two-factor-service | Mesmo projeto Supabase, esquema `two_factor`, com usuário próprio. Local: H2 em modo PostgreSQL (`data/two-factor`) | **Só o two-factor-service** | Em uso local; falta criar o esquema e o usuário no Supabase |
+| notification-service | Mesmo projeto Supabase, esquema `notification`, com usuário próprio. Local: H2 em modo PostgreSQL (`data/notification`) | **Só o notification-service** | Em uso local; falta criar o esquema e o usuário no Supabase |
 | shipping-service (evolução) | Cache em memória das cotações (ex.: Caffeine, TTL de alguns minutos, chave = origem + destino + volumes) | Só o próprio serviço | Previsto, se a cota do Melhor Envio apertar |
 | review-moderation-service (candidato) | Banco próprio: esquema `moderation` no mesmo projeto Supabase, com usuário próprio (sem acesso ao `public`) | Só ele | Previsto |
 | recommendation-service (candidato) | Modelo de leitura próprio (projeção do catálogo: slug, idade, habilidade), atualizado pela API pública `GET /api/products` | Só ele | Previsto |
@@ -510,7 +618,10 @@ Como cada serviço fica autônomo:
   snapshot no pedido (`shipping_cost`, `shipping_service`). Se o Melhor Envio for trocado, pedidos antigos
   continuam corretos.
 - **Os segredos também são separados.** O `MELHOR_ENVIO_TOKEN` existe só no shipping-service, e as
-  credenciais do banco existem só no backend. A chave `SHIPPING_SERVICE_API_KEY` é o único segredo compartilhado.
+  credenciais do esquema `public` existem só no backend. As chaves `SHIPPING_SERVICE_API_KEY` e
+  `ADMIN_AUTH_SERVICE_API_KEY` são os únicos segredos compartilhados, cada uma com um serviço.
+- **A lista de admins não está no banco do backend.** O backend pergunta ao admin-auth-service e guarda a
+  resposta por 30 segundos; remover um admin pelo painel limpa esse cache na hora.
 - **Serviços futuros no mesmo Supabase** (para ficar no free tier) usam **esquema e usuário próprios** com
   `GRANT` só no seu esquema. A separação lógica garante a autonomia sem pagar um segundo banco.
 - **Dentro do backend**, a autonomia é por módulo: cada tabela tem um único módulo dono (§11.1). As chaves
@@ -537,8 +648,8 @@ Como cada serviço fica autônomo:
 |---|---|---|
 | Pedido + estoque + pagamento (dentro do backend) | **Consistência forte (ACID)** numa transação | `OrderService` é `@Transactional`. Ao aprovar, o pedido vira `PAID` e o estoque baixa na **mesma transação**, com lock pessimista na linha do produto (`findByIdForUpdate`, `PESSIMISTIC_WRITE`). |
 | Webhook do Mercado Pago | **Consistência eventual + idempotência** | O pedido nasce `PENDING_PAYMENT`. O webhook só traz um id, e o backend **reconsulta** o pagamento na API. `markPaid()` retorna `false` se o pedido já estiver pago, então notificações repetidas não baixam o estoque duas vezes. Um webhook de pedido inexistente responde 200 para o Mercado Pago não reenviar. |
-| Webhook atrasado ou perdido | **Reconciliação ativa** | Quando o cliente volta do checkout, a loja chama `POST /api/orders/{id}/payment-sync`, que faz a mesma consulta. Se o Mercado Pago não estiver configurado, a Priscila usa o **modo manual** ("marcar como pago"). |
-| Venda do último item para dois clientes | **Compensação** (em vez de reserva distribuída) | O estoque é conferido ao criar o pedido, mas só baixa no pagamento. Se dois pagarem o último item, o estoque vai a 0 e o pedido ganha `stock_issue = true`, com alerta no painel. A Priscila compensa (estorno ou prazo maior). Aceito porque o volume é baixo e evita reservas com expiração. |
+| Webhook atrasado ou perdido | **Reconciliação ativa** | Quando o cliente volta do checkout, a loja chama `POST /api/orders/{id}/payment-sync`, que faz a mesma consulta. Se o Mercado Pago não estiver configurado, o lojista usa o **modo manual** ("marcar como pago"). |
+| Venda do último item para dois clientes | **Compensação** (em vez de reserva distribuída) | O estoque é conferido ao criar o pedido, mas só baixa no pagamento. Se dois pagarem o último item, o estoque vai a 0 e o pedido ganha `stock_issue = true`, com alerta no painel. O lojista compensa (estorno ou prazo maior). Aceito porque o volume é baixo e evita reservas com expiração. |
 | backend ↔ shipping-service | **Sem estado compartilhado + revalidação** | A cotação é leitura pura, sem efeito colateral, então pode ser repetida à vontade e não precisa de transação distribuída. O preço mostrado no checkout **não é confiável**: ao fechar o pedido, o backend **recota** e usa o preço do servidor para o `shippingOptionId` escolhido. Se a opção sumiu, o pedido é recusado com mensagem clara (HTTP 422). |
 | Falha do shipping-service | **Falha rápida e isolada** | Timeout de 15 s no backend e de 8 s no serviço até a transportadora. Erro 5xx vira `BusinessException` (422) com mensagem amigável; erro 4xx (chave ou payload) vira mensagem genérica. Nenhum pedido é gravado sem frete válido. |
 | Mudanças no catálogo depois da compra | **Snapshot (desnormalização intencional)** | `order_items` copia `product_slug`, `product_name` e `unit_price`, e `orders` copia `shipping_cost` e `shipping_service`. Editar ou excluir produto, preço ou transportadora não altera pedidos antigos. |
@@ -583,7 +694,11 @@ Convenções comuns:
 | `GET /api/products` | query opcionais: `category` (slug), `cooperative`, `isNew`, `onSale` (booleanos) | `200` `[Product]` | — |
 | `GET /api/products/{slug}` | — | `200` `Product` | `404` |
 | `POST /api/products/{slug}/reviews` | `{name, rating (1–5), comment (≤1000)}` | `202` `{"status": "pending"}` | `400`, `404` |
+| `POST /api/newsletter-subscriptions` | `{email}` | `204` (também quando o e-mail já estava inscrito) | `400` |
+| `POST /api/products/{slug}/views` | — (a loja chama ao abrir a ficha; só soma um contador por dia) | `204` | `404` |
 | `GET /api/content/about` | — | `200` `{heroText, values: [{icon, title, text}], missionEmoji, missionTitle, missionText}` | — |
+| `GET /api/content/site-info` | — | `200` `{contactEmail, contactPhone, whatsappUrl, businessHours, instagramUrl, facebookUrl, tiktokUrl, legalName, cnpj, address}` (campo não preenchido vem `null`) | — |
+| `GET /api/content/policies/{slug}` | `slug` = `privacy`, `returns` ou `shipping` | `200` `{slug, title, body, updatedAt}` | `404` |
 | `GET /api/settings` | — | `200` `{shippingEnabled, freeShippingThreshold}` | — |
 | `POST /api/shipping/quote` | `{postalCode, items: [{slug, quantity (1–20)}] (1–50)}` | `200` `[ShippingOption]` | `400`, `422` (frete desligado, CEP sem entrega, serviço fora) |
 | `POST /api/orders` | `OrderRequest` (abaixo) | `201` `{orderId (uuid), number, total, checkoutUrl}` | `400`, `422` (esgotado, frete inválido), `502` (Mercado Pago) |
@@ -644,6 +759,16 @@ Os itens levam **só slug e quantidade**: preço, total e frete são calculados 
 }
 ```
 
+Rotas ligadas aos dois serviços mais novos:
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/product-alerts` | `{email, productSlug, type, consent: true}`; `type` = `PROMOTION` ou `BACK_IN_STOCK` | `204` (repetir o pedido não é erro) | `400` (inclusive sem consentimento) · `404` produto · `422` aviso sem sentido (jogo já disponível / já em promoção) ou serviço fora do ar |
+| `GET /api/settings` | — | agora traz também `productAlertsEnabled` | — |
+
+No painel, `GET`/`POST /admin/verificacao` e `POST /admin/verificacao/reenviar` são a tela do código do
+two-factor-service; enquanto o código não é digitado, qualquer outra rota `/admin/**` redireciona para lá.
+
 ### 14.2 shipping-service: API interna (`/api/**` exige `X-Api-Key`)
 
 | Método e rota | Corpo | Resposta de sucesso | Erros |
@@ -672,19 +797,54 @@ o frete grátis é aplicado pelo backend.
 desconhecidos, com `@JsonIgnoreProperties(ignoreUnknown = true)`). Uma mudança incompatível exige uma nova
 rota (`/api/v2/quotes`), mantendo a antiga até o backend migrar.
 
-### 14.3 backend: painel admin (`/admin/**`)
+### 14.3 admin-auth-service: API interna (`/api/**` exige `X-Api-Key`)
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/logins` | `{idToken}` (ID token do Google recebido pelo backend) | `200` `{email, admin: true}` | `401` token inválido · `403` e-mail não verificado ou fora da lista · `503` sem `GOOGLE_CLIENT_ID` |
+| `GET /api/authorizations?email=` | — | `200` `{email, admin}` | — |
+| `GET /api/admins` | — | `200` `[{id, email, createdByEmail, createdAt}]` | — |
+| `POST /api/admins` | `{email, createdByEmail}` | `201` admin criado | `400`, `409` (já é admin) |
+| `DELETE /api/admins/{id}?requestedBy=` | `requestedBy` = e-mail de quem está removendo | `204` | `404`, `409` (remover a si mesmo) |
+| `GET /actuator/health` | — | `200` | — |
+
+### 14.4 two-factor-service: API interna (`/api/**` exige `X-Api-Key`)
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/challenges` | `{email, purpose}` | `201` `{id, email, purpose, expiresAt}` (o código vai só no e-mail) | `400` · `429` muitos pedidos para o e-mail · `503` e-mail não enviado |
+| `POST /api/challenges/{id}/verifications` | `{code}` (6 números) | `200` `{id, email, purpose, verified: true}` | `400` · `404` · `410` vencido, usado ou bloqueado · `422` código incorreto (`attemptsLeft`) |
+| `GET /actuator/health` | — | `200` | — |
+
+### 14.5 notification-service: API interna (`/api/**` exige `X-Api-Key`) e descadastro (aberto)
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/subscriptions` | `{email, productId, type, consent: true}`; `type` = `PROMOTION` ou `BACK_IN_STOCK` | `201` nova · `200` já existia: `{id, email, productId, type, consentedAt, lastNotifiedAt}` | `400` (inclusive sem consentimento) |
+| `GET /api/subscriptions?email=&productId=` | filtros opcionais | `200` lista | — |
+| `DELETE /api/subscriptions/{id}` | — | `204` | `404` |
+| `DELETE /api/subscriptions?email=` ou `?productId=` | exatamente um dos dois | `200` `{removed}` | `400` |
+| `POST /api/product-events` | `{type, productId, productName, productUrl, price, originalPrice?}` | `200` `{subscribers, sent, failed, skipped}` | `400` |
+| `GET /descadastro/{token}` | sem chave | `200` página de confirmação (não cancela nada) | — |
+| `POST /descadastro/{token}` | sem chave; `all=true` cancela todos os avisos do e-mail | `200` página "aviso cancelado" | — |
+| `GET /actuator/health` | — | `200` | — |
+
+### 14.6 backend: painel admin (`/admin/**`)
 
 Não é uma API REST: são páginas Thymeleaf renderizadas no servidor, com formulários HTML (`POST` + token
-CSRF), protegidas por login Google e pelo e-mail conferido em `admin_users`.
+CSRF), protegidas por login Google e pelo e-mail conferido no admin-auth-service.
 
 | Rota | Ações |
 |---|---|
-| `/admin` | Dashboard |
+| `/admin` | Dashboard: contadores e métricas do período (`?periodo=7`, `30` ou `90` dias): faturamento, pedidos pagos, valor médio, visualizações, faturamento por dia, mais vendidos e mais vistos |
 | `/admin/produtos` | listar, `novo`, `{id}/editar` (com envio de fotos, `multipart/form-data`), `{id}/fotos/{imageId}/capa`, `{id}/fotos/{imageId}/excluir`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
 | `/admin/categorias` | listar, criar, editar, excluir faixas etárias |
 | `/admin/avaliacoes` | fila de moderação, `{id}/aprovar`, `{id}/rejeitar`, `{id}/excluir` |
+| `/admin/newsletter` | lista de inscritos, `exportar` (CSV), `{id}/excluir` |
 | `/admin/pedidos` | listar/filtrar, `{id}`, `{id}/marcar-pago`, `{id}/marcar-enviado`, `{id}/cancelar` |
 | `/admin/sobre` | editar a página Sobre |
+| `/admin/politicas` | editar os textos de Privacidade, Trocas/Devoluções/Garantia e Frete |
+| `/admin/contato` | editar e-mail, telefone/WhatsApp, horário, redes sociais, razão social, CNPJ e endereço |
 | `/admin/configuracoes` | liga/desliga frete, CEP de origem, frete grátis, caixa padrão |
 | `/admin/admins` | adicionar e remover administradores |
 
@@ -706,7 +866,9 @@ Mercado Pago e o banco.
 | C6 | Reconciliar pagamento | frontend → backend → Mercado Pago | síncrono | `POST /api/orders/{id}/payment-sync` | modo manual no painel |
 | C7 | Enviar avaliação | frontend → backend | síncrono | `POST /api/products/{slug}/reviews` | cliente tenta de novo |
 | C8 | Ligar frete no painel | painel → backend → shipping-service | síncrono | `GET /api/provider` | toggle travado, frete "a combinar" |
-| C9 | Login do painel | navegador → Google → backend | OAuth2 redirect | OIDC | painel inacessível, loja no ar |
+| C9 | Login do painel | navegador → Google → backend → admin-auth-service | OAuth2 redirect + síncrono | OIDC, depois `POST /api/logins` | painel inacessível, loja no ar |
+| C11 | Conferir acesso a cada requisição do painel | backend → admin-auth-service | síncrono, com cache de 30 s | `GET /api/authorizations` | acesso negado até o serviço voltar |
+| C12 | Contar visualização da ficha | frontend → backend | síncrono, sem esperar resposta | `POST /api/products/{slug}/views` | a visualização não é contada; a página não é afetada |
 | C10 | Monitorar | Cloud Run → serviços | síncrono | `/actuator/health` | instância reiniciada |
 
 Os fluxos C2, C3 e C5 estão detalhados no diagrama de sequência da §10. Os de falha e de configuração
@@ -751,7 +913,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    actor D as Priscila
+    actor D as Lojista
     participant B as backend (painel)
     participant S as shipping-service
     D->>B: GET /admin/configuracoes
@@ -773,10 +935,13 @@ sequenceDiagram
 | frontend (Next.js) | **3000** | Cloudflare Workers (OpenNext), HTTPS 443 | Pública |
 | backend (Spring Boot) | **8080** | Cloud Run, HTTPS 443 (`PORT` injetada) | Pública (`/api/**`), painel protegido por login |
 | shipping-service (Spring Boot) | **8081** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
+| two-factor-service (Spring Boot) | **8082** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
+| admin-auth-service (Spring Boot) | **8083** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
+| notification-service (Spring Boot) | **8084** | Cloud Run, HTTPS 443 (`PORT` injetada) | API: só o backend (`X-Api-Key`). Página `/descadastro/{token}`: pública |
 | H2 console (dev) | 8080 `/h2-console` | desligado | Local |
-| Supabase PostgreSQL | — | 5432 (Session pooler, SSL) | Só o backend |
+| Supabase PostgreSQL | — | 5432 (Session pooler, SSL) | O backend (esquema `public`), o admin-auth-service (`admin_auth`), o two-factor-service (`two_factor`) e o notification-service (`notification`), cada um com o seu usuário |
 
-Para subir os dois serviços Java juntos: `docker compose up --build` na raiz ([docker-compose.yml](../docker-compose.yml)).
+Para subir os cinco serviços Java juntos: `docker compose up --build` na raiz ([docker-compose.yml](../docker-compose.yml)).
 
 Rotas e contratos de cada serviço: §14.
 

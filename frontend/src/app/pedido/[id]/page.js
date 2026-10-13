@@ -30,7 +30,7 @@ const STATUS_MESSAGES = {
   },
 };
 
-// Enquanto aguarda pagamento, consulta de novo a cada 10 s (por até 10 min).
+// polling enquanto aguarda pagamento: a cada 10 s, por até 10 min
 const POLL_INTERVAL_MS = 10_000;
 const POLL_LIMIT = 60;
 
@@ -57,8 +57,7 @@ export default function PedidoPage() {
       }
     }
 
-    // Voltando do Mercado Pago (?payment_id=...): pede ao backend para conferir
-    // o pagamento na hora, sem depender só do webhook.
+    // voltando do Mercado Pago: confere o pagamento na hora, sem esperar o webhook
     const paymentId = new URLSearchParams(window.location.search).get("payment_id");
     const sync =
       paymentId && /^\d+$/.test(paymentId)

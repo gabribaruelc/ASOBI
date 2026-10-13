@@ -168,9 +168,21 @@
   color: #fff;
 }
 
+/* Em telas menores a busca desce para uma linha própria, abaixo do logo. */
 @media (max-width: 900px) {
+  .headerInner {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+
+  .actions {
+    margin-left: auto;
+  }
+
   .search {
-    display: none;
+    order: 1;
+    flex-basis: 100%;
+    max-width: none;
   }
 }
 

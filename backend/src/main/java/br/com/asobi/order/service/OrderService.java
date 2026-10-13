@@ -61,10 +61,7 @@ public class OrderService {
 		this.clock = clock;
 	}
 
-	/**
-	 * Cria o pedido com preços do banco e confere o estoque. O estoque só é
-	 * baixado quando o pagamento é aprovado (ver {@link #applyPayment}).
-	 */
+	/** Confere o estoque; a baixa só acontece quando o pagamento é aprovado (ver {@link #applyPayment}). */
 	public OrderCreatedResponse placeOrder(OrderRequest request, Optional<CustomerIdentity> customer) {
 		Map<String, Integer> quantities = mergeQuantities(request.items());
 		Map<String, Product> products = productRepository.findBySlugIn(quantities.keySet()).stream()
@@ -87,7 +84,7 @@ public class OrderService {
 			order.addItem(product, quantity);
 		});
 
-		// Frete automático ligado: recota e usa o preço do servidor para a opção escolhida.
+		// recota no servidor em vez de confiar no preço do checkout
 		if (shippingService.isEnabled()) {
 			if (!StringUtils.hasText(request.shippingOptionId())) {
 				throw new BusinessException("Escolha uma opção de frete.");
@@ -111,10 +108,7 @@ public class OrderService {
 				.orElseThrow(() -> new NotFoundException("Pedido não encontrado.")));
 	}
 
-	/**
-	 * "Meus pedidos": os feitos logado e, se o e-mail da conta é confirmado, também os
-	 * feitos sem cadastro com esse mesmo e-mail.
-	 */
+	/** "Meus pedidos": os feitos logado e, com e-mail confirmado, também os sem cadastro com esse e-mail. */
 	@Transactional(readOnly = true)
 	public List<OrderStatusResponse> listForCustomer(CustomerIdentity customer) {
 		List<Order> orders = customer.emailVerified()
@@ -123,10 +117,7 @@ public class OrderService {
 		return orders.stream().map(OrderStatusResponse::from).toList();
 	}
 
-	/**
-	 * Aplica o que o provedor de pagamento informou. Idempotente: o webhook
-	 * pode chegar várias vezes, mas o estoque só baixa na primeira aprovação.
-	 */
+	/** Idempotente: o webhook pode chegar mais de uma vez, mas o estoque só baixa na primeira aprovação. */
 	public void applyPayment(PaymentUpdate update) {
 		Order order = orderRepository.findByPublicId(update.orderPublicId())
 				.orElseThrow(() -> new NotFoundException("Pedido não encontrado: " + update.orderPublicId()));
@@ -140,15 +131,14 @@ public class OrderService {
 				}
 			}
 			case PENDING -> {
-				// Pix/boleto aguardando: nada muda até aprovar ou expirar.
+				// Pix/boleto ainda não pago
 			}
 		}
 	}
 
 	/**
-	 * Cliente voltou do Mercado Pago com o id do pagamento: consulta o
-	 * pagamento na API (não confia na URL) e aplica, se for deste pedido.
-	 * Garante a atualização mesmo quando o webhook atrasa ou não chega (ex.: localhost).
+	 * Cobre o caso do webhook atrasar ou não chegar (ex.: localhost). O status
+	 * vem da API do Mercado Pago, não da URL de retorno.
 	 */
 	public OrderStatusResponse syncPayment(UUID publicId, String paymentId) {
 		PaymentUpdate update = paymentGateway.fetchPayment(paymentId)
@@ -160,7 +150,6 @@ public class OrderService {
 		return getOrderStatus(publicId);
 	}
 
-	/** "Marcar como pago" no painel (Pix direto, transferência, modo manual). */
 	public void markPaidManually(Long id) {
 		Order order = getForAdmin(id);
 		if (order.getStatus() != OrderStatus.PENDING_PAYMENT) {
@@ -212,7 +201,7 @@ public class OrderService {
 			if (product.getStock() >= item.getQuantity()) {
 				product.setStock(product.getStock() - item.getQuantity());
 			} else {
-				// Dois clientes pagaram o último item: zera e avisa a Priscila no painel.
+				// dois pagamentos para o último item: zera e sinaliza no painel
 				product.setStock(0);
 				order.flagStockIssue();
 				log.warn("Pedido #{} pago sem estoque suficiente de {}", order.getId(), item.getProductSlug());

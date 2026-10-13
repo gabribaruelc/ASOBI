@@ -11,9 +11,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.util.StringUtils;
 
 /**
- * Confere a assinatura das notificações do Mercado Pago (header x-signature).
- * Manifesto: "id:{data.id};request-id:{x-request-id};ts:{ts};" assinado com
- * HMAC-SHA256 usando a assinatura secreta configurada no painel do Mercado Pago.
+ * Header x-signature: HMAC-SHA256 de "id:{data.id};request-id:{x-request-id};ts:{ts};"
+ * com a assinatura secreta do webhook.
  */
 public class MercadoPagoSignatureVerifier {
 

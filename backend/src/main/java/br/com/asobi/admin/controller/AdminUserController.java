@@ -1,5 +1,7 @@
 package br.com.asobi.admin.controller;
 
+import java.util.List;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,22 +14,21 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import br.com.asobi.admin.directory.AdminDirectory;
 import br.com.asobi.admin.security.CurrentAdmin;
-import br.com.asobi.admin.service.AdminUserService;
 import br.com.asobi.common.exception.BusinessException;
 import br.com.asobi.common.exception.NotFoundException;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-/** Gestão de quem tem acesso ao painel (/admin/admins). */
 @Controller
 @RequestMapping("/admin/admins")
 public class AdminUserController {
 
-	private final AdminUserService adminUserService;
+	private final AdminDirectory adminDirectory;
 
-	public AdminUserController(AdminUserService adminUserService) {
-		this.adminUserService = adminUserService;
+	public AdminUserController(AdminDirectory adminDirectory) {
+		this.adminDirectory = adminDirectory;
 	}
 
 	@GetMapping
@@ -35,7 +36,7 @@ public class AdminUserController {
 		if (!model.containsAttribute("form")) {
 			model.addAttribute("form", new AdminUserForm(""));
 		}
-		model.addAttribute("admins", adminUserService.listAdmins());
+		addAdmins(model);
 		return "admin/admin-users";
 	}
 
@@ -43,12 +44,12 @@ public class AdminUserController {
 	public String add(@Validated @ModelAttribute("form") AdminUserForm form, BindingResult result,
 			Authentication authentication, Model model, RedirectAttributes redirect) {
 		if (result.hasErrors()) {
-			model.addAttribute("admins", adminUserService.listAdmins());
+			addAdmins(model);
 			return "admin/admin-users";
 		}
 		try {
-			adminUserService.addAdmin(form.email(), CurrentAdmin.emailOf(authentication));
-			redirect.addFlashAttribute("success", "Admin adicionado: " + AdminUserService.normalize(form.email()));
+			adminDirectory.addAdmin(form.email(), CurrentAdmin.emailOf(authentication));
+			redirect.addFlashAttribute("success", "Admin adicionado: " + AdminDirectory.normalize(form.email()));
 		} catch (BusinessException ex) {
 			redirect.addFlashAttribute("error", ex.getMessage());
 		}
@@ -58,7 +59,7 @@ public class AdminUserController {
 	@PostMapping("/{id}/excluir")
 	public String remove(@PathVariable Long id, Authentication authentication, RedirectAttributes redirect) {
 		try {
-			adminUserService.removeAdmin(id, CurrentAdmin.emailOf(authentication));
+			adminDirectory.removeAdmin(id, CurrentAdmin.emailOf(authentication));
 			redirect.addFlashAttribute("success", "Acesso removido.");
 		} catch (BusinessException | NotFoundException ex) {
 			redirect.addFlashAttribute("error", ex.getMessage());
@@ -66,12 +67,20 @@ public class AdminUserController {
 		return "redirect:/admin/admins";
 	}
 
+	private void addAdmins(Model model) {
+		try {
+			model.addAttribute("admins", adminDirectory.listAdmins());
+		} catch (BusinessException ex) {
+			model.addAttribute("admins", List.of());
+			model.addAttribute("error", ex.getMessage());
+		}
+	}
+
 	public record AdminUserForm(
 			@NotBlank(message = "Informe o e-mail.")
 			@Email(message = "E-mail inválido.")
 			String email) {
 
-		/** Tira espaços antes de validar (e-mail colado costuma vir com espaço). */
 		public AdminUserForm {
 			email = email == null ? null : email.trim();
 		}

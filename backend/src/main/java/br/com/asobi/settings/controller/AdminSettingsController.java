@@ -17,7 +17,6 @@ import br.com.asobi.settings.dto.StoreSettingsForm;
 import br.com.asobi.settings.service.StoreSettingsService;
 import br.com.asobi.shipping.ShippingQuoteProvider;
 
-/** Configurações da loja (/admin/configuracoes): liga/desliga frete automático e parâmetros. */
 @Controller
 @RequestMapping("/admin/configuracoes")
 public class AdminSettingsController {

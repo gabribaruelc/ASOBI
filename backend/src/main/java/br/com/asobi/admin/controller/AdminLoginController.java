@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import br.com.asobi.admin.AdminProperties;
-import br.com.asobi.admin.service.AdminUserService;
+import br.com.asobi.admin.directory.AdminDirectory;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -27,15 +27,15 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class AdminLoginController {
 
 	private final AdminProperties adminProperties;
-	private final AdminUserService adminUserService;
+	private final AdminDirectory adminDirectory;
 	private final SecurityContextRepository securityContextRepository;
 	private final boolean googleEnabled;
 
-	public AdminLoginController(AdminProperties adminProperties, AdminUserService adminUserService,
+	public AdminLoginController(AdminProperties adminProperties, AdminDirectory adminDirectory,
 			SecurityContextRepository securityContextRepository,
 			ObjectProvider<ClientRegistrationRepository> clientRegistrations) {
 		this.adminProperties = adminProperties;
-		this.adminUserService = adminUserService;
+		this.adminDirectory = adminDirectory;
 		this.securityContextRepository = securityContextRepository;
 		this.googleEnabled = clientRegistrations.getIfAvailable() != null;
 	}
@@ -47,21 +47,21 @@ public class AdminLoginController {
 		return "admin/login";
 	}
 
-	/** Entrar só com o e-mail, sem Google. Existe apenas com asobi.admin.dev-login-enabled=true (perfil local). */
+	/** Login sem Google, só no perfil local (asobi.admin.dev-login-enabled=true). */
 	@PostMapping("/admin/dev-login")
 	public String devLogin(@RequestParam String email, HttpServletRequest request, HttpServletResponse response) {
 		if (!adminProperties.devLoginEnabled()) {
 			throw new ResponseStatusException(NOT_FOUND);
 		}
-		if (!adminUserService.isAdmin(email)) {
+		if (!adminDirectory.isAdmin(email)) {
 			return "redirect:/admin/login?error";
 		}
 		var authentication = UsernamePasswordAuthenticationToken.authenticated(
-				AdminUserService.normalize(email), null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+				AdminDirectory.normalize(email), null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);
-		// Nova sessão após o login (proteção contra session fixation).
+		// evita session fixation
 		if (request.getSession(false) != null) {
 			request.changeSessionId();
 		}

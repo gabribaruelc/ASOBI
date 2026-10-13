@@ -4,7 +4,7 @@ import java.util.List;
 
 import br.com.asobi.content.model.AboutPage;
 
-/** Mesmo formato que a loja já usa (SiteContentContext). */
+/** Mesmo formato do SiteContentContext no frontend. */
 public record AboutPageResponse(
 		String heroText,
 		List<Value> values,

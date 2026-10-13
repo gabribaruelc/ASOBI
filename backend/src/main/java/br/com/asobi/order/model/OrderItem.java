@@ -13,7 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/** Item do pedido, com nome e preço congelados no momento da compra. */
+/** Guarda nome e preço do momento da compra. */
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
@@ -26,7 +26,7 @@ public class OrderItem {
 	@JoinColumn(name = "order_id", nullable = false)
 	private Order order;
 
-	/** Pode ficar nulo se o produto for excluído depois. */
+	/** null se o produto foi excluído. */
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "product_id")
 	private Product product;
