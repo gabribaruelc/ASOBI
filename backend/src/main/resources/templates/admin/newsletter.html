@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Newsletter')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <div class="page-header">
+      <div>
+        <h1>Newsletter</h1>
+        <p class="muted">Quem pediu para receber novidades pelo formulário da loja. Baixe a lista para importar na sua ferramenta de envio de e-mails. Se alguém pedir para sair, remova o e-mail aqui.</p>
+      </div>
+      <a th:unless="${#lists.isEmpty(subscribers)}" th:href="@{/admin/newsletter/exportar}" class="button">⬇ Baixar lista (CSV)</a>
+    </div>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <p class="card muted" th:if="${#lists.isEmpty(subscribers)}">Ninguém se inscreveu ainda.</p>
+
+    <div class="card table-wrap" th:unless="${#lists.isEmpty(subscribers)}">
+      <table>
+        <thead>
+          <tr><th>E-mail</th><th>Inscrito em</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="s : ${subscribers}">
+            <td th:text="${s.email}">responsavel@gmail.com</td>
+            <td class="muted" th:text="${@dates.dateTime(s.createdAt)}">12/10/2026 10:00</td>
+            <td class="actions">
+              <form th:action="@{/admin/newsletter/{id}/excluir(id=${s.id})}" method="post"
+                    onsubmit="return confirm('Remover este e-mail da newsletter?');">
+                <button type="submit" class="link-button danger">Remover</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -129,6 +129,7 @@ da loja, e *generic* é um problema comum que pode ser terceirizado.
 | **catalog** | core | Produtos, faixas etárias, preço/promoção, estoque, período de Novidades, visualizações por produto | `products`, `categories`, `product_views` |
 | **order** | core | Pedido, itens, cliente/endereço, status, total calculado no servidor | `orders`, `order_items` |
 | **review** | supporting | Avaliações e sua moderação | `reviews` |
+| **newsletter** | supporting | Inscrições na newsletter (só o e-mail do adulto) e exportação da lista | `newsletter_subscribers` |
 | **content** | supporting | Conteúdo institucional (página Sobre, políticas, contato e rodapé) | `about_page`, `about_values`, `policy_pages`, `site_info` |
 | **settings** | supporting | Parâmetros da loja (toggle de frete, frete grátis, caixa padrão, CEP de origem) | `store_settings` |
 | **shipping** | generic | Cotação de frete na transportadora | nenhum (stateless) |
@@ -459,6 +460,7 @@ erDiagram
 |---|---|---|
 | catalog | `categories`, `products`, `product_images`, `product_views` | `Category`, `Product`, `ProductImage`, `ProductView` |
 | review | `reviews` | `Review` |
+| newsletter | `newsletter_subscribers` | `NewsletterSubscriber` |
 | order | `orders`, `order_items` | `Order`, `OrderItem` (+ `Customer`, `Address` embutidos) |
 | content | `about_page`, `about_values`, `policy_pages`, `site_info` | `AboutPage`, `AboutValue`, `PolicyPage`, `SiteInfo` |
 | settings | `store_settings` | `StoreSettings` |
@@ -635,6 +637,7 @@ Convenções comuns:
 | `GET /api/products` | query opcionais: `category` (slug), `cooperative`, `isNew`, `onSale` (booleanos) | `200` `[Product]` | — |
 | `GET /api/products/{slug}` | — | `200` `Product` | `404` |
 | `POST /api/products/{slug}/reviews` | `{name, rating (1–5), comment (≤1000)}` | `202` `{"status": "pending"}` | `400`, `404` |
+| `POST /api/newsletter-subscriptions` | `{email}` | `204` (também quando o e-mail já estava inscrito) | `400` |
 | `POST /api/products/{slug}/views` | — (a loja chama ao abrir a ficha; só soma um contador por dia) | `204` | `404` |
 | `GET /api/content/about` | — | `200` `{heroText, values: [{icon, title, text}], missionEmoji, missionTitle, missionText}` | — |
 | `GET /api/content/site-info` | — | `200` `{contactEmail, contactPhone, whatsappUrl, businessHours, instagramUrl, facebookUrl, tiktokUrl, legalName, cnpj, address}` (campo não preenchido vem `null`) | — |
@@ -749,6 +752,7 @@ CSRF), protegidas por login Google e pelo e-mail conferido no admin-auth-service
 | `/admin/produtos` | listar, `novo`, `{id}/editar` (com envio de fotos, `multipart/form-data`), `{id}/fotos/{imageId}/capa`, `{id}/fotos/{imageId}/excluir`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
 | `/admin/categorias` | listar, criar, editar, excluir faixas etárias |
 | `/admin/avaliacoes` | fila de moderação, `{id}/aprovar`, `{id}/rejeitar`, `{id}/excluir` |
+| `/admin/newsletter` | lista de inscritos, `exportar` (CSV), `{id}/excluir` |
 | `/admin/pedidos` | listar/filtrar, `{id}`, `{id}/marcar-pago`, `{id}/marcar-enviado`, `{id}/cancelar` |
 | `/admin/sobre` | editar a página Sobre |
 | `/admin/politicas` | editar os textos de Privacidade, Trocas/Devoluções/Garantia e Frete |

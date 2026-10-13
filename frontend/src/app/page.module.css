@@ -341,6 +341,25 @@
   outline: none;
 }
 
+.newsletterBox {
+  max-width: 460px;
+}
+
+.newsletter .newsletterNote {
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+.newsletterNote a {
+  text-decoration: underline;
+}
+
+.newsletter .newsletterDone {
+  font-weight: 700;
+  font-size: 1.05rem;
+  opacity: 1;
+}
+
 @media (max-width: 1000px) {
   .heroInner {
     flex-direction: column;
