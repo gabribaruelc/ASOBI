@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Form from "next/form";
 import styles from "./Header.module.css";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -60,10 +61,18 @@ export default function Header({ ageFilters, freeShippingThreshold }) {
           ))}
         </nav>
 
-        <div className={styles.search}>
+        {/* Vai para /jogos?busca=..., onde a lista é filtrada. */}
+        <Form action="/jogos" className={styles.search} role="search">
           <span aria-hidden="true">🔍</span>
-          <input type="search" placeholder="Buscar jogos, idade, habilidade..." />
-        </div>
+          <input
+            type="search"
+            name="busca"
+            placeholder="Buscar jogos, idade, habilidade..."
+            aria-label="Buscar jogos"
+            maxLength={80}
+            required
+          />
+        </Form>
 
         <div className={styles.actions}>
           {accountLink && (
