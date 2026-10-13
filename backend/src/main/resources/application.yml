@@ -82,6 +82,15 @@ asobi:
     # Vazio = lista em memória só com o bootstrap-email abaixo: some a cada reinício (testes).
     url: ${ADMIN_AUTH_SERVICE_URL:}
     api-key: ${ADMIN_AUTH_SERVICE_API_KEY:}
+  two-factor-service:
+    # Segundo passo do login do painel: código enviado para o e-mail do admin.
+    # Vazio = o painel pede só o login.
+    url: ${TWO_FACTOR_SERVICE_URL:}
+    api-key: ${TWO_FACTOR_SERVICE_API_KEY:}
+  notification-service:
+    # Avisos de "entrou em promoção" e "voltou ao estoque". Vazio = a loja não mostra o "avise-me".
+    url: ${NOTIFICATION_SERVICE_URL:}
+    api-key: ${NOTIFICATION_SERVICE_API_KEY:}
   admin:
     # só vale sem o admin-auth-service; com ele, o primeiro admin é configurado lá
     bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}

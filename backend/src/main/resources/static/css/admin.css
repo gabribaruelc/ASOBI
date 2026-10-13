@@ -191,6 +191,9 @@ td.actions > * + * { margin-left: 12px; }
   gap: 16px;
 }
 .login-card .alert { margin: 0; }
+.code-form { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+.code-form input { font-size: 1.4rem; letter-spacing: .3em; text-align: center; }
+.login-card .link-button { margin: 0 auto; }
 .dev-login { display: flex; flex-direction: column; gap: 12px; text-align: left; border-top: 1px dashed var(--line); padding-top: 16px; }
 
 /* Celular */

@@ -14,7 +14,7 @@ spring:
       ddl-auto: validate
 
 server:
-  # 8080 backend, 8081 shipping-service, 8082 reservada ao two-factor-service
+  # 8080 backend, 8081 shipping-service, 8082 two-factor-service, 8084 notification-service
   port: ${PORT:8083}
   error:
     include-message: always

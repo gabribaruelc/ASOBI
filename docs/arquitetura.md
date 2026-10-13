@@ -4,8 +4,9 @@ Este documento parte do problema que a loja resolve e chega até os serviços qu
 **necessidade → requisito → funcionalidade → processo → domínio → serviço → dados → contratos → fluxos**,
 e cada decisão de decomposição vem com a sua justificativa.
 
-Detalhes de execução e deploy ficam em [backend/README.md](../backend/README.md) e
-[shipping-service/README.md](../shipping-service/README.md).
+Detalhes de execução e deploy ficam no README de cada serviço: [backend](../backend/README.md),
+[shipping-service](../shipping-service/README.md), [admin-auth-service](../admin-auth-service/README.md),
+[two-factor-service](../two-factor-service/README.md) e [notification-service](../notification-service/README.md).
 
 ---
 
@@ -163,9 +164,9 @@ Cada domínio foi avaliado como candidato a serviço independente:
 | catalog-service | catalog | Produtos, estoque, promoção | ⏸ Mantido no backend | A baixa de estoque precisa estar na **mesma transação** da confirmação do pagamento (lock na linha do produto). Separar exigiria saga/compensação, complexidade injustificável para um negócio com uma operadora. |
 | order-service | order | Pedidos | ⏸ Mantido no backend | Mesmo motivo acima: pedido + estoque + pagamento formam uma unidade transacional. |
 | payment-service | payment | Mercado Pago | ⏸ Mantido no backend | Já é terceirizado (o Mercado Pago é o "serviço"). O módulo local só adapta, atrás da interface `PaymentGateway`. |
-| two-factor-service | (novo) autenticação | Gerar, enviar por e-mail e conferir código de uso único | 🔜 Planejado | Sem dependência transacional com pedido ou estoque. Guarda só o hash do código, com validade curta e limite de tentativas. |
+| **two-factor-service** | (novo) autenticação | Gerar, enviar por e-mail e conferir código de uso único | ✅ **Extraído** | Segundo passo do login do painel. Sem dependência transacional com pedido ou estoque. Guarda só o HMAC do código, com validade curta, uso único e limite de tentativas. |
 | **admin-auth-service** | admin | Conferir o login Google do painel e ser o dono da lista de e-mails de admin | ✅ **Extraído** | Identidade é um subdomínio *generic*, sem transação com pedido ou estoque. O serviço tem a própria tabela (`admin_users`, esquema `admin_auth`) e decide sozinho quem entra; o backend só mantém a sessão do navegador. |
-| notification-service | (novo) notification | Avisar por e-mail que um produto entrou em promoção ou voltou ao estoque | 🔜 Planejado | Recebe eventos de preço/estoque do backend e envia de forma assíncrona; uma falha não afeta a venda. Guarda as inscrições com consentimento (LGPD) e link de descadastro. |
+| **notification-service** | (novo) notification | Avisar por e-mail que um produto entrou em promoção ou voltou ao estoque | ✅ **Extraído** | Recebe eventos de preço/estoque do backend e envia os e-mails; uma falha não afeta a venda. Guarda as inscrições com consentimento (LGPD) e link de descadastro. |
 | review-moderation-service | review | Filtro de conteúdo antes da fila | 🔜 Candidato futuro | Bom candidato quando houver filtro automático (lista de palavras, IA). Hoje é só CRUD + aprovação. |
 | recommendation-service | catalog (leitura) | Sugerir jogos por idade/habilidade | 🔜 Candidato futuro | Só leitura do catálogo; pode consumir a API pública. |
 | content / settings / admin | — | Conteúdo, parâmetros e acesso | ⏸ Mantidos | Pouco volume e nenhuma integração externa. Separar só adicionaria custo (cold start, mais conexões no Supabase free). |
@@ -174,7 +175,7 @@ Cada domínio foi avaliado como candidato a serviço independente:
 usa `maximum-pool-size: 3`). Cada serviço extra no Cloud Run também tem seu próprio *cold start*. E o lojista
 precisa operar sem ajuda técnica (RNF01, RNF02). A decomposição escolhida é um **backend modular** (fronteiras de
 domínio claras em pacotes) + **microsserviços onde há ganho real**. Hoje isso vale para o frete e para a
-autenticação de admins.
+autenticação de admins, para o código por e-mail do painel e para os avisos de produto.
 
 ---
 
@@ -193,10 +194,12 @@ flowchart LR
         subgraph BE[backend · Spring Boot · :8080]
             api[API REST /api/**]
             painel[Painel admin Thymeleaf /admin/**]
-            mods[catalog · order · review · content<br/>settings · payment · admin<br/>storage · notification · account]
+            mods[catalog · order · review · content<br/>settings · payment · admin<br/>storage · notification · account · alert]
         end
         ship[shipping-service<br/>Spring Boot · :8081]
         auth[admin-auth-service<br/>Spring Boot · :8083]
+        twofa[two-factor-service<br/>Spring Boot · :8082]
+        notif[notification-service<br/>Spring Boot · :8084]
     end
 
     loja -->|REST JSON| api
@@ -212,6 +215,13 @@ flowchart LR
     mods -->|REST| ST[(Supabase Storage)]
     mods -->|REST| RS[(Resend)]
     loja -.->|fotos por URL pública| ST
+    mods -->|REST + X-Api-Key| twofa
+    mods -->|REST + X-Api-Key| notif
+    twofa -->|JDBC :5432 · esquema two_factor| DB
+    twofa -->|REST| RS
+    notif -->|JDBC :5432 · esquema notification| DB
+    notif -->|REST em lote| RS
+    cliente -.->|link de descadastro do e-mail| notif
     MP -->|webhook assinado| api
     painel -->|OAuth2| G[(Google)]
 ```
@@ -224,6 +234,9 @@ flowchart LR
 | **backend** | Regras da loja: catálogo, pedido, estoque, moderação, conteúdo, configurações, acesso; **política** de frete (toggle, frete grátis, caixa padrão) | Qual transportadora é usada e como a API dela funciona |
 | **shipping-service** | Integração com a transportadora: autenticação, formato da API, timeout, normalização e ordenação das opções | Produtos, preços de venda, pedidos, toggle, frete grátis, banco de dados |
 | **admin-auth-service** | Lista de e-mails de admin (tabela própria), conferência do ID token do Google, regra "ninguém remove a si mesmo", primeiro admin (`ADMIN_BOOTSTRAP_EMAIL`) | Sessão do navegador, telas do painel, produtos, pedidos |
+
+| **two-factor-service** | Código de uso único: sorteio, HMAC, validade, limite de tentativas e de pedidos, e-mail com o código | Quem é a pessoa, por que o código foi pedido, sessão, telas |
+| **notification-service** | Pedidos de aviso (e-mail + produto + tipo) com consentimento, envio dos avisos, intervalo mínimo entre avisos, descadastro | Catálogo (nome, preço e link vêm no evento), pedidos, newsletter |
 
 Não há sobreposição: a regra "frete grátis acima de R$ X" é **comercial** e fica no backend (domínio
 `settings`). A regra "como pedir preço ao Melhor Envio" é **técnica/integração** e fica no shipping-service.
@@ -251,6 +264,11 @@ O backend recota o frete ao fechar o pedido, de modo que o preço nunca vem do n
 | frontend → Supabase Auth | HTTPS (SDK no navegador) | Login do cliente com Google | Só o login falha; a compra sem cadastro segue |
 | backend → Supabase Auth | REST (`GET /auth/v1/user`) | Conferir o token do cliente em "Meus pedidos" e ao fechar pedido | "Meus pedidos" responde `401`; o pedido é fechado sem cadastro |
 | backend → Resend | REST + Bearer token | E-mails de pedido recebido, pago e enviado | Só o e-mail falha (vai para o log); o pedido segue normalmente |
+| backend → two-factor-service | REST/JSON + `X-Api-Key` | Depois do login do painel: pedir um código para o e-mail do admin e conferir o que ele digitou (finalidade `admin-login`) | Ninguém passa da tela do código (nunca libera na dúvida); a loja segue no ar. Sem `TWO_FACTOR_SERVICE_URL`, o painel pede só o login |
+| two-factor-service → Resend | REST + Bearer token | Enviar o código | `503`; o desafio é apagado e nenhum código fica valendo |
+| backend → notification-service | REST/JSON + `X-Api-Key` | Gravar o "avise-me" feito na ficha do jogo; depois do commit, publicar "entrou em promoção" / "voltou ao estoque" e apagar as inscrições de produto excluído | O "avise-me" responde 422 com mensagem amigável; a falha ao publicar só vai para o log. O que o lojista salvou no painel não é desfeito. Sem `NOTIFICATION_SERVICE_URL`, a loja não mostra o "avise-me" |
+| notification-service → Resend | REST + Bearer token (lote de até 100) | Enviar os avisos | O lote conta como `failed` e ninguém é marcado como avisado; o evento pode ser repetido |
+| navegador → notification-service | HTTPS, sem chave (token no link) | Página de descadastro do e-mail | A pessoa tenta de novo depois; o cabeçalho `List-Unsubscribe` aponta para a mesma rota |
 
 ### Fluxo P1 + P2: compra com frete e pagamento
 
@@ -538,6 +556,43 @@ erDiagram
 O e-mail é sempre guardado em minúsculas e sem espaços. Não há chave estrangeira para o banco do backend:
 os campos `updated_by_email` das tabelas do backend guardam o e-mail como texto.
 
+### 11.4 two-factor-service: Supabase PostgreSQL (esquema `two_factor`)
+
+```mermaid
+erDiagram
+    challenges {
+        uuid id PK
+        varchar email
+        varchar purpose
+        varchar code_hash
+        int attempts
+        timestamptz created_at
+        timestamptz expires_at
+        timestamptz consumed_at
+    }
+```
+
+O código nunca é gravado: `code_hash` é o HMAC-SHA256 dele com uma chave que só o serviço tem
+(`TWO_FACTOR_CODE_SECRET`). Linhas vencidas há mais de um dia são apagadas a cada novo pedido de código.
+
+### 11.5 notification-service: Supabase PostgreSQL (esquema `notification`)
+
+```mermaid
+erDiagram
+    subscriptions {
+        bigint id PK
+        varchar email
+        bigint product_id
+        varchar alert_type
+        varchar unsubscribe_token UK
+        timestamptz consented_at
+        timestamptz last_notified_at
+    }
+```
+
+`(email, product_id, alert_type)` é único. `product_id` é o id do produto no backend, guardado como número
+solto, sem chave estrangeira. `consented_at` é o registro do consentimento (LGPD); o descadastro apaga a linha.
+
 ---
 
 ## 12. Autonomia dos dados e bancos previstos
@@ -549,6 +604,8 @@ os campos `updated_by_email` das tabelas do backend guardam o e-mail como texto.
 | backend | Supabase PostgreSQL (free, 500 MB), banco `postgres`, esquema `public`, via Session pooler :5432. Local: H2 em modo PostgreSQL | **Só o backend** (credenciais `DB_USER`/`DB_PASSWORD` só nele) | Em uso |
 | shipping-service | **Nenhum.** Sem estado, tudo vem na requisição | — | Em uso |
 | admin-auth-service | Mesmo projeto Supabase, esquema `admin_auth` (fora do `public`, não aparece no PostgREST), com usuário próprio. Local: H2 em modo PostgreSQL (`data/admin-auth`) | **Só o admin-auth-service** | Em uso |
+| two-factor-service | Mesmo projeto Supabase, esquema `two_factor`, com usuário próprio. Local: H2 em modo PostgreSQL (`data/two-factor`) | **Só o two-factor-service** | Em uso local; falta criar o esquema e o usuário no Supabase |
+| notification-service | Mesmo projeto Supabase, esquema `notification`, com usuário próprio. Local: H2 em modo PostgreSQL (`data/notification`) | **Só o notification-service** | Em uso local; falta criar o esquema e o usuário no Supabase |
 | shipping-service (evolução) | Cache em memória das cotações (ex.: Caffeine, TTL de alguns minutos, chave = origem + destino + volumes) | Só o próprio serviço | Previsto, se a cota do Melhor Envio apertar |
 | review-moderation-service (candidato) | Banco próprio: esquema `moderation` no mesmo projeto Supabase, com usuário próprio (sem acesso ao `public`) | Só ele | Previsto |
 | recommendation-service (candidato) | Modelo de leitura próprio (projeção do catálogo: slug, idade, habilidade), atualizado pela API pública `GET /api/products` | Só ele | Previsto |
@@ -702,6 +759,16 @@ Os itens levam **só slug e quantidade**: preço, total e frete são calculados 
 }
 ```
 
+Rotas ligadas aos dois serviços mais novos:
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/product-alerts` | `{email, productSlug, type, consent: true}`; `type` = `PROMOTION` ou `BACK_IN_STOCK` | `204` (repetir o pedido não é erro) | `400` (inclusive sem consentimento) · `404` produto · `422` aviso sem sentido (jogo já disponível / já em promoção) ou serviço fora do ar |
+| `GET /api/settings` | — | agora traz também `productAlertsEnabled` | — |
+
+No painel, `GET`/`POST /admin/verificacao` e `POST /admin/verificacao/reenviar` são a tela do código do
+two-factor-service; enquanto o código não é digitado, qualquer outra rota `/admin/**` redireciona para lá.
+
 ### 14.2 shipping-service: API interna (`/api/**` exige `X-Api-Key`)
 
 | Método e rota | Corpo | Resposta de sucesso | Erros |
@@ -741,7 +808,28 @@ rota (`/api/v2/quotes`), mantendo a antiga até o backend migrar.
 | `DELETE /api/admins/{id}?requestedBy=` | `requestedBy` = e-mail de quem está removendo | `204` | `404`, `409` (remover a si mesmo) |
 | `GET /actuator/health` | — | `200` | — |
 
-### 14.4 backend: painel admin (`/admin/**`)
+### 14.4 two-factor-service: API interna (`/api/**` exige `X-Api-Key`)
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/challenges` | `{email, purpose}` | `201` `{id, email, purpose, expiresAt}` (o código vai só no e-mail) | `400` · `429` muitos pedidos para o e-mail · `503` e-mail não enviado |
+| `POST /api/challenges/{id}/verifications` | `{code}` (6 números) | `200` `{id, email, purpose, verified: true}` | `400` · `404` · `410` vencido, usado ou bloqueado · `422` código incorreto (`attemptsLeft`) |
+| `GET /actuator/health` | — | `200` | — |
+
+### 14.5 notification-service: API interna (`/api/**` exige `X-Api-Key`) e descadastro (aberto)
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/subscriptions` | `{email, productId, type, consent: true}`; `type` = `PROMOTION` ou `BACK_IN_STOCK` | `201` nova · `200` já existia: `{id, email, productId, type, consentedAt, lastNotifiedAt}` | `400` (inclusive sem consentimento) |
+| `GET /api/subscriptions?email=&productId=` | filtros opcionais | `200` lista | — |
+| `DELETE /api/subscriptions/{id}` | — | `204` | `404` |
+| `DELETE /api/subscriptions?email=` ou `?productId=` | exatamente um dos dois | `200` `{removed}` | `400` |
+| `POST /api/product-events` | `{type, productId, productName, productUrl, price, originalPrice?}` | `200` `{subscribers, sent, failed, skipped}` | `400` |
+| `GET /descadastro/{token}` | sem chave | `200` página de confirmação (não cancela nada) | — |
+| `POST /descadastro/{token}` | sem chave; `all=true` cancela todos os avisos do e-mail | `200` página "aviso cancelado" | — |
+| `GET /actuator/health` | — | `200` | — |
+
+### 14.6 backend: painel admin (`/admin/**`)
 
 Não é uma API REST: são páginas Thymeleaf renderizadas no servidor, com formulários HTML (`POST` + token
 CSRF), protegidas por login Google e pelo e-mail conferido no admin-auth-service.
@@ -847,13 +935,13 @@ sequenceDiagram
 | frontend (Next.js) | **3000** | Cloudflare Workers (OpenNext), HTTPS 443 | Pública |
 | backend (Spring Boot) | **8080** | Cloud Run, HTTPS 443 (`PORT` injetada) | Pública (`/api/**`), painel protegido por login |
 | shipping-service (Spring Boot) | **8081** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
-| two-factor-service (planejado) | **8082** | Cloud Run, HTTPS 443 | Só o backend (`X-Api-Key`) |
+| two-factor-service (Spring Boot) | **8082** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
 | admin-auth-service (Spring Boot) | **8083** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
-| notification-service (planejado) | **8084** | Cloud Run, HTTPS 443 | Só o backend (`X-Api-Key`) |
+| notification-service (Spring Boot) | **8084** | Cloud Run, HTTPS 443 (`PORT` injetada) | API: só o backend (`X-Api-Key`). Página `/descadastro/{token}`: pública |
 | H2 console (dev) | 8080 `/h2-console` | desligado | Local |
-| Supabase PostgreSQL | — | 5432 (Session pooler, SSL) | O backend (esquema `public`) e o admin-auth-service (esquema `admin_auth`) |
+| Supabase PostgreSQL | — | 5432 (Session pooler, SSL) | O backend (esquema `public`), o admin-auth-service (`admin_auth`), o two-factor-service (`two_factor`) e o notification-service (`notification`), cada um com o seu usuário |
 
-Para subir os três serviços Java juntos: `docker compose up --build` na raiz ([docker-compose.yml](../docker-compose.yml)).
+Para subir os cinco serviços Java juntos: `docker compose up --build` na raiz ([docker-compose.yml](../docker-compose.yml)).
 
 Rotas e contratos de cada serviço: §14.
 

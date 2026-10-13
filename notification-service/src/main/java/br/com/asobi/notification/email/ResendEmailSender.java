@@ -1,0 +1,78 @@
+package br.com.asobi.notification.email;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
+
+/**
+ * Envio em lote pelo Resend (https://resend.com/docs/api-reference/emails/send-batch-emails):
+ * uma chamada para até 100 e-mails, cada um com o seu destinatário e o seu link de descadastro.
+ */
+public class ResendEmailSender implements EmailSender {
+
+	private static final String API_URL = "https://api.resend.com";
+
+	private static final Duration TIMEOUT = Duration.ofSeconds(10);
+
+	private final RestClient restClient;
+	private final String from;
+	private final String replyTo;
+
+	public ResendEmailSender(EmailProperties properties) {
+		this(properties, RestClient.builder().requestFactory(timeoutRequestFactory()));
+	}
+
+	/** Construtor para testes (MockRestServiceServer). */
+	ResendEmailSender(EmailProperties properties, RestClient.Builder builder) {
+		this.from = properties.from();
+		this.replyTo = properties.replyTo();
+		this.restClient = builder
+				.baseUrl(API_URL)
+				.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + properties.resendApiKey())
+				.build();
+	}
+
+	private static JdkClientHttpRequestFactory timeoutRequestFactory() {
+		JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(
+				HttpClient.newBuilder().connectTimeout(TIMEOUT).build());
+		factory.setReadTimeout(TIMEOUT);
+		return factory;
+	}
+
+	@Override
+	public void sendAll(List<EmailMessage> messages) {
+		if (messages.isEmpty()) {
+			return;
+		}
+		restClient.post()
+				.uri("/emails/batch")
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(messages.stream().map(this::toBody).toList())
+				.retrieve()
+				.toBodilessEntity();
+	}
+
+	private Map<String, Object> toBody(EmailMessage message) {
+		Map<String, Object> body = new LinkedHashMap<>();
+		body.put("from", from);
+		body.put("to", List.of(message.to()));
+		body.put("subject", message.subject());
+		body.put("html", message.html());
+		if (StringUtils.hasText(replyTo)) {
+			body.put("reply_to", replyTo);
+		}
+		// RFC 8058: o programa de e-mail mostra "cancelar inscrição" e faz o POST sozinho
+		body.put("headers", Map.of(
+				"List-Unsubscribe", "<" + message.unsubscribeUrl() + ">",
+				"List-Unsubscribe-Post", "List-Unsubscribe=One-Click"));
+		return body;
+	}
+}

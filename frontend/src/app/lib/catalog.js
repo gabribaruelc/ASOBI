@@ -62,7 +62,7 @@ export function getPolicy(slug) {
   return fetchOr(`/api/content/policies/${slug}`, null);
 }
 
-/** Configurações públicas da loja ({ shippingEnabled, freeShippingThreshold }). */
+/** Configurações públicas da loja ({ shippingEnabled, freeShippingThreshold, productAlertsEnabled }). */
 export function getStoreSettings() {
   return fetchOr("/api/settings", {});
 }
