@@ -38,10 +38,10 @@ class LoginApiTests {
 
 	@Test
 	void acceptsVerifiedAdminEmail() throws Exception {
-		given(tokenVerifier.verify("good")).willReturn(new GoogleIdentity("Priscila@asobi.com.br", true));
+		given(tokenVerifier.verify("good")).willReturn(new GoogleIdentity("Admin@asobi.com.br", true));
 		mockMvc.perform(login("good"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value("priscila@asobi.com.br"))
+				.andExpect(jsonPath("$.email").value("admin@asobi.com.br"))
 				.andExpect(jsonPath("$.admin").value(true));
 	}
 
@@ -55,7 +55,7 @@ class LoginApiTests {
 
 	@Test
 	void refusesUnverifiedEmail() throws Exception {
-		given(tokenVerifier.verify("unverified")).willReturn(new GoogleIdentity("priscila@asobi.com.br", false));
+		given(tokenVerifier.verify("unverified")).willReturn(new GoogleIdentity("admin@asobi.com.br", false));
 		mockMvc.perform(login("unverified")).andExpect(status().isForbidden());
 	}
 

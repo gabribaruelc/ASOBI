@@ -33,7 +33,7 @@ import br.com.asobi.order.repository.OrderRepository;
 @Transactional
 class AdminDashboardTests {
 
-	private static final String ADMIN = "priscila@asobi.com.br";
+	private static final String ADMIN = "admin@asobi.com.br";
 
 	@Autowired
 	private MockMvc mockMvc;

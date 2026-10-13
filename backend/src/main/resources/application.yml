@@ -108,7 +108,7 @@ asobi:
     # defina ADMIN_AUTH_SERVICE_URL vazia.
     url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
   admin:
-    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:priscila@asobi.com.br}
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:admin@asobi.com.br}
     dev-login-enabled: true
 
 ---

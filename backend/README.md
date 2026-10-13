@@ -87,7 +87,7 @@ sobrevive ao Cloud Run desligar a instância.
   Privacidade, Trocas e Frete, e telefone/WhatsApp, e-mail, redes sociais, razão social e CNPJ da loja.
 
 - **Local**: tela de login tem um "modo desenvolvimento" que entra só com o e-mail
-  (admin inicial `priscila@asobi.com.br`). Nunca ligado em produção (`asobi.admin.dev-login-enabled`).
+  (admin inicial `admin@asobi.com.br`). Nunca ligado em produção (`asobi.admin.dev-login-enabled`).
 - **Google (produção)**: no [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
   crie um "ID do cliente OAuth" do tipo *Aplicativo da Web* com a URI de redirecionamento
   `https://<url-do-cloud-run>/login/oauth2/code/google` (e `http://localhost:8080/login/oauth2/code/google`
@@ -126,12 +126,12 @@ Acrescente em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.c
 
 Configuração no [painel do Mercado Pago](https://www.mercadopago.com.br/developers/panel/app):
 Webhooks → URL `https://<url-do-cloud-run>/api/webhooks/mercadopago`, evento **Pagamentos**.
-Sem `MERCADO_PAGO_ACCESS_TOKEN`, a loja funciona em **modo manual**: o cliente vê o pedido e a Priscila
+Sem `MERCADO_PAGO_ACCESS_TOKEN`, a loja funciona em **modo manual**: o cliente vê o pedido e o lojista
 confirma o pagamento no painel (também serve para Pix direto).
 
 ## Frete (microsserviço shipping-service, com liga/desliga)
 
-Em `/admin/configuracoes` a Priscila liga ou desliga o **frete automático**, define o CEP de origem,
+Em `/admin/configuracoes` o lojista liga ou desliga o **frete automático**, define o CEP de origem,
 o valor para frete grátis (a opção mais barata sai por R$ 0) e as medidas da caixa padrão.
 
 - **Desligado** (padrão): o checkout mostra "Frete a combinar".
@@ -146,7 +146,7 @@ Integrações → Tokens de acesso, com permissão `shipping-calculate`).
 
 ## Fotos de produto (Supabase Storage)
 
-No formulário de produto (`/admin/produtos`), a Priscila envia até **6 fotos** (JPG, PNG ou WebP, 5 MB cada).
+No formulário de produto (`/admin/produtos`), o lojista envia até **6 fotos** (JPG, PNG ou WebP, 5 MB cada).
 A primeira é a capa; dá para trocar a capa e excluir fotos na tela de edição. Produto sem foto continua
 mostrando o emoji.
 

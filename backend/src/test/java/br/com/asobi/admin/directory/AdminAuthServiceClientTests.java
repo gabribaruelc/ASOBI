@@ -25,7 +25,7 @@ import br.com.asobi.common.exception.NotFoundException;
 class AdminAuthServiceClientTests {
 
 	private static final String BASE = "http://admin-auth.test";
-	private static final String ADMIN = "priscila@asobi.com.br";
+	private static final String ADMIN = "admin@asobi.com.br";
 
 	private final RestClient.Builder builder = RestClient.builder();
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
@@ -38,20 +38,20 @@ class AdminAuthServiceClientTests {
 
 	@Test
 	void asksTheServiceAndCachesTheAnswer() {
-		server.expect(once(), requestTo(BASE + "/api/authorizations?email=priscila@asobi.com.br"))
+		server.expect(once(), requestTo(BASE + "/api/authorizations?email=admin@asobi.com.br"))
 				.andExpect(method(HttpMethod.GET))
 				.andExpect(header("X-Api-Key", "key-123"))
-				.andRespond(withSuccess("{\"email\": \"priscila@asobi.com.br\", \"admin\": true}",
+				.andRespond(withSuccess("{\"email\": \"admin@asobi.com.br\", \"admin\": true}",
 						MediaType.APPLICATION_JSON));
 
-		assertThat(client.isAdmin(" Priscila@Asobi.com.br ")).isTrue();
+		assertThat(client.isAdmin(" Admin@Asobi.com.br ")).isTrue();
 		assertThat(client.isAdmin(ADMIN)).as("segunda pergunta vem do cache").isTrue();
 		server.verify();
 	}
 
 	@Test
 	void deniesWhenServiceIsDownOrEmailIsBlank() {
-		server.expect(requestTo(BASE + "/api/authorizations?email=priscila@asobi.com.br"))
+		server.expect(requestTo(BASE + "/api/authorizations?email=admin@asobi.com.br"))
 				.andRespond(withServiceUnavailable());
 
 		assertThat(client.isAdmin(ADMIN)).isFalse();
@@ -63,7 +63,7 @@ class AdminAuthServiceClientTests {
 	void removingAnAdminClearsTheCache() {
 		server.expect(requestTo(BASE + "/api/authorizations?email=outra@example.com"))
 				.andRespond(withSuccess("{\"email\": \"outra@example.com\", \"admin\": true}", MediaType.APPLICATION_JSON));
-		server.expect(requestTo(BASE + "/api/admins/7?requestedBy=priscila@asobi.com.br"))
+		server.expect(requestTo(BASE + "/api/admins/7?requestedBy=admin@asobi.com.br"))
 				.andExpect(method(HttpMethod.DELETE))
 				.andRespond(withNoContent());
 		server.expect(requestTo(BASE + "/api/authorizations?email=outra@example.com"))
@@ -80,7 +80,7 @@ class AdminAuthServiceClientTests {
 		server.expect(requestTo(BASE + "/api/logins"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(jsonPath("$.idToken").value("token-abc"))
-				.andRespond(withSuccess("{\"email\": \"priscila@asobi.com.br\", \"admin\": true}",
+				.andRespond(withSuccess("{\"email\": \"admin@asobi.com.br\", \"admin\": true}",
 						MediaType.APPLICATION_JSON));
 		server.expect(requestTo(BASE + "/api/logins"))
 				.andRespond(withSuccess("{\"email\": \"outra@example.com\", \"admin\": true}",
@@ -97,13 +97,13 @@ class AdminAuthServiceClientTests {
 	void listsAndAddsAdmins() {
 		server.expect(requestTo(BASE + "/api/admins")).andExpect(method(HttpMethod.GET))
 				.andRespond(withSuccess("""
-						[{"id": 1, "email": "priscila@asobi.com.br", "createdByEmail": null, "createdAt": "2026-10-01T12:00:00Z"}]
+						[{"id": 1, "email": "admin@asobi.com.br", "createdByEmail": null, "createdAt": "2026-10-01T12:00:00Z"}]
 						""", MediaType.APPLICATION_JSON));
 		server.expect(requestTo(BASE + "/api/admins")).andExpect(method(HttpMethod.POST))
 				.andExpect(jsonPath("$.email").value("nova@example.com"))
 				.andExpect(jsonPath("$.createdByEmail").value(ADMIN))
 				.andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON)
-						.body("{\"id\": 2, \"email\": \"nova@example.com\", \"createdByEmail\": \"priscila@asobi.com.br\"}"));
+						.body("{\"id\": 2, \"email\": \"nova@example.com\", \"createdByEmail\": \"admin@asobi.com.br\"}"));
 
 		assertThat(client.listAdmins()).singleElement()
 				.isEqualTo(new AdminAccount(1L, ADMIN, null));
@@ -116,7 +116,7 @@ class AdminAuthServiceClientTests {
 		server.expect(requestTo(BASE + "/api/admins"))
 				.andRespond(withStatus(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_PROBLEM_JSON)
 						.body(problem("Esse e-mail já é admin.")));
-		server.expect(requestTo(BASE + "/api/admins/9?requestedBy=priscila@asobi.com.br"))
+		server.expect(requestTo(BASE + "/api/admins/9?requestedBy=admin@asobi.com.br"))
 				.andRespond(withStatus(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_PROBLEM_JSON)
 						.body("{\"status\": 404, \"detail\": \"Admin não encontrado.\"}"));
 		server.expect(requestTo(BASE + "/api/admins")).andRespond(withStatus(HttpStatus.UNAUTHORIZED));

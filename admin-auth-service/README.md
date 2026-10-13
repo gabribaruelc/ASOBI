@@ -47,7 +47,7 @@ tentativa de remover a si mesmo · `503` login Google sem `GOOGLE_CLIENT_ID`.
 ./mvnw spring-boot:run          # macOS/Linux
 ```
 
-Sobe com H2 em `data/admin-auth` e `priscila@asobi.com.br` como admin inicial. O arquivo fica em disco:
+Sobe com H2 em `data/admin-auth` e `admin@asobi.com.br` como admin inicial. O arquivo fica em disco:
 os admins adicionados pelo painel continuam lá depois de reiniciar. Localmente o backend já procura este
 serviço em `http://localhost:8083`. Ou suba tudo junto com `docker compose up --build` na raiz do repositório.
 
@@ -90,7 +90,7 @@ gcloud run deploy asobi-admin-auth-service \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 1 \
-  --set-env-vars ADMIN_BOOTSTRAP_EMAIL=<email-google-da-priscila> \
+  --set-env-vars ADMIN_BOOTSTRAP_EMAIL=<email-google-do-admin> \
   --set-secrets ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,DB_URL=asobi-db-url:latest,DB_USER=asobi-admin-auth-db-user:latest,DB_PASSWORD=asobi-admin-auth-db-password:latest
 ```
 

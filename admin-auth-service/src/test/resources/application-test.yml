@@ -8,4 +8,4 @@ admin-auth-service:
   api-key: test-key
 
 admin-auth:
-  bootstrap-email: priscila@asobi.com.br
+  bootstrap-email: admin@asobi.com.br

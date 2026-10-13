@@ -1,5 +1,5 @@
 // Leitura do catálogo no servidor (Server Components). As respostas ficam em cache
-// por 1 minuto: o que a Priscila muda no painel aparece na loja em até esse tempo,
+// por 1 minuto: o que o lojista muda no painel aparece na loja em até esse tempo,
 // sem a loja bater no backend a cada visita.
 import { API_URL } from "./api";
 

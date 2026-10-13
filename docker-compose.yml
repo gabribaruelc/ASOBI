@@ -39,10 +39,10 @@ services:
     ports:
       - "8083:8083"
     environment:
-      # Perfil local: banco H2 dentro do container, com priscila@asobi.com.br como admin inicial.
+      # Perfil local: banco H2 dentro do container, com admin@asobi.com.br como admin inicial.
       SPRING_PROFILES_ACTIVE: local
       ADMIN_AUTH_SERVICE_API_KEY: dev-admin-auth-key
-      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-priscila@asobi.com.br}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-admin@asobi.com.br}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     volumes:
       - admin-auth-data:/app/data

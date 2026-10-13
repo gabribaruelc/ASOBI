@@ -37,7 +37,7 @@ Sem as duas variáveis do Supabase a loja funciona normalmente, só sem o link "
   vêm do painel (Políticas, Contato e rodapé, Configurações). O que não está preenchido não aparece.
 - **Catálogo no servidor** (`src/app/lib/catalog.js`): home, `/jogos`, `/novidades`, `/promocoes`, `/sobre`
   e a ficha `/jogos/[slug]` são Server Components. As respostas da API ficam em cache por **1 minuto**,
-  então o que a Priscila muda no painel aparece na loja em até esse tempo. Cada ficha tem título e
+  então o que o lojista muda no painel aparece na loja em até esse tempo. Cada ficha tem título e
   descrição próprios (SEO).
 - **Carrinho e checkout no navegador** (`src/app/lib/useProducts.js`): buscam preço e estoque na hora.
 - Se o backend não responder, as listas mostram um aviso em vez de quebrar a página (e o build).

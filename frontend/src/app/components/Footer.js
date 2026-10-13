@@ -8,7 +8,7 @@ const SOCIAL_LINKS = [
   { field: "whatsappUrl", label: "WhatsApp", icon: "💬" },
 ];
 
-// siteInfo vem do servidor (layout), com o que a Priscila preencheu em "Contato e rodapé"
+// siteInfo vem do servidor (layout), com o que o lojista preencheu em "Contato e rodapé"
 // no painel. O que está vazio não aparece.
 export default function Footer({ siteInfo }) {
   const social = SOCIAL_LINKS.filter((link) => siteInfo[link.field]);

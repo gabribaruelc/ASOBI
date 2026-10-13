@@ -6,7 +6,7 @@ export const metadata = {
   description: "Canais de atendimento da ASOBI.",
 };
 
-// Os canais são os que a Priscila preencheu em "Contato e rodapé" no painel.
+// Os canais são os que o lojista preencheu em "Contato e rodapé" no painel.
 export default async function FaleConoscoPage() {
   const siteInfo = await getSiteInfo();
   const hasChannel = siteInfo.contactEmail || siteInfo.contactPhone;

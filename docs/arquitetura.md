@@ -11,7 +11,7 @@ Detalhes de execução e deploy ficam em [backend/README.md](../backend/README.m
 
 ## 1. Contexto e intervenção
 
-**Problema.** Uma pequena empresária (a Priscila) quer vender jogos de tabuleiro infantis pela internet.
+**Problema.** Uma pequena empresa (o lojista) quer vender jogos de tabuleiro infantis pela internet.
 Ela não tem equipe técnica, o orçamento de infraestrutura é praticamente zero (bem abaixo de R$ 110/mês) e o
 público final envolve crianças, o que exige cuidado extra com conteúdo e dados (LGPD, art. 14).
 
@@ -19,7 +19,7 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 
 - loja virtual pensada para pais escolherem jogos pela idade da criança;
 - checkout com pagamento terceirizado (Mercado Pago), sem guardar dados de cartão;
-- **painel administrativo** que dá à Priscila controle total do site sem depender de programador;
+- **painel administrativo** que dá ao lojista controle total do site sem depender de programador;
 - somente **serviços gerenciados em tier gratuito** (Cloudflare Workers, Google Cloud Run, Supabase), sem
   servidor próprio para manter.
 
@@ -29,14 +29,14 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 
 | ID | Necessidade | Quem sente |
 |---|---|---|
-| N1 | Vender pela internet recebendo por Pix, cartão e boleto, com segurança | Priscila / cliente |
+| N1 | Vender pela internet recebendo por Pix, cartão e boleto, com segurança | Lojista / cliente |
 | N2 | Encontrar rápido jogos adequados à idade e ao perfil da criança | Cliente (pais) |
-| N3 | Operar a loja sozinha no dia a dia (produtos, preços, promoções, novidades, textos) | Priscila |
-| N4 | Custo mensal de infraestrutura próximo de zero | Priscila |
-| N5 | Proteger o público infantil: nada publicado sem moderação e dados mínimos | Priscila / famílias |
-| N6 | Saber o custo e o prazo da entrega antes de pagar, e poder desligar isso | Cliente / Priscila |
-| N7 | Não vender o que não tem em estoque e acompanhar cada pedido até o envio | Priscila |
-| N8 | Acesso administrativo seguro e que possa ser delegado a outras pessoas | Priscila |
+| N3 | Operar a loja por conta própria no dia a dia (produtos, preços, promoções, novidades, textos) | Lojista |
+| N4 | Custo mensal de infraestrutura próximo de zero | Lojista |
+| N5 | Proteger o público infantil: nada publicado sem moderação e dados mínimos | Lojista / famílias |
+| N6 | Saber o custo e o prazo da entrega antes de pagar, e poder desligar isso | Cliente / Lojista |
+| N7 | Não vender o que não tem em estoque e acompanhar cada pedido até o envio | Lojista |
+| N8 | Acesso administrativo seguro e que possa ser delegado a outras pessoas | Lojista |
 
 ---
 
@@ -108,12 +108,12 @@ público final envolve crianças, o que exige cuidado extra com conteúdo e dado
 |---|---|---|---|
 | P1 | **Compra** | Cliente, loja, backend, shipping-service, Mercado Pago | navegar → carrinho → informar CEP e cotar frete → preencher dados → criar pedido (preço, estoque e frete recalculados no servidor) → redirecionar ao Mercado Pago |
 | P2 | **Confirmação de pagamento** | Mercado Pago, backend | webhook assinado → backend **reconsulta** o pagamento na API → pedido `PAID` → baixa de estoque com lock na linha do produto (uma única vez) |
-| P3 | **Expedição** | Priscila | ver pedidos pagos → enviar → marcar `SHIPPED` (ou cancelar) |
-| P4 | **Moderação de avaliações** | Cliente, Priscila | cliente envia (entra `pendente`) → Priscila aprova ou rejeita → só aprovadas aparecem na ficha |
-| P5 | **Gestão de catálogo** | Priscila | cadastrar/editar produto → definir estoque, promoção e dias em Novidades → loja reflete na hora |
-| P6 | **Gestão de conteúdo** | Priscila | editar a página Sobre, os textos das políticas e os dados de contato do rodapé |
+| P3 | **Expedição** | Lojista | ver pedidos pagos → enviar → marcar `SHIPPED` (ou cancelar) |
+| P4 | **Moderação de avaliações** | Cliente, Lojista | cliente envia (entra `pendente`) → o lojista aprova ou rejeita → só aprovadas aparecem na ficha |
+| P5 | **Gestão de catálogo** | Lojista | cadastrar/editar produto → definir estoque, promoção e dias em Novidades → loja reflete na hora |
+| P6 | **Gestão de conteúdo** | Lojista | editar a página Sobre, os textos das políticas e os dados de contato do rodapé |
 | P7 | **Gestão de acesso** | Admin, backend, admin-auth-service | login Google → o admin-auth-service confere o ID token e a lista de admins → e-mail reconferido a cada requisição → adicionar/remover admins |
-| P8 | **Configuração de frete** | Priscila | ligar o frete automático (só se o shipping-service estiver no ar e com token) → definir CEP de origem, caixa padrão e valor de frete grátis |
+| P8 | **Configuração de frete** | Lojista | ligar o frete automático (só se o shipping-service estiver no ar e com token) → definir CEP de origem, caixa padrão e valor de frete grátis |
 
 Ciclo de vida do pedido: `PENDING_PAYMENT → PAID → SHIPPED`, com `CANCELED` possível antes do envio.
 
@@ -143,7 +143,7 @@ da loja, e *generic* é um problema comum que pode ser terceirizado.
 |---|---|---|---|---|
 | N1 Vender com segurança | RF03, RF04, RF05, RNF04 | F04, F06, F07 | order, payment | backend + Mercado Pago |
 | N2 Achar o jogo certo | RF01, RF02, RNF08 | F01, F02, F03 | catalog | backend + frontend |
-| N3 Operar sozinha | RF09, RF10, RF11, RF07 | F11, F12, F13, F16 | catalog, content, settings | backend (painel) |
+| N3 Operar por conta própria | RF09, RF10, RF11, RF07 | F11, F12, F13, F16 | catalog, content, settings | backend (painel) |
 | N4 Custo ≈ zero | RNF01, RNF02 | — (transversal) | — | todos (Cloud Run a zero, Workers, Supabase free) |
 | N5 Proteger crianças | RF08, RNF05 | F09, F10 | review | backend |
 | N6 Custo de entrega | RF07, RNF06, RNF07 | F05, F16 | shipping, settings | **shipping-service** + backend |
@@ -170,8 +170,8 @@ Cada domínio foi avaliado como candidato a serviço independente:
 | content / settings / admin | — | Conteúdo, parâmetros e acesso | ⏸ Mantidos | Pouco volume e nenhuma integração externa. Separar só adicionaria custo (cold start, mais conexões no Supabase free). |
 
 **Por que não "um microsserviço por domínio"?** O free tier do Supabase tem poucas conexões (o backend já
-usa `maximum-pool-size: 3`). Cada serviço extra no Cloud Run também tem seu próprio *cold start*. E a Priscila
-precisa operar sozinha (RNF01, RNF02). A decomposição escolhida é um **backend modular** (fronteiras de
+usa `maximum-pool-size: 3`). Cada serviço extra no Cloud Run também tem seu próprio *cold start*. E o lojista
+precisa operar sem ajuda técnica (RNF01, RNF02). A decomposição escolhida é um **backend modular** (fronteiras de
 domínio claras em pacotes) + **microsserviços onde há ganho real**. Hoje isso vale para o frete e para a
 autenticação de admins.
 
@@ -182,7 +182,7 @@ autenticação de admins.
 ```mermaid
 flowchart LR
     cliente([Cliente / pais]) -->|HTTPS| loja
-    priscila([Priscila / admins]) -->|HTTPS| painel
+    lojista([Lojista / admins]) -->|HTTPS| painel
 
     subgraph CF[Cloudflare Workers · OpenNext]
         loja[frontend<br/>Next.js<br/>:3000 local]
@@ -237,9 +237,9 @@ O backend recota o frete ao fechar o pedido, de modo que o preço nunca vem do n
 | De → Para | Protocolo | Por quê | Se falhar |
 |---|---|---|---|
 | frontend → backend | REST/JSON (CORS) | Única fonte de verdade de preço, estoque e pedidos | Loja sem catálogo e sem checkout |
-| backend → shipping-service | REST/JSON + `X-Api-Key` | Cotar frete (F05) e recotar ao fechar pedido | Só a cotação falha (HTTP 422 com mensagem amigável); o resto da loja segue no ar, e a Priscila pode desligar o frete no painel para voltar ao "a combinar" |
+| backend → shipping-service | REST/JSON + `X-Api-Key` | Cotar frete (F05) e recotar ao fechar pedido | Só a cotação falha (HTTP 422 com mensagem amigável); o resto da loja segue no ar, e o lojista pode desligar o frete no painel para voltar ao "a combinar" |
 | shipping-service → Melhor Envio | REST + Bearer token | Preço e prazo reais | `502` com mensagem amigável (timeout de 8 s) |
-| backend → Mercado Pago | REST (SDK) | Criar preferência e consultar pagamento | Modo manual: Priscila confirma no painel |
+| backend → Mercado Pago | REST (SDK) | Criar preferência e consultar pagamento | Modo manual: o lojista confirma no painel |
 | Mercado Pago → backend | Webhook assinado (`x-signature`) | Avisar mudança de pagamento | Reconsulta ao cliente voltar (`payment-sync`) |
 | backend → Supabase | JDBC (Session pooler) | Persistência | Indisponibilidade da loja |
 | backend → Google | OAuth2 / OIDC | Redirecionamento do login do painel | Painel inacessível; a loja segue no ar |
@@ -287,7 +287,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor C as Cliente
-    actor D as Priscila
+    actor D as Lojista
     participant F as frontend
     participant B as backend
     C->>F: escreve avaliação
@@ -589,8 +589,8 @@ Como cada serviço fica autônomo:
 |---|---|---|
 | Pedido + estoque + pagamento (dentro do backend) | **Consistência forte (ACID)** numa transação | `OrderService` é `@Transactional`. Ao aprovar, o pedido vira `PAID` e o estoque baixa na **mesma transação**, com lock pessimista na linha do produto (`findByIdForUpdate`, `PESSIMISTIC_WRITE`). |
 | Webhook do Mercado Pago | **Consistência eventual + idempotência** | O pedido nasce `PENDING_PAYMENT`. O webhook só traz um id, e o backend **reconsulta** o pagamento na API. `markPaid()` retorna `false` se o pedido já estiver pago, então notificações repetidas não baixam o estoque duas vezes. Um webhook de pedido inexistente responde 200 para o Mercado Pago não reenviar. |
-| Webhook atrasado ou perdido | **Reconciliação ativa** | Quando o cliente volta do checkout, a loja chama `POST /api/orders/{id}/payment-sync`, que faz a mesma consulta. Se o Mercado Pago não estiver configurado, a Priscila usa o **modo manual** ("marcar como pago"). |
-| Venda do último item para dois clientes | **Compensação** (em vez de reserva distribuída) | O estoque é conferido ao criar o pedido, mas só baixa no pagamento. Se dois pagarem o último item, o estoque vai a 0 e o pedido ganha `stock_issue = true`, com alerta no painel. A Priscila compensa (estorno ou prazo maior). Aceito porque o volume é baixo e evita reservas com expiração. |
+| Webhook atrasado ou perdido | **Reconciliação ativa** | Quando o cliente volta do checkout, a loja chama `POST /api/orders/{id}/payment-sync`, que faz a mesma consulta. Se o Mercado Pago não estiver configurado, o lojista usa o **modo manual** ("marcar como pago"). |
+| Venda do último item para dois clientes | **Compensação** (em vez de reserva distribuída) | O estoque é conferido ao criar o pedido, mas só baixa no pagamento. Se dois pagarem o último item, o estoque vai a 0 e o pedido ganha `stock_issue = true`, com alerta no painel. O lojista compensa (estorno ou prazo maior). Aceito porque o volume é baixo e evita reservas com expiração. |
 | backend ↔ shipping-service | **Sem estado compartilhado + revalidação** | A cotação é leitura pura, sem efeito colateral, então pode ser repetida à vontade e não precisa de transação distribuída. O preço mostrado no checkout **não é confiável**: ao fechar o pedido, o backend **recota** e usa o preço do servidor para o `shippingOptionId` escolhido. Se a opção sumiu, o pedido é recusado com mensagem clara (HTTP 422). |
 | Falha do shipping-service | **Falha rápida e isolada** | Timeout de 15 s no backend e de 8 s no serviço até a transportadora. Erro 5xx vira `BusinessException` (422) com mensagem amigável; erro 4xx (chave ou payload) vira mensagem genérica. Nenhum pedido é gravado sem frete válido. |
 | Mudanças no catálogo depois da compra | **Snapshot (desnormalização intencional)** | `order_items` copia `product_slug`, `product_name` e `unit_price`, e `orders` copia `shipping_cost` e `shipping_service`. Editar ou excluir produto, preço ou transportadora não altera pedidos antigos. |
@@ -821,7 +821,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    actor D as Priscila
+    actor D as Lojista
     participant B as backend (painel)
     participant S as shipping-service
     D->>B: GET /admin/configuracoes
