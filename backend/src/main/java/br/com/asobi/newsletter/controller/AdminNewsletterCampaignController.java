@@ -53,6 +53,19 @@ public class AdminNewsletterCampaignController {
 		return "redirect:/admin/newsletter/campanhas/" + campaign.getId();
 	}
 
+	@PostMapping("/promocoes")
+	public String createPromotion(Authentication authentication, RedirectAttributes redirect) {
+		try {
+			NewsletterCampaign campaign = campaignService.createPromotion(CurrentAdmin.emailOf(authentication));
+			redirect.addFlashAttribute("success",
+					"Rascunho criado com os jogos em promoção. Revise o texto, confira a prévia e envie.");
+			return "redirect:/admin/newsletter/campanhas/" + campaign.getId();
+		} catch (BusinessException ex) {
+			redirect.addFlashAttribute("error", ex.getMessage());
+			return "redirect:/admin/newsletter";
+		}
+	}
+
 	@GetMapping("/{id}")
 	public String show(@PathVariable Long id, Model model) {
 		CampaignStatus status = campaignService.get(id);
@@ -127,5 +140,6 @@ public class AdminNewsletterCampaignController {
 		model.addAttribute("subscriberCount", newsletterService.count());
 		model.addAttribute("dailyLimit", campaignService.dailyLimit());
 		model.addAttribute("remainingQuota", campaignService.remainingQuota());
+		model.addAttribute("productOptions", campaignService.productOptions());
 	}
 }

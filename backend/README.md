@@ -68,6 +68,7 @@ Supabase (a chave `anon` é pública); o backend conecta como dono das tabelas e
 | `RESEND_API_KEY` | chave do [Resend](https://resend.com) (`re_...`). Vazio = os e-mails só aparecem no log |
 | `EMAIL_FROM` | remetente, ex.: `ASOBI <pedidos@asobi.com.br>` (domínio verificado no Resend) |
 | `EMAIL_REPLY_TO` | opcional; e-mail de atendimento que recebe as respostas dos clientes |
+| `JOBS_API_KEY` | chave do cabeçalho `X-Job-Key` das rotinas chamadas pelo Cloud Scheduler (lembrete de pagamento). Vazio = rotinas desligadas |
 | `NEWSLETTER_DAILY_LIMIT` | opcional; máximo de e-mails de newsletter a cada 24 horas (padrão `80`, para sobrar espaço para os de pedido no plano gratuito do Resend) |
 
 Nunca commitar essas credenciais.
@@ -93,13 +94,21 @@ sobrevive ao Cloud Run desligar a instância.
 - **Avisos de produto**: com `NOTIFICATION_SERVICE_URL` definida, a ficha do jogo na loja mostra o "avise-me"
   (`POST /api/product-alerts`). Quando o lojista coloca um jogo em promoção ou repõe o estoque de um jogo
   esgotado, o backend avisa o [`notification-service`](../notification-service/README.md), que envia os
-  e-mails. Excluir um produto apaga os pedidos de aviso dele.
+  e-mails. Excluir um produto apaga os pedidos de aviso dele. O terceiro aviso, "está acabando"
+  (`LOW_STOCK`), sai quando uma venda leva o jogo ao limite de estoque baixo (abaixo).
+- **Estoque baixo** (limite em `/admin/configuracoes`, padrão 3; 0 desliga): quando um pedido pago deixa um
+  jogo com o limite de unidades ou menos, os admins recebem "Estoque baixo: <jogo>" (ou "Esgotou: <jogo>"),
+  quem pediu o aviso de "está acabando" recebe o e-mail, a loja mostra "Últimas unidades" (`lowStock` na API)
+  e o dashboard lista o jogo. O aviso sai uma vez, quando a venda cruza o limite, não a cada venda abaixo dele.
 - **Newsletter** (`/admin/newsletter`): o lojista escreve o e-mail (assunto, texto e um botão opcional), salva
   o rascunho, vê a prévia, manda um teste para si e envia. Cada e-mail sai com o link de descadastro do
   inscrito (`/newsletter/descadastro/{token}`, página do próprio backend) e o cabeçalho `List-Unsubscribe`;
   sair da lista apaga o e-mail. O envio para em `NEWSLETTER_DAILY_LIMIT` e-mails por 24 horas: o que faltar,
   o lojista continua no dia seguinte pelo botão "Continuar envio", sem repetir ninguém. Depois do primeiro
   envio o texto não muda mais e só recebe quem já estava inscrito. A lista continua exportável em CSV.
+  A newsletter pode levar até 12 **jogos em destaque** (cartões com foto, preço de/por e link), com o preço
+  lido na hora do envio; jogo esgotado fica de fora. **"Anunciar promoções"** cria um rascunho pronto com os
+  jogos em promoção que têm estoque, para o lojista revisar e enviar.
 - **Dashboard** (`/admin`): contadores e métricas dos últimos 7, 30 ou 90 dias (faturamento pela data do
   pagamento, pedidos pagos, valor médio, faturamento por dia, mais vendidos e mais vistos). As visualizações
   são um contador por produto e por dia (`product_views`), somado quando a loja abre a ficha; não guarda quem viu.
@@ -125,7 +134,7 @@ gcloud run deploy asobi-backend \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
   --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service>,TWO_FACTOR_SERVICE_URL=<url-do-two-factor-service>,NOTIFICATION_SERVICE_URL=<url-do-notification-service> \
-  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,TWO_FACTOR_SERVICE_API_KEY=asobi-two-factor-api-key:latest,NOTIFICATION_SERVICE_API_KEY=asobi-notification-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest
+  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,TWO_FACTOR_SERVICE_API_KEY=asobi-two-factor-api-key:latest,NOTIFICATION_SERVICE_API_KEY=asobi-notification-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest,JOBS_API_KEY=asobi-jobs-api-key:latest
 ```
 
 Acrescente em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.co` e
@@ -179,6 +188,24 @@ mostrando o emoji.
   (servidos em `/uploads/**`). Para testar o Supabase localmente, preencha as duas no `.env`.
 
 A `SUPABASE_SERVICE_KEY` dá acesso total ao projeto: fica só no backend (Secret Manager), nunca no frontend.
+
+## Lembrete de pagamento (carrinho abandonado)
+
+Quem fez o pedido e não chegou ao pagamento recebe **um** lembrete, de 2 a 48 horas depois do pedido
+(`asobi.payment-reminders`), com o link para a página do pedido. Lá, o botão **"Pagar agora"**
+(`POST /api/orders/{id}/checkouts`) confere o estoque de novo e abre um novo checkout do Mercado Pago, com o
+preço do pedido. Fica de fora quem já gerou Pix ou boleto (para não cobrar duas vezes), o pedido com algum
+jogo esgotado e o modo manual (sem Mercado Pago).
+
+O Cloud Run não tem processo rodando o tempo todo, então quem dispara é o **Cloud Scheduler** (3 rotinas
+grátis por conta de faturamento), de hora em hora, com a chave `JOBS_API_KEY` no cabeçalho:
+
+```bash
+gcloud scheduler jobs create http asobi-payment-reminders   --location southamerica-east1   --schedule "0 * * * *" --time-zone "America/Sao_Paulo"   --uri "https://<url-do-cloud-run>/api/jobs/payment-reminders"   --http-method POST   --headers "X-Job-Key=<a mesma JOBS_API_KEY do backend>"
+```
+
+Sem `JOBS_API_KEY`, a rota responde `404`. Localmente dá para rodar à mão:
+`curl -X POST -H "X-Job-Key: <chave>" http://localhost:8080/api/jobs/payment-reminders`.
 
 ## E-mails de pedido (Resend)
 

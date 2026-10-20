@@ -40,6 +40,7 @@ public class StoreSettingsService {
 		form.setPackageWidthCm(settings.getPackageWidthCm());
 		form.setPackageHeightCm(settings.getPackageHeightCm());
 		form.setPackageLengthCm(settings.getPackageLengthCm());
+		form.setLowStockThreshold(settings.getLowStockThreshold());
 		return form;
 	}
 
@@ -65,6 +66,7 @@ public class StoreSettingsService {
 		settings.setPackageWidthCm(form.getPackageWidthCm());
 		settings.setPackageHeightCm(form.getPackageHeightCm());
 		settings.setPackageLengthCm(form.getPackageLengthCm());
+		settings.setLowStockThreshold(form.getLowStockThreshold());
 		settings.setUpdatedByEmail(adminEmail);
 	}
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Aviso de "entrou em promoção" / "voltou ao estoque". Montado pelo AlertEmailComposer.
+<!-- Aviso de "entrou em promoção" / "voltou ao estoque" / "está acabando". Montado pelo AlertEmailComposer.
      Estilos inline e tabelas: é o que os programas de e-mail entendem. -->
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -34,6 +34,7 @@
                           th:if="${originalPrice != null}" th:text="${originalPrice}">R$ 99,90</span>
                     <span style="font-size:22px;font-weight:bold;color:#2E7CF6;" th:text="${price}">R$ 79,90</span>
                   </div>
+                  <div style="margin-top:6px;font-weight:bold;color:#E8408A;" th:if="${stockNote != null}" th:text="${stockNote}">Restam só 2 unidades</div>
                 </td>
               </tr>
             </table>

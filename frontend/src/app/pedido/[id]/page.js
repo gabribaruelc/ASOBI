@@ -38,6 +38,8 @@ export default function PedidoPage() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState(null);
 
   useEffect(() => {
     let polls = 0;
@@ -74,6 +76,22 @@ export default function PedidoPage() {
     };
   }, [id]);
 
+  // Pedido que ficou sem pagar: novo link do Mercado Pago, com o estoque conferido de novo.
+  async function handlePay() {
+    setPaying(true);
+    setPayError(null);
+    try {
+      const { checkoutUrl } = await apiFetch(
+        `/api/orders/${encodeURIComponent(id)}/checkouts`,
+        { method: "POST" },
+      );
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      setPayError(err.message);
+      setPaying(false);
+    }
+  }
+
   if (error) {
     return (
       <main className={styles.main}>
@@ -106,6 +124,23 @@ export default function PedidoPage() {
           <p className={styles.kicker}>Pedido #{order.number}</p>
           <h1>{message.title}</h1>
           <p className={styles.text}>{message.text}</p>
+          {order.payable && (
+            <>
+              <button
+                type="button"
+                className={styles.payButton}
+                onClick={handlePay}
+                disabled={paying}
+              >
+                {paying ? "Abrindo o pagamento…" : "Pagar agora"}
+              </button>
+              {payError && (
+                <p className={styles.payError} role="alert">
+                  {payError}
+                </p>
+              )}
+            </>
+          )}
           {order.trackingCode && (
             <p className={styles.tracking}>
               Código de rastreio: <strong>{order.trackingCode}</strong>

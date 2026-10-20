@@ -71,7 +71,7 @@ class NotificationServiceClientTests {
 						MediaType.APPLICATION_JSON));
 
 		client.publish(new Alert(AlertType.PROMOTION, 7L, "Corrida dos Sapos",
-				"https://asobi.com.br/jogos/corrida-dos-sapos", new BigDecimal("79.90"), new BigDecimal("99.90")));
+				"https://asobi.com.br/jogos/corrida-dos-sapos", new BigDecimal("79.90"), new BigDecimal("99.90"), null));
 
 		server.verify();
 	}
@@ -81,7 +81,7 @@ class NotificationServiceClientTests {
 		server.expect(requestTo(BASE + "/api/product-events")).andRespond(withServerError());
 
 		assertThatThrownBy(() -> client.publish(new Alert(AlertType.BACK_IN_STOCK, 7L, "Corrida dos Sapos",
-				"https://asobi.com.br/jogos/corrida-dos-sapos", new BigDecimal("99.90"), null)))
+				"https://asobi.com.br/jogos/corrida-dos-sapos", new BigDecimal("99.90"), null, null)))
 				.isInstanceOf(RestClientException.class);
 	}
 

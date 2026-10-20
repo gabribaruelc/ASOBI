@@ -59,6 +59,18 @@
         </div>
       </section>
 
+      <section class="card">
+        <h2>Estoque baixo</h2>
+        <p class="hint">Quando uma venda deixa um jogo com esta quantidade ou menos, os admins recebem um e-mail para
+          repor, a loja mostra "Últimas unidades" e quem pediu o aviso de "está acabando" recebe o e-mail. Use 0 para desligar.</p>
+        <div class="form-grid">
+          <label>Avisar com até (unidades)
+            <input type="number" th:field="*{lowStockThreshold}" min="0" max="100">
+            <span class="field-error" th:if="${#fields.hasErrors('lowStockThreshold')}" th:errors="*{lowStockThreshold}"></span>
+          </label>
+        </div>
+      </section>
+
       <div class="form-actions">
         <button type="submit" class="button">Salvar configurações</button>
       </div>

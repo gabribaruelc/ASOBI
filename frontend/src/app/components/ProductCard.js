@@ -3,7 +3,7 @@ import styles from "./ProductCard.module.css";
 import { discountPercent, formatPrice, isProductNew } from "../lib/products";
 
 export default function ProductCard({ product }) {
-  const { slug, icon, images, skill, name, age, players, price, promo, inStock } =
+  const { slug, icon, images, skill, name, age, players, price, promo, inStock, lowStock } =
     product;
   const isNew = isProductNew(product);
   // Sem foto cadastrada, mostra o emoji do produto.
@@ -23,6 +23,7 @@ export default function ProductCard({ product }) {
           <span className={styles.badgePromo}>-{discountPercent(product)}%</span>
         )}
         {!inStock && <span className={styles.badgeOut}>Esgotado</span>}
+        {lowStock && <span className={styles.badgeLow}>Últimas unidades</span>}
       </div>
       <div className={styles.body}>
         <span className={styles.skill}>{skill}</span>

@@ -72,7 +72,8 @@ class ShippingFlowTests {
 				.param("packageWeightKg", "1.0")
 				.param("packageWidthCm", "30")
 				.param("packageHeightCm", "8")
-				.param("packageLengthCm", "30");
+				.param("packageLengthCm", "30")
+				.param("lowStockThreshold", "3");
 	}
 
 	private void enableShipping() throws Exception {

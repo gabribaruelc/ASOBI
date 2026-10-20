@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Size;
  *
  * @param price         preço que a pessoa paga agora (o promocional, se estiver em promoção)
  * @param originalPrice preço cheio, para o "de R$ X por R$ Y" da promoção; opcional
+ * @param stock         unidades restantes, para o "restam só N" do aviso de estoque baixo; opcional
  */
 public record ProductEvent(
 		@NotNull(message = "Informe o tipo do evento.")
@@ -37,5 +38,8 @@ public record ProductEvent(
 		BigDecimal price,
 
 		@PositiveOrZero(message = "Preço inválido.")
-		BigDecimal originalPrice) {
+		BigDecimal originalPrice,
+
+		@PositiveOrZero(message = "Estoque inválido.")
+		Integer stock) {
 }

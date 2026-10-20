@@ -2,6 +2,7 @@ package br.com.asobi.newsletter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.atLeastOnce;
@@ -31,6 +32,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.asobi.catalog.repository.ProductRepository;
 import br.com.asobi.newsletter.model.NewsletterCampaign;
 import br.com.asobi.newsletter.model.NewsletterSubscriber;
 import br.com.asobi.newsletter.repository.NewsletterCampaignRepository;
@@ -65,6 +67,9 @@ class NewsletterCampaignTests {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	private ProductRepository productRepository;
 
 	@MockitoBean
 	private EmailSender emailSender;
@@ -237,6 +242,45 @@ class NewsletterCampaignTests {
 		subscriberRepository.flush();
 
 		assertThat(deliveryRepository.count()).isZero();
+	}
+
+	@Test
+	void announcesPromotionsWithProductCards() throws Exception {
+		newsletterService.subscribe("ana@example.com");
+
+		mockMvc.perform(post("/admin/newsletter/campanhas/promocoes").with(user(ADMIN)).with(csrf()))
+				.andExpect(status().is3xxRedirection());
+
+		NewsletterCampaign campaign = campaignRepository.findAll().get(0);
+		assertThat(campaign.getSubject()).isEqualTo("Promoções na ASOBI 🎉");
+		assertThat(campaign.getButtonUrl()).isEqualTo("http://localhost:3000/promocoes");
+		// em promoção, mas esgotado: fica de fora
+		Long soldOut = productRepository.findAllByOrderByNameAsc().stream()
+				.filter(product -> product.isOnSale() && !product.isInStock()).findFirst().orElseThrow().getId();
+		assertThat(campaign.getProductIds()).hasSize(2).doesNotContain(soldOut);
+
+		send(campaign.getId());
+
+		assertThat(sentMessages().get(0).html())
+				.contains("Ilha do Tesouro Cooperativa", "Palavras Mágicas", "R$ 94,90", "R$ 74,90")
+				.contains("href=\"http://localhost:3000/jogos/palavras-magicas\"");
+	}
+
+	@Test
+	void featuredProductsComeFromTheFormAndSkipSoldOut() throws Exception {
+		Long sapos = productRepository.findBySlug("corrida-dos-sapos").orElseThrow().getId();
+		mockMvc.perform(post("/admin/newsletter/campanhas").with(user(ADMIN)).with(csrf())
+				.param("subject", "Novidades").param("body", "Oi!").param("productIds", String.valueOf(sapos)))
+				.andExpect(status().is3xxRedirection());
+		Long id = campaignRepository.findAll().get(0).getId();
+
+		mockMvc.perform(get("/admin/newsletter/campanhas/{id}", id).with(user(ADMIN)))
+				.andExpect(model().attribute("previewHtml", containsString("Corrida dos Sapos")));
+
+		productRepository.findBySlug("corrida-dos-sapos").orElseThrow().setStock(0);
+		mockMvc.perform(get("/admin/newsletter/campanhas/{id}", id).with(user(ADMIN)))
+				.andExpect(model().attribute("previewHtml",
+						not(containsString("jogos/corrida-dos-sapos"))));
 	}
 
 	@Test

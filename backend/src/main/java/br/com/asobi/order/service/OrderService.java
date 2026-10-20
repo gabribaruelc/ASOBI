@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import br.com.asobi.account.CustomerIdentity;
+import br.com.asobi.catalog.event.ProductEvent;
 import br.com.asobi.catalog.model.Product;
 import br.com.asobi.catalog.repository.ProductRepository;
 import br.com.asobi.common.exception.BusinessException;
@@ -32,8 +33,11 @@ import br.com.asobi.order.model.OrderItem;
 import br.com.asobi.order.model.OrderStatus;
 import br.com.asobi.order.model.ShippingAddress;
 import br.com.asobi.order.repository.OrderRepository;
+import br.com.asobi.payment.ManualPaymentGateway;
 import br.com.asobi.payment.PaymentGateway;
 import br.com.asobi.payment.PaymentUpdate;
+import br.com.asobi.settings.model.StoreSettings;
+import br.com.asobi.settings.service.StoreSettingsService;
 import br.com.asobi.shipping.ShippingOption;
 import br.com.asobi.shipping.ShippingService;
 
@@ -47,16 +51,18 @@ public class OrderService {
 	private final ProductRepository productRepository;
 	private final PaymentGateway paymentGateway;
 	private final ShippingService shippingService;
+	private final StoreSettingsService settingsService;
 	private final ApplicationEventPublisher events;
 	private final Clock clock;
 
 	public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
-			PaymentGateway paymentGateway, ShippingService shippingService, ApplicationEventPublisher events,
-			Clock clock) {
+			PaymentGateway paymentGateway, ShippingService shippingService, StoreSettingsService settingsService,
+			ApplicationEventPublisher events, Clock clock) {
 		this.orderRepository = orderRepository;
 		this.productRepository = productRepository;
 		this.paymentGateway = paymentGateway;
 		this.shippingService = shippingService;
+		this.settingsService = settingsService;
 		this.events = events;
 		this.clock = clock;
 	}
@@ -104,7 +110,7 @@ public class OrderService {
 
 	@Transactional(readOnly = true)
 	public OrderStatusResponse getOrderStatus(UUID publicId) {
-		return OrderStatusResponse.from(orderRepository.findByPublicId(publicId)
+		return toStatus(orderRepository.findByPublicId(publicId)
 				.orElseThrow(() -> new NotFoundException("Pedido não encontrado.")));
 	}
 
@@ -114,7 +120,36 @@ public class OrderService {
 		List<Order> orders = customer.emailVerified()
 				? orderRepository.findForCustomer(customer.userId(), customer.email())
 				: orderRepository.findByCustomerUserIdOrderByCreatedAtDesc(customer.userId());
-		return orders.stream().map(OrderStatusResponse::from).toList();
+		return orders.stream().map(this::toStatus).toList();
+	}
+
+	/**
+	 * "Pagar agora" da página do pedido (e do lembrete por e-mail): cria um novo checkout para o
+	 * pedido que ficou sem pagar. Confere o estoque de novo; o preço é o do pedido.
+	 */
+	public String resumeCheckout(UUID publicId) {
+		Order order = orderRepository.findByPublicId(publicId)
+				.orElseThrow(() -> new NotFoundException("Pedido não encontrado."));
+		if (!isPayable(order)) {
+			throw new BusinessException("Este pedido não está aguardando pagamento.");
+		}
+		for (OrderItem item : order.getItems()) {
+			Product product = item.getProduct();
+			if (product == null || product.getStock() < item.getQuantity()) {
+				throw new BusinessException("\"" + item.getProductName()
+						+ "\" esgotou. Monte o carrinho de novo para fazer um novo pedido.");
+			}
+		}
+		return paymentGateway.createCheckout(order);
+	}
+
+	/** Sem Mercado Pago, quem confirma o pagamento é o lojista: não há para onde mandar o cliente. */
+	public boolean isPayable(Order order) {
+		return order.isAwaitingCheckout() && !ManualPaymentGateway.NAME.equals(paymentGateway.name());
+	}
+
+	private OrderStatusResponse toStatus(Order order) {
+		return OrderStatusResponse.from(order, isPayable(order));
 	}
 
 	/** Idempotente: o webhook pode chegar mais de uma vez, mas o estoque só baixa na primeira aprovação. */
@@ -190,6 +225,7 @@ public class OrderService {
 		if (!order.markPaid(clock.instant())) {
 			return;
 		}
+		StoreSettings settings = settingsService.get();
 		for (OrderItem item : order.getItems()) {
 			if (item.getProduct() == null) {
 				continue;
@@ -198,13 +234,17 @@ public class OrderService {
 			if (product == null) {
 				continue;
 			}
-			if (product.getStock() >= item.getQuantity()) {
+			int stockBefore = product.getStock();
+			if (stockBefore >= item.getQuantity()) {
 				product.setStock(product.getStock() - item.getQuantity());
 			} else {
 				// dois pagamentos para o último item: zera e sinaliza no painel
 				product.setStock(0);
 				order.flagStockIssue();
 				log.warn("Pedido #{} pago sem estoque suficiente de {}", order.getId(), item.getProductSlug());
+			}
+			if (settings.crossedLowStock(stockBefore, product.getStock())) {
+				events.publishEvent(ProductEvent.of(ProductEvent.Type.LOW_STOCK, product));
 			}
 		}
 		log.info("Pedido #{} pago", order.getId());

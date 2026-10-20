@@ -1,5 +1,8 @@
 package br.com.asobi.newsletter.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -20,6 +23,9 @@ public class NewsletterCampaignForm {
 	@Size(max = 500, message = "Máximo de 500 caracteres.")
 	@Pattern(regexp = "|https?://\\S+", message = "Use um endereço completo, começando com https://")
 	private String buttonUrl;
+
+	@Size(max = 12, message = "Escolha no máximo 12 jogos.")
+	private List<Long> productIds = new ArrayList<>();
 
 	public String getSubject() {
 		return subject;
@@ -51,5 +57,13 @@ public class NewsletterCampaignForm {
 
 	public void setButtonUrl(String buttonUrl) {
 		this.buttonUrl = buttonUrl;
+	}
+
+	public List<Long> getProductIds() {
+		return productIds;
+	}
+
+	public void setProductIds(List<Long> productIds) {
+		this.productIds = productIds == null ? new ArrayList<>() : productIds;
 	}
 }

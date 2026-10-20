@@ -7,6 +7,8 @@ import br.com.asobi.order.model.Order;
 /** Sem Mercado Pago: o pagamento é confirmado à mão no painel. */
 public class ManualPaymentGateway implements PaymentGateway {
 
+	public static final String NAME = "manual";
+
 	private final String storeUrl;
 
 	public ManualPaymentGateway(String storeUrl) {
@@ -15,7 +17,7 @@ public class ManualPaymentGateway implements PaymentGateway {
 
 	@Override
 	public String name() {
-		return "manual";
+		return NAME;
 	}
 
 	@Override

@@ -37,8 +37,14 @@ public class ProductAlertListener {
 		}
 		try {
 			switch (event.type()) {
-				case SALE_STARTED -> gateway.publish(alert(AlertType.PROMOTION, event));
-				case BACK_IN_STOCK -> gateway.publish(alert(AlertType.BACK_IN_STOCK, event));
+				case SALE_STARTED -> gateway.publish(alert(AlertType.PROMOTION, event, null));
+				case BACK_IN_STOCK -> gateway.publish(alert(AlertType.BACK_IN_STOCK, event, null));
+				case LOW_STOCK -> {
+					// esgotou de uma vez: "está acabando" não faz mais sentido
+					if (event.stock() > 0) {
+						gateway.publish(alert(AlertType.LOW_STOCK, event, event.stock()));
+					}
+				}
 				case DELETED -> gateway.removeProduct(event.productId());
 			}
 		} catch (RuntimeException ex) {
@@ -47,8 +53,8 @@ public class ProductAlertListener {
 		}
 	}
 
-	private Alert alert(AlertType type, ProductEvent event) {
+	private Alert alert(AlertType type, ProductEvent event, Integer stock) {
 		return new Alert(type, event.productId(), event.name(), storeUrl + "/jogos/" + event.slug(),
-				event.price(), event.originalPrice());
+				event.price(), event.originalPrice(), stock);
 	}
 }

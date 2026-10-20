@@ -117,6 +117,33 @@ class ProductAlertTests {
 	}
 
 	@Test
+	void lowStockEmailSaysHowManyAreLeft() throws Exception {
+		saved("ana@example.com", 7, AlertType.LOW_STOCK);
+		saved("maria@example.com", 7, AlertType.PROMOTION);
+
+		mockMvc.perform(publish("""
+				{"type": "LOW_STOCK", "productId": 7, "productName": "Corrida dos Sapos",
+				 "productUrl": "https://loja.asobi.test/jogos/corrida-dos-sapos", "price": 89.90, "stock": 2}
+				"""))
+				.andExpect(jsonPath("$.subscribers").value(1))
+				.andExpect(jsonPath("$.sent").value(1));
+
+		EmailMessage message = sentMessages().get(0);
+		assertThat(message.to()).isEqualTo("ana@example.com");
+		assertThat(message.subject()).isEqualTo("Corrida dos Sapos: últimas unidades — ASOBI");
+		assertThat(message.html()).contains("Está acabando!").contains("Restam só 2 unidades").contains("R$ 89,90");
+	}
+
+	@Test
+	void subscribesToLowStock() throws Exception {
+		mockMvc.perform(post("/api/subscriptions").header(ApiKeyFilter.HEADER, "test-key")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\": \"ana@example.com\", \"productId\": 7, \"type\": \"LOW_STOCK\", \"consent\": true}"))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.type").value("LOW_STOCK"));
+	}
+
+	@Test
 	void repeatedEventDoesNotEmailTheSamePersonAgain() throws Exception {
 		saved("maria@example.com", 7, AlertType.PROMOTION);
 

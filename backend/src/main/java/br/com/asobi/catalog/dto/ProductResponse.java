@@ -7,7 +7,9 @@ import java.util.List;
 import br.com.asobi.catalog.model.Product;
 import br.com.asobi.review.model.Review;
 
-/** Não expõe a quantidade em estoque e só traz avaliações aprovadas. */
+/**
+ * Não expõe a quantidade em estoque (só se está nas últimas unidades) e só traz avaliações aprovadas.
+ */
 public record ProductResponse(
 		String slug,
 		String name,
@@ -21,6 +23,7 @@ public record ProductResponse(
 		BigDecimal price,
 		Promo promo,
 		boolean inStock,
+		boolean lowStock,
 		boolean cooperative,
 		Instant newUntil,
 		boolean isNew,
@@ -36,9 +39,12 @@ public record ProductResponse(
 		}
 	}
 
-	/** @param imageUrls URLs das fotos na ordem da galeria (a primeira é a capa) */
+	/**
+	 * @param imageUrls URLs das fotos na ordem da galeria (a primeira é a capa)
+	 * @param lowStock  tem estoque, mas no limite de "últimas unidades" das configurações
+	 */
 	public static ProductResponse from(Product product, List<String> imageUrls, List<Review> approvedReviews,
-			Instant now) {
+			Instant now, boolean lowStock) {
 		return new ProductResponse(
 				product.getSlug(),
 				product.getName(),
@@ -52,6 +58,7 @@ public record ProductResponse(
 				product.getPrice(),
 				product.isOnSale() ? new Promo(product.getOriginalPrice()) : null,
 				product.isInStock(),
+				lowStock,
 				product.isCooperative(),
 				product.getNewUntil(),
 				product.isNewAt(now),

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.asobi.catalog.dto.ProductViewCount;
+import br.com.asobi.catalog.model.Product;
 import br.com.asobi.catalog.repository.ProductRepository;
 import br.com.asobi.catalog.repository.ProductViewRepository;
 import br.com.asobi.common.time.StoreTime;
@@ -57,6 +58,11 @@ public class AdminDashboardService {
 				reviewRepository.countByStatus(ReviewStatus.PENDING),
 				orderRepository.countByStatus(OrderStatus.PAID),
 				orderRepository.countByStatus(OrderStatus.PENDING_PAYMENT));
+	}
+
+	/** Jogos com estoque entre 1 e o limite das configurações (os esgotados já têm o contador próprio). */
+	public List<Product> lowStock(int threshold) {
+		return threshold <= 0 ? List.of() : productRepository.findByStockBetweenOrderByStockAscNameAsc(1, threshold);
 	}
 
 	/** Últimos {@code days} dias, contando hoje, no fuso da loja. O faturamento conta pela data do pagamento. */

@@ -35,6 +35,7 @@ public class AdminNewsletterController {
 	public String list(Model model) {
 		model.addAttribute("subscribers", newsletterService.list());
 		model.addAttribute("campaigns", campaignService.list());
+		model.addAttribute("onSaleCount", campaignService.productsOnSale().size());
 		return "admin/newsletter";
 	}
 
