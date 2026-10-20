@@ -130,7 +130,7 @@ da loja, e *generic* é um problema comum que pode ser terceirizado.
 | **catalog** | core | Produtos, faixas etárias, preço/promoção, estoque, período de Novidades, visualizações por produto | `products`, `categories`, `product_views` |
 | **order** | core | Pedido, itens, cliente/endereço, status, total calculado no servidor | `orders`, `order_items` |
 | **review** | supporting | Avaliações e sua moderação | `reviews` |
-| **newsletter** | supporting | Inscrições na newsletter (só o e-mail do adulto) e exportação da lista | `newsletter_subscribers` |
+| **newsletter** | supporting | Inscrições na newsletter (só o e-mail do adulto), envio pelo painel com limite diário, descadastro pelo link e exportação da lista | `newsletter_subscribers`, `newsletter_campaigns`, `newsletter_deliveries` |
 | **content** | supporting | Conteúdo institucional (página Sobre, políticas, contato e rodapé) | `about_page`, `about_values`, `policy_pages`, `site_info` |
 | **settings** | supporting | Parâmetros da loja (toggle de frete, frete grátis, caixa padrão, CEP de origem) | `store_settings` |
 | **shipping** | generic | Cotação de frete na transportadora | nenhum (stateless) |
@@ -264,6 +264,7 @@ O backend recota o frete ao fechar o pedido, de modo que o preço nunca vem do n
 | frontend → Supabase Auth | HTTPS (SDK no navegador) | Login do cliente com Google | Só o login falha; a compra sem cadastro segue |
 | backend → Supabase Auth | REST (`GET /auth/v1/user`) | Conferir o token do cliente em "Meus pedidos" e ao fechar pedido | "Meus pedidos" responde `401`; o pedido é fechado sem cadastro |
 | backend → Resend | REST + Bearer token | E-mails de pedido recebido, pago e enviado | Só o e-mail falha (vai para o log); o pedido segue normalmente |
+| backend (newsletter) → Resend | REST + Bearer token (lote de até 100) | Enviar a newsletter, no máximo `NEWSLETTER_DAILY_LIMIT` por 24 h | O lote reservado é liberado e ninguém recebe duas vezes; o lojista continua o envio depois |
 | backend → two-factor-service | REST/JSON + `X-Api-Key` | Depois do login do painel: pedir um código para o e-mail do admin e conferir o que ele digitou (finalidade `admin-login`) | Ninguém passa da tela do código (nunca libera na dúvida); a loja segue no ar. Sem `TWO_FACTOR_SERVICE_URL`, o painel pede só o login |
 | two-factor-service → Resend | REST + Bearer token | Enviar o código | `503`; o desafio é apagado e nenhum código fica valendo |
 | backend → notification-service | REST/JSON + `X-Api-Key` | Gravar o "avise-me" feito na ficha do jogo; depois do commit, publicar "entrou em promoção" / "voltou ao estoque" e apagar as inscrições de produto excluído | O "avise-me" responde 422 com mensagem amigável; a falha ao publicar só vai para o log. O que o lojista salvou no painel não é desfeito. Sem `NOTIFICATION_SERVICE_URL`, a loja não mostra o "avise-me" |
@@ -478,7 +479,7 @@ erDiagram
 |---|---|---|
 | catalog | `categories`, `products`, `product_images`, `product_views` | `Category`, `Product`, `ProductImage`, `ProductView` |
 | review | `reviews` | `Review` |
-| newsletter | `newsletter_subscribers` | `NewsletterSubscriber` |
+| newsletter | `newsletter_subscribers`, `newsletter_campaigns`, `newsletter_deliveries` | `NewsletterSubscriber`, `NewsletterCampaign`, `NewsletterDelivery` |
 | order | `orders`, `order_items` | `Order`, `OrderItem` (+ `Customer`, `Address` embutidos) |
 | content | `about_page`, `about_values`, `policy_pages`, `site_info` | `AboutPage`, `AboutValue`, `PolicyPage`, `SiteInfo` |
 | settings | `store_settings` | `StoreSettings` |
@@ -766,6 +767,10 @@ Rotas ligadas aos dois serviços mais novos:
 | `POST /api/product-alerts` | `{email, productSlug, type, consent: true}`; `type` = `PROMOTION` ou `BACK_IN_STOCK` | `204` (repetir o pedido não é erro) | `400` (inclusive sem consentimento) · `404` produto · `422` aviso sem sentido (jogo já disponível / já em promoção) ou serviço fora do ar |
 | `GET /api/settings` | — | agora traz também `productAlertsEnabled` | — |
 
+Fora de `/api/**` e `/admin/**`, o backend tem uma única página pública: `GET`/`POST /newsletter/descadastro/{token}`,
+o link de descadastro da newsletter (o GET só pergunta; o POST apaga o e-mail e também atende o botão do
+programa de e-mail, `List-Unsubscribe-Post`, por isso sem CSRF).
+
 No painel, `GET`/`POST /admin/verificacao` e `POST /admin/verificacao/reenviar` são a tela do código do
 two-factor-service; enquanto o código não é digitado, qualquer outra rota `/admin/**` redireciona para lá.
 
@@ -840,7 +845,7 @@ CSRF), protegidas por login Google e pelo e-mail conferido no admin-auth-service
 | `/admin/produtos` | listar, `novo`, `{id}/editar` (com envio de fotos, `multipart/form-data`), `{id}/fotos/{imageId}/capa`, `{id}/fotos/{imageId}/excluir`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
 | `/admin/categorias` | listar, criar, editar, excluir faixas etárias |
 | `/admin/avaliacoes` | fila de moderação, `{id}/aprovar`, `{id}/rejeitar`, `{id}/excluir` |
-| `/admin/newsletter` | lista de inscritos, `exportar` (CSV), `{id}/excluir` |
+| `/admin/newsletter` | newsletters e inscritos, `exportar` (CSV), `{id}/excluir`; `campanhas/nova`, `campanhas/{id}` (editar rascunho e prévia), `campanhas/{id}/teste`, `campanhas/{id}/envio` (começa ou continua), `campanhas/{id}/excluir` |
 | `/admin/pedidos` | listar/filtrar, `{id}`, `{id}/marcar-pago`, `{id}/marcar-enviado`, `{id}/cancelar` |
 | `/admin/sobre` | editar a página Sobre |
 | `/admin/politicas` | editar os textos de Privacidade, Trocas/Devoluções/Garantia e Frete |

@@ -5,7 +5,7 @@ import Link from "next/link";
 import styles from "./page.module.css";
 import { apiFetch } from "./lib/api";
 
-// Só o e-mail do adulto. A lista fica no painel (Newsletter), de onde o lojista exporta.
+// Só o e-mail do adulto. O lojista envia a newsletter pelo painel; cada e-mail traz o link para sair.
 export default function NewsletterForm() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);

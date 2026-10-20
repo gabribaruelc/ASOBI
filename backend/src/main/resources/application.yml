@@ -77,6 +77,10 @@ asobi:
     from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
     # Para onde vão as respostas dos clientes (e-mail de atendimento). Opcional.
     reply-to: ${EMAIL_REPLY_TO:}
+  newsletter:
+    # Máximo de e-mails de newsletter a cada 24 horas. O plano gratuito do Resend tem 100 por dia
+    # somando os e-mails de pedido; a sobra fica para eles. O lojista continua o envio no dia seguinte.
+    daily-limit: ${NEWSLETTER_DAILY_LIMIT:80}
   admin-auth-service:
     # Dono da lista de admins e da conferência do login Google do painel.
     # Vazio = lista em memória só com o bootstrap-email abaixo: some a cada reinício (testes).

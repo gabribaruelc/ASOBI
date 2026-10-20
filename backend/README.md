@@ -68,6 +68,7 @@ Supabase (a chave `anon` é pública); o backend conecta como dono das tabelas e
 | `RESEND_API_KEY` | chave do [Resend](https://resend.com) (`re_...`). Vazio = os e-mails só aparecem no log |
 | `EMAIL_FROM` | remetente, ex.: `ASOBI <pedidos@asobi.com.br>` (domínio verificado no Resend) |
 | `EMAIL_REPLY_TO` | opcional; e-mail de atendimento que recebe as respostas dos clientes |
+| `NEWSLETTER_DAILY_LIMIT` | opcional; máximo de e-mails de newsletter a cada 24 horas (padrão `80`, para sobrar espaço para os de pedido no plano gratuito do Resend) |
 
 Nunca commitar essas credenciais.
 
@@ -93,6 +94,12 @@ sobrevive ao Cloud Run desligar a instância.
   (`POST /api/product-alerts`). Quando o lojista coloca um jogo em promoção ou repõe o estoque de um jogo
   esgotado, o backend avisa o [`notification-service`](../notification-service/README.md), que envia os
   e-mails. Excluir um produto apaga os pedidos de aviso dele.
+- **Newsletter** (`/admin/newsletter`): o lojista escreve o e-mail (assunto, texto e um botão opcional), salva
+  o rascunho, vê a prévia, manda um teste para si e envia. Cada e-mail sai com o link de descadastro do
+  inscrito (`/newsletter/descadastro/{token}`, página do próprio backend) e o cabeçalho `List-Unsubscribe`;
+  sair da lista apaga o e-mail. O envio para em `NEWSLETTER_DAILY_LIMIT` e-mails por 24 horas: o que faltar,
+  o lojista continua no dia seguinte pelo botão "Continuar envio", sem repetir ninguém. Depois do primeiro
+  envio o texto não muda mais e só recebe quem já estava inscrito. A lista continua exportável em CSV.
 - **Dashboard** (`/admin`): contadores e métricas dos últimos 7, 30 ou 90 dias (faturamento pela data do
   pagamento, pedidos pagos, valor médio, faturamento por dia, mais vendidos e mais vistos). As visualizações
   são um contador por produto e por dia (`product_views`), somado quando a loja abre a ficha; não guarda quem viu.
@@ -185,7 +192,8 @@ a cada pedido pago. O modelo é `templates/email/order.html`.
   domínio em *Domains* (o Resend mostra os registros DNS para cadastrar no registro.br). Enquanto o
   domínio não é verificado, o remetente de teste `onboarding@resend.dev` só entrega para o e-mail dono da
   conta do Resend.
-- Free tier: 100 e-mails por dia (cada pedido completo usa 3 do cliente + 1 por admin).
+- Free tier: 100 e-mails por dia (cada pedido completo usa 3 do cliente + 1 por admin), somando a newsletter;
+  por isso ela para em `NEWSLETTER_DAILY_LIMIT` (80) por dia.
 - **Local**: sem `RESEND_API_KEY`, nada é enviado; o assunto e o destinatário aparecem no log.
 
 ## Conta do cliente (login com Google pelo Supabase Auth)

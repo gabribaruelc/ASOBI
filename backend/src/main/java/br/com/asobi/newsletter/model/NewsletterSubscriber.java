@@ -22,6 +22,10 @@ public class NewsletterSubscriber {
 	@Column(nullable = false, unique = true, length = 254)
 	private String email;
 
+	/** Vazio só nas inscrições anteriores ao envio pelo painel (ver V15). */
+	@Column(name = "unsubscribe_token", unique = true, length = 64)
+	private String unsubscribeToken;
+
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
@@ -29,8 +33,13 @@ public class NewsletterSubscriber {
 	protected NewsletterSubscriber() {
 	}
 
-	public NewsletterSubscriber(String email) {
+	public NewsletterSubscriber(String email, String unsubscribeToken) {
 		this.email = email;
+		this.unsubscribeToken = unsubscribeToken;
+	}
+
+	public void assignUnsubscribeToken(String unsubscribeToken) {
+		this.unsubscribeToken = unsubscribeToken;
 	}
 
 	public Long getId() {
@@ -39,6 +48,10 @@ public class NewsletterSubscriber {
 
 	public String getEmail() {
 		return email;
+	}
+
+	public String getUnsubscribeToken() {
+		return unsubscribeToken;
 	}
 
 	public Instant getCreatedAt() {

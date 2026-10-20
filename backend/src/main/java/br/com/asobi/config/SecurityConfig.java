@@ -22,7 +22,8 @@ import br.com.asobi.admin.twofactor.TwoFactorSession;
  * /api/** é público e sem sessão (sem CSRF). /admin/** confere o e-mail no
  * AdminDirectory a cada requisição, então remover um admin corta o acesso sem esperar a sessão expirar.
  * Com o two-factor-service configurado, o painel só abre depois do código enviado por e-mail;
- * até lá o admin logado só alcança /admin/verificacao.
+ * até lá o admin logado só alcança /admin/verificacao. O descadastro da newsletter é público e
+ * sem CSRF: quem autoriza é o token do link, e o programa de e-mail faz o POST sozinho (RFC 8058).
  */
 @Configuration
 public class SecurityConfig {
@@ -53,7 +54,7 @@ public class SecurityConfig {
 						})
 						.anyRequest().permitAll())
 				.securityContext(context -> context.securityContextRepository(securityContextRepository))
-				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**", "/newsletter/descadastro/**"))
 				.cors(Customizer.withDefaults())
 				// console do H2 usa frames
 				.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

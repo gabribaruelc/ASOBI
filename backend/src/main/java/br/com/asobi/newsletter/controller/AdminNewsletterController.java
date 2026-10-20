@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import br.com.asobi.newsletter.service.NewsletterCampaignService;
 import br.com.asobi.newsletter.service.NewsletterService;
 
 @Controller
@@ -23,14 +24,17 @@ public class AdminNewsletterController {
 	private static final MediaType CSV = new MediaType("text", "csv", StandardCharsets.UTF_8);
 
 	private final NewsletterService newsletterService;
+	private final NewsletterCampaignService campaignService;
 
-	public AdminNewsletterController(NewsletterService newsletterService) {
+	public AdminNewsletterController(NewsletterService newsletterService, NewsletterCampaignService campaignService) {
 		this.newsletterService = newsletterService;
+		this.campaignService = campaignService;
 	}
 
 	@GetMapping
 	public String list(Model model) {
 		model.addAttribute("subscribers", newsletterService.list());
+		model.addAttribute("campaigns", campaignService.list());
 		return "admin/newsletter";
 	}
 
