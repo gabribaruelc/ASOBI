@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -50,11 +51,21 @@ public class ChallengeService {
 	 * Gera o código, grava o hash e envia o e-mail. Sem transação de propósito: a chamada ao
 	 * Resend não pode segurar uma conexão do banco. Se o envio falhar, o desafio é apagado e
 	 * o código anterior (se houver) continua valendo.
+	 * <p>
+	 * Pedidos repetidos dentro de {@code resendCooldown} recebem o desafio que já existe, sem
+	 * novo e-mail. Dois pedidos simultâneos gravam cada um o seu e depois conferem: fica o mais
+	 * antigo e o outro se apaga antes de enviar. Assim sai um e-mail só, e o código dele vale.
 	 */
 	public Challenge create(String email, String purpose) {
 		String normalized = normalize(email);
 		Instant now = clock.instant();
 		challengeRepository.deleteExpiredBefore(now.minus(RETENTION));
+
+		Instant cooldownStart = now.minus(properties.resendCooldown());
+		List<Challenge> pending = challengeRepository.findOpenCreatedAfter(normalized, purpose, cooldownStart, now);
+		if (!pending.isEmpty()) {
+			return pending.get(0);
+		}
 
 		long recent = challengeRepository.countByEmailAndCreatedAtAfter(normalized,
 				now.minus(properties.challengeWindow()));
@@ -66,6 +77,12 @@ public class ChallengeService {
 		String code = String.format("%06d", random.nextInt(1_000_000));
 		Challenge challenge = challengeRepository.save(new Challenge(id, normalized, purpose,
 				codeHasher.hash(id, code), now, now.plus(properties.codeTtl())));
+
+		Challenge first = challengeRepository.findOpenCreatedAfter(normalized, purpose, cooldownStart, now).get(0);
+		if (!first.getId().equals(id)) {
+			challengeRepository.delete(challenge);
+			return first;
+		}
 		try {
 			emailSender.send(composer.compose(normalized, code, properties.codeTtl()));
 		} catch (RuntimeException ex) {
@@ -73,7 +90,7 @@ public class ChallengeService {
 			challengeRepository.delete(challenge);
 			throw new EmailDeliveryException("Não foi possível enviar o código agora. Tente novamente em instantes.");
 		}
-		challengeRepository.expireOthers(normalized, purpose, id, now);
+		challengeRepository.expireOlder(normalized, purpose, id, challenge.getCreatedAt(), now);
 		return challenge;
 	}
 

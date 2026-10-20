@@ -17,6 +17,7 @@ confere o código que ela digita. É chamado **só pelo backend da loja** (`../b
 | Conferir o código: validade de 10 minutos, uso único, no máximo 5 erros | Manter a sessão de quem passou na conferência |
 | Limitar os pedidos: 5 códigos por e-mail a cada 15 minutos | Saber qualquer coisa de produtos, pedidos ou admins |
 | Aposentar o código anterior quando a pessoa pede outro | |
+| Responder com o mesmo código (sem novo e-mail) a pedidos repetidos em até 30 s, inclusive simultâneos | |
 
 O fluxo: o backend chama `POST /api/challenges` com o e-mail e a finalidade (`purpose`, ex.: `admin-login`) e
 guarda o `id` devolvido. A pessoa recebe o código por e-mail e digita na tela do backend, que chama

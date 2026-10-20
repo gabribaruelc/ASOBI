@@ -10,8 +10,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxAttempts     erros permitidos por código
  * @param maxChallenges   códigos que o mesmo e-mail pode pedir dentro de {@code challengeWindow}
  * @param challengeWindow janela do limite acima
+ * @param resendCooldown  pedidos repetidos dentro deste tempo recebem o mesmo código, sem novo e-mail
  */
 @ConfigurationProperties("two-factor")
 public record TwoFactorProperties(String codeSecret, Duration codeTtl, int maxAttempts, int maxChallenges,
-		Duration challengeWindow) {
+		Duration challengeWindow, Duration resendCooldown) {
 }

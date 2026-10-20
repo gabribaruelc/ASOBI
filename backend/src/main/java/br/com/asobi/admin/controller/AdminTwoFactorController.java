@@ -92,7 +92,7 @@ public class AdminTwoFactorController {
 		twoFactorSession.clearChallenge(session);
 		try {
 			twoFactorSession.setChallengeId(session, gateway.requestCode(CurrentAdmin.emailOf(authentication)));
-			redirect.addFlashAttribute("success", "Enviamos um código novo.");
+			redirect.addFlashAttribute("success", "Código enviado. Se não aparecer em 1 minuto, confira a caixa de spam.");
 		} catch (BusinessException ex) {
 			redirect.addFlashAttribute("error", ex.getMessage());
 		}

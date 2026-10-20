@@ -7,7 +7,7 @@
   <p class="muted">Painel da loja</p>
 
   <p class="alert error" th:if="${error}" th:text="${error}">Código incorreto.</p>
-  <p class="alert success" th:if="${success}" th:text="${success}">Enviamos um código novo.</p>
+  <p class="alert success" th:if="${success}" th:text="${success}">Código enviado. Se não aparecer em 1 minuto, confira a caixa de spam.</p>
 
   <form th:if="${codeSent}" th:action="@{/admin/verificacao}" method="post" class="code-form">
     <p>Enviamos um código de 6 números para <strong th:text="${email}">admin@asobi.com.br</strong>. Ele vale por 10 minutos.</p>

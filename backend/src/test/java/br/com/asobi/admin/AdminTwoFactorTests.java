@@ -155,7 +155,7 @@ class AdminTwoFactorTests {
 		given(gateway.requestCode(ADMIN)).willReturn("challenge-2");
 		asAdmin(post(PAGE + "/reenviar").with(csrf()))
 				.andExpect(redirectedUrl(PAGE))
-				.andExpect(flash().attribute("success", "Enviamos um código novo."));
+				.andExpect(flash().attribute("success", "Código enviado. Se não aparecer em 1 minuto, confira a caixa de spam."));
 
 		given(gateway.verify("challenge-2", "654321", ADMIN))
 				.willReturn(new Verification(Verification.Status.VERIFIED, null));

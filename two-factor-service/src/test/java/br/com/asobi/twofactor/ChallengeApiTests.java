@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -151,21 +152,41 @@ class ChallengeApiTests {
 		mockMvc.perform(verifyCode(id, "123456")).andExpect(status().isGone());
 	}
 
+	/** Desafio pedido há {@code minutesAgo} minutos, ainda dentro da validade. */
+	private UUID storeChallenge(String code, long minutesAgo) {
+		UUID id = UUID.randomUUID();
+		Instant createdAt = Instant.now().minus(minutesAgo, ChronoUnit.MINUTES);
+		challengeRepository.save(new Challenge(id, EMAIL, "admin-login", codeHasher.hash(id, code), createdAt,
+				createdAt.plus(10, ChronoUnit.MINUTES)));
+		return id;
+	}
+
+	@Test
+	void repeatedRequestGetsTheSameCodeWithoutAnotherEmail() throws Exception {
+		UUID first = createChallenge(EMAIL);
+		String code = lastSentCode();
+		UUID second = createChallenge(EMAIL);
+
+		assertThat(second).isEqualTo(first);
+		verify(emailSender, times(1)).send(any());
+		mockMvc.perform(verifyCode(first, code)).andExpect(status().isOk());
+	}
+
 	@Test
 	void newCodeRetiresThePreviousOne() throws Exception {
-		UUID first = createChallenge(EMAIL);
-		String firstCode = lastSentCode();
+		UUID first = storeChallenge("123456", 1);
 		UUID second = createChallenge(EMAIL);
 		String secondCode = lastSentCode();
 
-		mockMvc.perform(verifyCode(first, firstCode)).andExpect(status().isGone());
+		assertThat(second).isNotEqualTo(first);
+		mockMvc.perform(verifyCode(first, "123456")).andExpect(status().isGone());
 		mockMvc.perform(verifyCode(second, secondCode)).andExpect(status().isOk());
 	}
 
 	@Test
 	void limitsHowManyCodesAnEmailCanAsk() throws Exception {
 		for (int i = 0; i < 5; i++) {
-			createChallenge(EMAIL);
+			storeChallenge("123456", 1);
 		}
 		mockMvc.perform(create(EMAIL))
 				.andExpect(status().isTooManyRequests())

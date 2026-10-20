@@ -1,6 +1,7 @@
 package br.com.asobi.twofactor.challenge;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,16 +23,26 @@ public interface ChallengeRepository extends JpaRepository<Challenge, UUID> {
 
 	long countByEmailAndCreatedAtAfter(String email, Instant since);
 
-	/** Pedir um código novo aposenta os anteriores do mesmo e-mail e finalidade. */
+	/** Códigos ainda abertos pedidos desde {@code since}, o mais antigo primeiro. */
+	@Query("""
+			SELECT c FROM Challenge c
+			WHERE c.email = :email AND c.purpose = :purpose AND c.createdAt > :since
+			  AND c.consumedAt IS NULL AND c.expiresAt > :now
+			ORDER BY c.createdAt, c.id
+			""")
+	List<Challenge> findOpenCreatedAfter(@Param("email") String email, @Param("purpose") String purpose,
+			@Param("since") Instant since, @Param("now") Instant now);
+
+	/** Pedir um código novo aposenta os anteriores do mesmo e-mail e finalidade (nunca um mais novo). */
 	@Transactional
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query("""
 			UPDATE Challenge c SET c.expiresAt = :now
 			WHERE c.email = :email AND c.purpose = :purpose AND c.id <> :keepId
-			  AND c.consumedAt IS NULL AND c.expiresAt > :now
+			  AND c.createdAt <= :keepCreatedAt AND c.consumedAt IS NULL AND c.expiresAt > :now
 			""")
-	int expireOthers(@Param("email") String email, @Param("purpose") String purpose,
-			@Param("keepId") UUID keepId, @Param("now") Instant now);
+	int expireOlder(@Param("email") String email, @Param("purpose") String purpose,
+			@Param("keepId") UUID keepId, @Param("keepCreatedAt") Instant keepCreatedAt, @Param("now") Instant now);
 
 	@Transactional
 	@Modifying(flushAutomatically = true, clearAutomatically = true)

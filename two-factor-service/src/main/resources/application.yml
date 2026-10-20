@@ -39,6 +39,8 @@ two-factor:
   # códigos que o mesmo e-mail pode pedir dentro da janela
   max-challenges: 5
   challenge-window: 15m
+  # login abre a tela duas vezes (aba duplicada, pré-carregamento): o segundo pedido fica com o mesmo código
+  resend-cooldown: 30s
   email:
     # Vazio = o e-mail (com o código) só aparece no log.
     resend-api-key: ${RESEND_API_KEY:}
