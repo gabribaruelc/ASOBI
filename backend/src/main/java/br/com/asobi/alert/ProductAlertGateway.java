@@ -3,7 +3,7 @@ package br.com.asobi.alert;
 import java.math.BigDecimal;
 
 /**
- * Avisos de "entrou em promoção" e "voltou ao estoque". As inscrições e o envio dos e-mails
+ * Avisos de "entrou em promoção", "voltou ao estoque" e "está acabando". As inscrições e o envio dos e-mails
  * ficam no notification-service; o backend só repassa o pedido da loja e conta o que mudou.
  */
 public interface ProductAlertGateway {
@@ -27,8 +27,9 @@ public interface ProductAlertGateway {
 	/**
 	 * @param price         valor cobrado agora
 	 * @param originalPrice preço cheio, para o "de/por" do aviso de promoção; pode ser null
+	 * @param stock         unidades restantes, só no aviso de "está acabando"; nos outros, null
 	 */
 	record Alert(AlertType type, Long productId, String productName, String productUrl, BigDecimal price,
-			BigDecimal originalPrice) {
+			BigDecimal originalPrice, Integer stock) {
 	}
 }

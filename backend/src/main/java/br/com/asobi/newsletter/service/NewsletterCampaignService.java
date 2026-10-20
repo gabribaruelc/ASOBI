@@ -3,6 +3,8 @@ package br.com.asobi.newsletter.service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -13,9 +15,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import br.com.asobi.catalog.model.Product;
+import br.com.asobi.catalog.repository.ProductRepository;
 import br.com.asobi.common.exception.BusinessException;
 import br.com.asobi.common.exception.NotFoundException;
 import br.com.asobi.newsletter.dto.NewsletterCampaignForm;
+import br.com.asobi.newsletter.dto.NewsletterProductCard;
 import br.com.asobi.newsletter.model.NewsletterCampaign;
 import br.com.asobi.newsletter.model.NewsletterDelivery;
 import br.com.asobi.newsletter.model.NewsletterSubscriber;
@@ -42,6 +47,7 @@ public class NewsletterCampaignService {
 	private final NewsletterCampaignRepository campaignRepository;
 	private final NewsletterSubscriberRepository subscriberRepository;
 	private final NewsletterDeliveryRepository deliveryRepository;
+	private final ProductRepository productRepository;
 	private final NewsletterEmailComposer composer;
 	private final EmailSender emailSender;
 	private final Clock clock;
@@ -49,11 +55,13 @@ public class NewsletterCampaignService {
 
 	public NewsletterCampaignService(NewsletterCampaignRepository campaignRepository,
 			NewsletterSubscriberRepository subscriberRepository, NewsletterDeliveryRepository deliveryRepository,
-			NewsletterEmailComposer composer, EmailSender emailSender, Clock clock,
+			ProductRepository productRepository, NewsletterEmailComposer composer, EmailSender emailSender,
+			Clock clock,
 			@Value("${asobi.newsletter.daily-limit}") int dailyLimit) {
 		this.campaignRepository = campaignRepository;
 		this.subscriberRepository = subscriberRepository;
 		this.deliveryRepository = deliveryRepository;
+		this.productRepository = productRepository;
 		this.composer = composer;
 		this.emailSender = emailSender;
 		this.clock = clock;
@@ -74,7 +82,36 @@ public class NewsletterCampaignService {
 		form.setBody(campaign.getBody());
 		form.setButtonLabel(campaign.getButtonLabel());
 		form.setButtonUrl(campaign.getButtonUrl());
+		form.setProductIds(new ArrayList<>(campaign.getProductIds()));
 		return form;
+	}
+
+	/** Jogos que podem entrar como destaque: os que têm estoque, os em promoção primeiro. */
+	public List<Product> productOptions() {
+		return productRepository.findAllByOrderByNameAsc().stream()
+				.filter(Product::isInStock)
+				.sorted(Comparator.comparing((Product product) -> !product.isOnSale()))
+				.toList();
+	}
+
+	public List<Product> productsOnSale() {
+		return productRepository.findByOriginalPriceIsNotNullAndStockGreaterThanOrderByNameAsc(0);
+	}
+
+	/** Rascunho pronto com os jogos em promoção; o lojista revisa o texto antes de enviar. */
+	public NewsletterCampaign createPromotion(String adminEmail) {
+		List<Product> onSale = productsOnSale();
+		if (onSale.isEmpty()) {
+			throw new BusinessException("Nenhum jogo com estoque está em promoção agora.");
+		}
+		NewsletterCampaign campaign = new NewsletterCampaign(adminEmail);
+		campaign.update(onSale.size() == 1 ? onSale.get(0).getName() + " está em promoção! 🎉"
+				: "Promoções na ASOBI 🎉",
+				"Oi! Separamos jogos com preço especial para a próxima brincadeira em família.\n\n"
+						+ "As promoções valem enquanto durar o estoque.",
+				"Ver todas as promoções", composer.storeUrl() + "/promocoes",
+				onSale.stream().limit(12).map(Product::getId).toList());
+		return campaignRepository.save(campaign);
 	}
 
 	public NewsletterCampaign create(NewsletterCampaignForm form, String adminEmail) {
@@ -94,13 +131,15 @@ public class NewsletterCampaignService {
 	}
 
 	public String preview(Long id) {
-		return composer.preview(find(id));
+		NewsletterCampaign campaign = find(id);
+		return composer.preview(campaign, composer.cards(campaign.getProductIds()));
 	}
 
 	/** Manda a newsletter só para o admin conferir; não conta como envio. */
 	public void sendTest(Long id, String adminEmail) {
 		NewsletterCampaign campaign = find(id);
-		EmailMessage message = composer.compose(campaign, adminEmail, "exemplo");
+		EmailMessage message = composer.compose(campaign, composer.cards(campaign.getProductIds()), adminEmail,
+				"exemplo");
 		emailSender.send(new EmailMessage(message.to(), "[Teste] " + message.subject(), message.html(),
 				message.unsubscribeUrl()));
 	}
@@ -115,6 +154,7 @@ public class NewsletterCampaignService {
 		}
 
 		int quota = remainingQuota(now);
+		List<NewsletterProductCard> cards = composer.cards(campaign.getProductIds());
 		int sent = 0;
 		while (quota > 0) {
 			List<NewsletterSubscriber> batch = subscriberRepository.findPending(campaign.getId(),
@@ -139,7 +179,7 @@ public class NewsletterCampaignService {
 			NewsletterCampaign current = campaign;
 			try {
 				emailSender.sendAll(batch.stream()
-						.map(subscriber -> composer.compose(current, subscriber.getEmail(),
+						.map(subscriber -> composer.compose(current, cards, subscriber.getEmail(),
 								subscriber.getUnsubscribeToken()))
 						.toList());
 			} catch (RuntimeException ex) {
@@ -192,7 +232,7 @@ public class NewsletterCampaignService {
 
 	private static void apply(NewsletterCampaign campaign, NewsletterCampaignForm form) {
 		campaign.update(form.getSubject().strip(), form.getBody().strip(), blankToNull(form.getButtonLabel()),
-				blankToNull(form.getButtonUrl()));
+				blankToNull(form.getButtonUrl()), form.getProductIds());
 	}
 
 	private static String blankToNull(String value) {

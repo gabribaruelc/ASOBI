@@ -14,6 +14,10 @@ const COPY = {
     toggle: "🔔 Avise-me se entrar em promoção",
     done: "Combinado! A gente manda um e-mail se este jogo entrar em promoção.",
   },
+  LOW_STOCK: {
+    toggle: "⏳ Avise-me se estiver acabando",
+    done: "Combinado! A gente manda um e-mail quando este jogo estiver nas últimas unidades.",
+  },
 };
 
 // Só o e-mail do adulto, e só com a caixa de consentimento marcada (ela começa desmarcada).

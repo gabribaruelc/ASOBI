@@ -46,11 +46,16 @@ export default async function ProdutoPage({ params }) {
     notFound();
   }
 
-  // Esgotado: aviso de volta ao estoque. Disponível e fora de promoção: aviso de promoção.
-  let alertType = null;
+  // Esgotado: aviso de volta ao estoque. Disponível: aviso de promoção (se não está em
+  // promoção) e de "está acabando" (se ainda não está nas últimas unidades).
+  const alertTypes = [];
   if (settings.productAlertsEnabled) {
-    if (!product.inStock) alertType = "BACK_IN_STOCK";
-    else if (!product.promo) alertType = "PROMOTION";
+    if (!product.inStock) {
+      alertTypes.push("BACK_IN_STOCK");
+    } else {
+      if (!product.promo) alertTypes.push("PROMOTION");
+      if (!product.lowStock) alertTypes.push("LOW_STOCK");
+    }
   }
 
   const isNew = isProductNew(product);
@@ -131,17 +136,21 @@ export default async function ProdutoPage({ params }) {
               <span className={styles.price}>{formatPrice(product.price)}</span>
             </div>
 
+            {product.lowStock && (
+              <p className={styles.lowStock}>⏳ Últimas unidades!</p>
+            )}
+
             <p className={styles.description}>{product.description}</p>
 
             <AddToCartBox slug={product.slug} outOfStock={!product.inStock} />
 
-            {alertType && (
+            {alertTypes.map((type) => (
               <ProductAlertForm
-                key={`${product.slug}-${alertType}`}
+                key={`${product.slug}-${type}`}
                 slug={product.slug}
-                type={alertType}
+                type={type}
               />
-            )}
+            ))}
 
             <div className={styles.paymentBadges}>
               <span>Pix</span>

@@ -34,6 +34,10 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
 	long countByOriginalPriceIsNotNull();
 
+	List<Product> findByStockBetweenOrderByStockAscNameAsc(int min, int max);
+
+	List<Product> findByOriginalPriceIsNotNullAndStockGreaterThanOrderByNameAsc(int stock);
+
 	@Override
 	@EntityGraph(attributePaths = "category")
 	List<Product> findAll(Specification<Product> spec, Sort sort);

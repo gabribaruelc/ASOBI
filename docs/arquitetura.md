@@ -339,8 +339,10 @@ removido (o endpoint de cotação agora tem DTO próprio) e o `GET /api/settings
 `settings`. Se algum desses domínios virar serviço, o ciclo vira evento (ex.: `PaymentApproved`) ou uma
 interface (porta) no lado dependente.
 
-O módulo `order` **não** depende de `notification`: ele só publica `OrderEvent` (`PLACED`, `PAID`, `SHIPPED`)
-e o `notification` escuta. O e-mail é montado dentro da transação do pedido, mas enviado só **depois do
+O módulo `order` **não** depende de `notification`: ele só publica `OrderEvent` (`PLACED`, `PAID`, `SHIPPED`,
+`PAYMENT_REMINDER`) e o `notification` escuta. Quando a baixa de estoque de um pedido pago cruza o limite de
+estoque baixo, o `order` publica `ProductEvent` `LOW_STOCK`: o `notification` avisa os admins e o `alert`
+repassa ao notification-service. O e-mail é montado dentro da transação do pedido, mas enviado só **depois do
 commit** (`EmailDispatcher`), de forma síncrona — no Cloud Run a CPU é cortada quando a resposta sai, então
 uma tarefa em segundo plano poderia não rodar.
 
@@ -479,7 +481,7 @@ erDiagram
 |---|---|---|
 | catalog | `categories`, `products`, `product_images`, `product_views` | `Category`, `Product`, `ProductImage`, `ProductView` |
 | review | `reviews` | `Review` |
-| newsletter | `newsletter_subscribers`, `newsletter_campaigns`, `newsletter_deliveries` | `NewsletterSubscriber`, `NewsletterCampaign`, `NewsletterDelivery` |
+| newsletter | `newsletter_subscribers`, `newsletter_campaigns`, `newsletter_campaign_products`, `newsletter_deliveries` | `NewsletterSubscriber`, `NewsletterCampaign`, `NewsletterDelivery` |
 | order | `orders`, `order_items` | `Order`, `OrderItem` (+ `Customer`, `Address` embutidos) |
 | content | `about_page`, `about_values`, `policy_pages`, `site_info` | `AboutPage`, `AboutValue`, `PolicyPage`, `SiteInfo` |
 | settings | `store_settings` | `StoreSettings` |
@@ -718,14 +720,14 @@ Convenções comuns:
   "description": "…", "skill": "Coordenação motora",
   "ageKey": "4-6", "age": "4 a 6 anos", "players": "2 a 4 jogadores",
   "price": 79.90, "promo": { "originalPrice": 89.90 },
-  "inStock": true, "cooperative": false,
+  "inStock": true, "lowStock": false, "cooperative": false,
   "newUntil": "2026-10-15T02:59:59Z", "isNew": true,
   "reviews": [ { "id": 7, "name": "Ana", "rating": 5, "comment": "Meu filho adora!" } ]
 }
 ```
 
 `promo` é `null` quando o produto não está em promoção. `reviews` traz **só as aprovadas**, e o estoque
-exato não é exposto (apenas `inStock`). `images` são as URLs públicas das fotos, com a capa primeiro;
+exato não é exposto (apenas `inStock` e `lowStock`, "últimas unidades"). `images` são as URLs públicas das fotos, com a capa primeiro;
 quando vem vazio, a loja mostra o emoji de `icon`.
 
 **`OrderRequest`**:
@@ -756,7 +758,7 @@ Os itens levam **só slug e quantidade**: preço, total e frete são calculados 
   "items": [ { "slug": "corrida-dos-sapos", "name": "Corrida dos Sapos", "quantity": 2,
                "unitPrice": 79.90, "lineTotal": 159.80 } ],
   "itemsTotal": 159.80, "shippingCost": 0.00, "shippingService": "Correios PAC · 6 dias úteis",
-  "total": 159.80, "trackingCode": null, "createdAt": "2026-09-28T14:03:00Z"
+  "total": 159.80, "trackingCode": null, "createdAt": "2026-09-28T14:03:00Z", "payable": false
 }
 ```
 
@@ -764,7 +766,9 @@ Rotas ligadas aos dois serviços mais novos:
 
 | Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
 |---|---|---|---|
-| `POST /api/product-alerts` | `{email, productSlug, type, consent: true}`; `type` = `PROMOTION` ou `BACK_IN_STOCK` | `204` (repetir o pedido não é erro) | `400` (inclusive sem consentimento) · `404` produto · `422` aviso sem sentido (jogo já disponível / já em promoção) ou serviço fora do ar |
+| `POST /api/product-alerts` | `{email, productSlug, type, consent: true}`; `type` = `PROMOTION`, `BACK_IN_STOCK` ou `LOW_STOCK` | `204` (repetir o pedido não é erro) | `400` (inclusive sem consentimento) · `404` produto · `422` aviso sem sentido (jogo já disponível / já em promoção / já nas últimas unidades) ou serviço fora do ar |
+| `POST /api/orders/{orderId}/checkouts` | — ("Pagar agora" do pedido que ficou sem pagar) | `201` `{checkoutUrl}` | `404` · `422` (não está aguardando pagamento, ou algum jogo esgotou) |
+| `POST /api/jobs/payment-reminders` | cabeçalho `X-Job-Key` (Cloud Scheduler) | `200` `{sent}` | `401` chave errada · `404` sem `JOBS_API_KEY` |
 | `GET /api/settings` | — | agora traz também `productAlertsEnabled` | — |
 
 Fora de `/api/**` e `/admin/**`, o backend tem uma única página pública: `GET`/`POST /newsletter/descadastro/{token}`,
@@ -825,11 +829,11 @@ rota (`/api/v2/quotes`), mantendo a antiga até o backend migrar.
 
 | Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
 |---|---|---|---|
-| `POST /api/subscriptions` | `{email, productId, type, consent: true}`; `type` = `PROMOTION` ou `BACK_IN_STOCK` | `201` nova · `200` já existia: `{id, email, productId, type, consentedAt, lastNotifiedAt}` | `400` (inclusive sem consentimento) |
+| `POST /api/subscriptions` | `{email, productId, type, consent: true}`; `type` = `PROMOTION`, `BACK_IN_STOCK` ou `LOW_STOCK` | `201` nova · `200` já existia: `{id, email, productId, type, consentedAt, lastNotifiedAt}` | `400` (inclusive sem consentimento) |
 | `GET /api/subscriptions?email=&productId=` | filtros opcionais | `200` lista | — |
 | `DELETE /api/subscriptions/{id}` | — | `204` | `404` |
 | `DELETE /api/subscriptions?email=` ou `?productId=` | exatamente um dos dois | `200` `{removed}` | `400` |
-| `POST /api/product-events` | `{type, productId, productName, productUrl, price, originalPrice?}` | `200` `{subscribers, sent, failed, skipped}` | `400` |
+| `POST /api/product-events` | `{type, productId, productName, productUrl, price, originalPrice?, stock?}` | `200` `{subscribers, sent, failed, skipped}` | `400` |
 | `GET /descadastro/{token}` | sem chave | `200` página de confirmação (não cancela nada) | — |
 | `POST /descadastro/{token}` | sem chave; `all=true` cancela todos os avisos do e-mail | `200` página "aviso cancelado" | — |
 | `GET /actuator/health` | — | `200` | — |
@@ -845,7 +849,7 @@ CSRF), protegidas por login Google e pelo e-mail conferido no admin-auth-service
 | `/admin/produtos` | listar, `novo`, `{id}/editar` (com envio de fotos, `multipart/form-data`), `{id}/fotos/{imageId}/capa`, `{id}/fotos/{imageId}/excluir`, `{id}/estoque`, `{id}/encerrar-promocao`, `{id}/excluir` |
 | `/admin/categorias` | listar, criar, editar, excluir faixas etárias |
 | `/admin/avaliacoes` | fila de moderação, `{id}/aprovar`, `{id}/rejeitar`, `{id}/excluir` |
-| `/admin/newsletter` | newsletters e inscritos, `exportar` (CSV), `{id}/excluir`; `campanhas/nova`, `campanhas/{id}` (editar rascunho e prévia), `campanhas/{id}/teste`, `campanhas/{id}/envio` (começa ou continua), `campanhas/{id}/excluir` |
+| `/admin/newsletter` | newsletters e inscritos, `exportar` (CSV), `{id}/excluir`; `campanhas/nova`, `campanhas/{id}` (editar rascunho e prévia), `campanhas/{id}/teste`, `campanhas/{id}/envio` (começa ou continua), `campanhas/{id}/excluir`, `campanhas/promocoes` (rascunho com os jogos em promoção) |
 | `/admin/pedidos` | listar/filtrar, `{id}`, `{id}/marcar-pago`, `{id}/marcar-enviado`, `{id}/cancelar` |
 | `/admin/sobre` | editar a página Sobre |
 | `/admin/politicas` | editar os textos de Privacidade, Trocas/Devoluções/Garantia e Frete |

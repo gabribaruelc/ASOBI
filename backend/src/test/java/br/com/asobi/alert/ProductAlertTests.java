@@ -195,15 +195,15 @@ class ProductAlertTests {
 	@Test
 	void listenerTranslatesCatalogEventsForTheService() {
 		listener.onProductEvent(new ProductEvent(ProductEvent.Type.SALE_STARTED, 7L, SLUG, "Corrida dos Sapos",
-				new BigDecimal("69.90"), new BigDecimal("89.90")));
+				new BigDecimal("69.90"), new BigDecimal("89.90"), 5));
 
 		ArgumentCaptor<Alert> captor = ArgumentCaptor.forClass(Alert.class);
 		verify(gateway).publish(captor.capture());
 		assertThat(captor.getValue()).isEqualTo(new Alert(AlertType.PROMOTION, 7L, "Corrida dos Sapos",
-				"http://localhost:3000/jogos/corrida-dos-sapos", new BigDecimal("69.90"), new BigDecimal("89.90")));
+				"http://localhost:3000/jogos/corrida-dos-sapos", new BigDecimal("69.90"), new BigDecimal("89.90"), null));
 
 		listener.onProductEvent(new ProductEvent(ProductEvent.Type.DELETED, 7L, SLUG, "Corrida dos Sapos",
-				new BigDecimal("69.90"), null));
+				new BigDecimal("69.90"), null, 5));
 		verify(gateway).removeProduct(7L);
 	}
 
@@ -212,7 +212,7 @@ class ProductAlertTests {
 		willThrow(new IllegalStateException("fora do ar")).given(gateway).publish(any());
 
 		listener.onProductEvent(new ProductEvent(ProductEvent.Type.BACK_IN_STOCK, 7L, SLUG, "Corrida dos Sapos",
-				new BigDecimal("89.90"), null));
+				new BigDecimal("89.90"), null, 5));
 
 		verify(gateway).publish(any());
 	}

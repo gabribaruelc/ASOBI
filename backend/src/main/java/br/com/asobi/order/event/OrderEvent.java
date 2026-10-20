@@ -14,6 +14,8 @@ public record OrderEvent(Type type, Order order) {
 		/** Pagamento aprovado (pelo Mercado Pago ou marcado no painel). */
 		PAID,
 		/** Marcado como enviado no painel. */
-		SHIPPED
+		SHIPPED,
+		/** Ficou sem pagar: lembrete único com o link para pagar. */
+		PAYMENT_REMINDER
 	}
 }

@@ -41,6 +41,9 @@ public class StoreSettings {
 	@Column(name = "package_length_cm", nullable = false)
 	private int packageLengthCm;
 
+	@Column(name = "low_stock_threshold", nullable = false)
+	private int lowStockThreshold;
+
 	@Column(name = "updated_by_email", length = 254)
 	private String updatedByEmail;
 
@@ -53,6 +56,16 @@ public class StoreSettings {
 
 	public boolean qualifiesForFreeShipping(BigDecimal itemsTotal) {
 		return freeShippingThreshold != null && itemsTotal.compareTo(freeShippingThreshold) >= 0;
+	}
+
+	/** Com estas unidades ou menos (e mais de zero), o jogo está nas últimas. */
+	public boolean isLowStock(int stock) {
+		return stock > 0 && stock <= lowStockThreshold;
+	}
+
+	/** A venda levou o estoque do jogo para o limite ou abaixo dele (inclusive esgotando). */
+	public boolean crossedLowStock(int before, int after) {
+		return lowStockThreshold > 0 && before > lowStockThreshold && after <= lowStockThreshold;
 	}
 
 	public Long getId() {
@@ -113,6 +126,14 @@ public class StoreSettings {
 
 	public void setPackageLengthCm(int packageLengthCm) {
 		this.packageLengthCm = packageLengthCm;
+	}
+
+	public int getLowStockThreshold() {
+		return lowStockThreshold;
+	}
+
+	public void setLowStockThreshold(int lowStockThreshold) {
+		this.lowStockThreshold = lowStockThreshold;
 	}
 
 	public String getUpdatedByEmail() {

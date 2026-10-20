@@ -21,6 +21,8 @@ import br.com.asobi.common.exception.NotFoundException;
 import br.com.asobi.review.model.Review;
 import br.com.asobi.review.model.ReviewStatus;
 import br.com.asobi.review.repository.ReviewRepository;
+import br.com.asobi.settings.model.StoreSettings;
+import br.com.asobi.settings.service.StoreSettingsService;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,14 +32,17 @@ public class CatalogService {
 	private final ProductRepository productRepository;
 	private final ReviewRepository reviewRepository;
 	private final ProductImageService imageService;
+	private final StoreSettingsService settingsService;
 	private final Clock clock;
 
 	public CatalogService(CategoryRepository categoryRepository, ProductRepository productRepository,
-			ReviewRepository reviewRepository, ProductImageService imageService, Clock clock) {
+			ReviewRepository reviewRepository, ProductImageService imageService,
+			StoreSettingsService settingsService, Clock clock) {
 		this.categoryRepository = categoryRepository;
 		this.productRepository = productRepository;
 		this.reviewRepository = reviewRepository;
 		this.imageService = imageService;
+		this.settingsService = settingsService;
 		this.clock = clock;
 	}
 
@@ -69,9 +74,11 @@ public class CatalogService {
 		Map<Long, List<Review>> reviewsByProduct = reviewRepository
 				.findByProductIdInAndStatusOrderByCreatedAtAsc(ids, ReviewStatus.APPROVED).stream()
 				.collect(Collectors.groupingBy(review -> review.getProduct().getId()));
+		StoreSettings settings = settingsService.get();
 		return products.stream()
 				.map(product -> ProductResponse.from(product, imageService.urls(product),
-						reviewsByProduct.getOrDefault(product.getId(), List.of()), now))
+						reviewsByProduct.getOrDefault(product.getId(), List.of()), now,
+						settings.isLowStock(product.getStock())))
 				.toList();
 	}
 }

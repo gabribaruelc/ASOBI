@@ -36,6 +36,20 @@
       </a>
     </div>
 
+    <section class="card table-wrap" th:unless="${lowStock.isEmpty()}">
+      <h3 class="table-title" th:text="${'Estoque baixo (até ' + lowStockThreshold + ' unidades)'}">Estoque baixo</h3>
+      <table>
+        <thead><tr><th>Jogo</th><th>Unidades</th><th></th></tr></thead>
+        <tbody>
+          <tr th:each="product : ${lowStock}">
+            <td th:text="${product.name}">Corrida dos Sapos</td>
+            <td><span class="badge pink" th:text="${product.stock}">2</span></td>
+            <td class="actions"><a th:href="@{/admin/produtos/{id}/editar(id=${product.id})}">Repor estoque →</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <div class="page-header metrics-header">
       <h2>Vendas e visitas</h2>
       <div class="tabs">

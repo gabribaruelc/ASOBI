@@ -91,6 +91,9 @@ public class NotificationServiceClient implements ProductAlertGateway {
 		if (alert.originalPrice() != null) {
 			body.put("originalPrice", alert.originalPrice());
 		}
+		if (alert.stock() != null) {
+			body.put("stock", alert.stock());
+		}
 		Result result = restClient.post()
 				.uri("/api/product-events")
 				.contentType(MediaType.APPLICATION_JSON)

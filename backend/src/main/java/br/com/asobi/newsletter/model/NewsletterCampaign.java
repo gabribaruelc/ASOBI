@@ -1,14 +1,21 @@
 package br.com.asobi.newsletter.model;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
 /** Uma newsletter escrita no painel: rascunho até o primeiro envio. */
@@ -32,6 +39,12 @@ public class NewsletterCampaign {
 	@Column(name = "button_url", length = 500)
 	private String buttonUrl;
 
+	/** Jogos em destaque (cartões com foto e preço). Carregados junto: o envio roda fora de transação. */
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name = "newsletter_campaign_products", joinColumns = @JoinColumn(name = "campaign_id"))
+	@Column(name = "product_id")
+	private Set<Long> productIds = new LinkedHashSet<>();
+
 	@Column(name = "created_by", nullable = false, updatable = false, length = 254)
 	private String createdBy;
 
@@ -49,11 +62,14 @@ public class NewsletterCampaign {
 		this.createdBy = createdBy;
 	}
 
-	public void update(String subject, String body, String buttonLabel, String buttonUrl) {
+	public void update(String subject, String body, String buttonLabel, String buttonUrl,
+			Collection<Long> productIds) {
 		this.subject = subject;
 		this.body = body;
 		this.buttonLabel = buttonLabel;
 		this.buttonUrl = buttonUrl;
+		this.productIds.clear();
+		this.productIds.addAll(productIds);
 	}
 
 	public void markStarted(Instant now) {
@@ -84,6 +100,10 @@ public class NewsletterCampaign {
 
 	public String getButtonUrl() {
 		return buttonUrl;
+	}
+
+	public Set<Long> getProductIds() {
+		return productIds;
 	}
 
 	public String getCreatedBy() {

@@ -39,6 +39,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 	long countByStatus(OrderStatus status);
 
+	/** Pedidos criados entre {@code from} e {@code to} que nunca chegaram ao pagamento nem receberam lembrete. */
+	@EntityGraph(attributePaths = "items")
+	@Query("""
+			select o from Order o
+			where o.status = :status and o.paymentId is null and o.paymentReminderSentAt is null
+			  and o.createdAt >= :from and o.createdAt <= :to
+			order by o.createdAt""")
+	List<Order> findPaymentReminderCandidates(@Param("status") OrderStatus status, @Param("from") Instant from,
+			@Param("to") Instant to);
+
 	/** Pedidos com pagamento aprovado a partir de {@code from}, sem os itens. */
 	@Query("select o from Order o where o.paidAt >= :from order by o.paidAt")
 	List<Order> findPaidSince(@Param("from") Instant from);

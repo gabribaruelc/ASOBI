@@ -89,6 +89,9 @@ public class Order {
 	@Column(name = "shipped_at")
 	private Instant shippedAt;
 
+	@Column(name = "payment_reminder_sent_at")
+	private Instant paymentReminderSentAt;
+
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
@@ -157,6 +160,15 @@ public class Order {
 			throw new BusinessException("Só pedidos aguardando pagamento podem ser cancelados por aqui.");
 		}
 		this.status = OrderStatus.CANCELED;
+	}
+
+	/** Aguardando pagamento e sem nenhum pagamento iniciado (Pix ou boleto gerado não conta como abandonado). */
+	public boolean isAwaitingCheckout() {
+		return status == OrderStatus.PENDING_PAYMENT && paymentId == null;
+	}
+
+	public void markPaymentReminderSent(Instant when) {
+		this.paymentReminderSentAt = when;
 	}
 
 	public void flagStockIssue() {
@@ -233,6 +245,10 @@ public class Order {
 
 	public Instant getPaidAt() {
 		return paidAt;
+	}
+
+	public Instant getPaymentReminderSentAt() {
+		return paymentReminderSentAt;
 	}
 
 	public Instant getShippedAt() {

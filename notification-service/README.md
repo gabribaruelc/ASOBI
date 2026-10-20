@@ -42,7 +42,7 @@ Todas as rotas `/api/**` exigem o cabeçalho `X-Api-Key` (igual a `NOTIFICATION_
 | `POST /api/product-events` | O backend conta que um produto mudou (abaixo). Resposta: `{subscribers, sent, failed, skipped}` |
 | `GET /actuator/health` | Health check (aberto, sem chave) |
 
-`type` é `PROMOTION` ou `BACK_IN_STOCK`, tanto na inscrição quanto no evento.
+`type` é `PROMOTION`, `BACK_IN_STOCK` ou `LOW_STOCK` ("está acabando"), tanto na inscrição quanto no evento.
 
 Evento:
 
@@ -57,7 +57,8 @@ Evento:
 }
 ```
 
-`price` é o que a pessoa paga agora; `originalPrice` é opcional e só aparece (riscado) no aviso de promoção.
+`price` é o que a pessoa paga agora; `originalPrice` é opcional e aparece riscado quando é maior que `price`.
+`stock` é opcional: no `LOW_STOCK`, vira o "Restam só N unidades" do e-mail.
 Na resposta, `skipped` conta quem já tinha recebido o mesmo aviso nas últimas 24 horas, e `failed`, quem não
 recebeu porque o Resend recusou o lote. Quem falhou não é marcado como avisado: basta o backend mandar o
 evento de novo.

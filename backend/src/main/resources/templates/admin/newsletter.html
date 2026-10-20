@@ -11,7 +11,12 @@
         <p class="muted">Escreva e envie e-mails para quem pediu novidades pelo formulário da loja. Cada e-mail
           sai com um link para a pessoa sair da lista sozinha.</p>
       </div>
-      <a th:href="@{/admin/newsletter/campanhas/nova}" class="button pink">✉ Escrever newsletter</a>
+      <div class="form-actions">
+        <form th:if="${onSaleCount > 0}" th:action="@{/admin/newsletter/campanhas/promocoes}" method="post">
+          <button type="submit" class="button secondary" th:text="${'🏷 Anunciar promoções (' + onSaleCount + ')'}">🏷 Anunciar promoções</button>
+        </form>
+        <a th:href="@{/admin/newsletter/campanhas/nova}" class="button pink">✉ Escrever newsletter</a>
+      </div>
     </div>
     <div th:replace="~{admin/fragments :: flash}"></div>
 

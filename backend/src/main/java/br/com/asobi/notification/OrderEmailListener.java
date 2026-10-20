@@ -46,6 +46,7 @@ public class OrderEmailListener {
 					}
 				}
 				case SHIPPED -> dispatcher.sendAfterCommit(composer.shipped(order));
+				case PAYMENT_REMINDER -> dispatcher.sendAfterCommit(composer.paymentReminder(order));
 			}
 		} catch (RuntimeException ex) {
 			// Um problema no e-mail não pode impedir a venda.

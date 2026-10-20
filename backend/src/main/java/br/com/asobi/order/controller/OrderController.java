@@ -47,6 +47,16 @@ public class OrderController {
 		return orderService.getOrderStatus(orderId);
 	}
 
+	/** "Pagar agora": novo link do Mercado Pago para o pedido que ficou sem pagar. */
+	@PostMapping("/{orderId}/checkouts")
+	@ResponseStatus(HttpStatus.CREATED)
+	public CheckoutResponse resumeCheckout(@PathVariable UUID orderId) {
+		return new CheckoutResponse(orderService.resumeCheckout(orderId));
+	}
+
+	public record CheckoutResponse(String checkoutUrl) {
+	}
+
 	/** Chamado quando o cliente volta do Mercado Pago com ?payment_id=... */
 	@PostMapping("/{orderId}/payment-sync")
 	public OrderStatusResponse syncPayment(@PathVariable UUID orderId,

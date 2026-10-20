@@ -77,6 +77,14 @@ asobi:
     from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
     # Para onde vão as respostas dos clientes (e-mail de atendimento). Opcional.
     reply-to: ${EMAIL_REPLY_TO:}
+  payment-reminders:
+    # Lembrete único para quem fez o pedido e não chegou ao pagamento: depois de "delay" e só
+    # para pedidos com até "max-age". Quem dispara é o Cloud Scheduler (ver jobs abaixo).
+    delay: 2h
+    max-age: 48h
+  jobs:
+    # Chave do cabeçalho X-Job-Key das rotinas em /api/jobs/** (Cloud Scheduler). Vazio = rotinas desligadas.
+    api-key: ${JOBS_API_KEY:}
   newsletter:
     # Máximo de e-mails de newsletter a cada 24 horas. O plano gratuito do Resend tem 100 por dia
     # somando os e-mails de pedido; a sobra fica para eles. O lojista continua o envio no dia seguinte.

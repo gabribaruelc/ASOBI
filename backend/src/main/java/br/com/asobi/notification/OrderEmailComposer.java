@@ -59,6 +59,17 @@ public class OrderEmailComposer {
 		return message(order, "Seu pedido nº " + order.getId() + " foi enviado — ASOBI", context);
 	}
 
+	/** Para o cliente: ficou sem pagar. Leva para a página do pedido, que tem o "Pagar agora". */
+	public EmailMessage paymentReminder(Order order) {
+		Context context = customerContext(order, "Seus jogos estão esperando por você 🎲", List.of(
+				"Oi, " + firstName(order) + "! Vimos que o pedido nº " + order.getId()
+						+ " ficou sem pagamento.",
+				"Se ainda quiser os jogos, é só abrir o pedido e clicar em \"Pagar agora\". Se mudou de ideia, "
+						+ "pode ignorar este e-mail: o pedido não é cobrado e este é o único lembrete."));
+		context.setVariable("buttonLabel", "Pagar agora");
+		return message(order, "Seu pedido nº " + order.getId() + " está esperando pagamento — ASOBI", context);
+	}
+
 	/** Para os admins: chegou um pedido pago, hora de separar e enviar. */
 	public EmailMessage paidAdminNotice(Order order, List<String> adminEmails) {
 		List<String> paragraphs = new ArrayList<>();

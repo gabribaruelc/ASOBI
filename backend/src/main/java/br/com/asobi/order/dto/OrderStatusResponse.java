@@ -8,7 +8,11 @@ import java.util.UUID;
 import br.com.asobi.order.model.Order;
 import br.com.asobi.order.model.OrderStatus;
 
-/** Público (qualquer um com o link), por isso sem e-mail, telefone ou endereço. */
+/**
+ * Público (qualquer um com o link), por isso sem e-mail, telefone ou endereço.
+ *
+ * @param payable a loja pode mostrar "Pagar agora" (aguardando pagamento, sem pagamento iniciado)
+ */
 public record OrderStatusResponse(
 		UUID orderId,
 		Long number,
@@ -20,12 +24,13 @@ public record OrderStatusResponse(
 		String shippingService,
 		BigDecimal total,
 		String trackingCode,
-		Instant createdAt) {
+		Instant createdAt,
+		boolean payable) {
 
 	public record Item(String slug, String name, int quantity, BigDecimal unitPrice, BigDecimal lineTotal) {
 	}
 
-	public static OrderStatusResponse from(Order order) {
+	public static OrderStatusResponse from(Order order, boolean payable) {
 		return new OrderStatusResponse(
 				order.getPublicId(),
 				order.getId(),
@@ -40,6 +45,7 @@ public record OrderStatusResponse(
 				order.getShippingService(),
 				order.getTotal(),
 				order.getTrackingCode(),
-				order.getCreatedAt());
+				order.getCreatedAt(),
+				payable);
 	}
 }

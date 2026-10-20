@@ -39,6 +39,11 @@ public class StoreSettingsForm {
 	@Max(value = 100, message = "Máximo 100 cm.")
 	private Integer packageLengthCm;
 
+	@NotNull(message = "Informe o limite.")
+	@Min(value = 0, message = "Use 0 para desligar.")
+	@Max(value = 100, message = "Máximo 100 unidades.")
+	private Integer lowStockThreshold;
+
 	public boolean isShippingEnabled() {
 		return shippingEnabled;
 	}
@@ -85,6 +90,14 @@ public class StoreSettingsForm {
 
 	public void setPackageHeightCm(Integer packageHeightCm) {
 		this.packageHeightCm = packageHeightCm;
+	}
+
+	public Integer getLowStockThreshold() {
+		return lowStockThreshold;
+	}
+
+	public void setLowStockThreshold(Integer lowStockThreshold) {
+		this.lowStockThreshold = lowStockThreshold;
 	}
 
 	public Integer getPackageLengthCm() {

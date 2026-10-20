@@ -27,28 +27,46 @@ public class AlertEmailComposer {
 	}
 
 	public EmailMessage compose(ProductEvent event, Subscription subscription) {
-		boolean promotion = event.type() == AlertType.PROMOTION;
 		String unsubscribeUrl = properties.publicUrl() + "/descadastro/" + subscription.getUnsubscribeToken();
+		Copy copy = copy(event);
 
 		Context context = new Context(PT_BR);
-		context.setVariable("heading", promotion ? "Entrou em promoção! 🎉" : "Voltou ao estoque! 🎲");
-		context.setVariable("intro", promotion
-				? "Boa notícia: o jogo que você estava de olho está com preço especial."
-				: "Boa notícia: o jogo que você estava esperando chegou de novo.");
+		context.setVariable("heading", copy.heading());
+		context.setVariable("intro", copy.intro());
 		context.setVariable("productName", event.productName());
 		context.setVariable("price", money(event.price()));
-		boolean showOriginal = promotion && event.originalPrice() != null
-				&& event.originalPrice().compareTo(event.price()) > 0;
+		boolean showOriginal = event.originalPrice() != null && event.originalPrice().compareTo(event.price()) > 0;
 		context.setVariable("originalPrice", showOriginal ? money(event.originalPrice()) : null);
+		context.setVariable("stockNote", event.type() == AlertType.LOW_STOCK && event.stock() != null
+				? (event.stock() == 1 ? "Resta só 1 unidade" : "Restam só " + event.stock() + " unidades")
+				: null);
 		context.setVariable("productUrl", event.productUrl());
-		context.setVariable("reason", promotion
-				? "Você recebeu este e-mail porque pediu para ser avisado quando este jogo entrasse em promoção."
-				: "Você recebeu este e-mail porque pediu para ser avisado quando este jogo voltasse ao estoque.");
+		context.setVariable("reason", copy.reason());
 		context.setVariable("unsubscribeUrl", unsubscribeUrl);
 
-		String subject = event.productName() + (promotion ? " entrou em promoção" : " voltou ao estoque") + " — ASOBI";
+		String subject = event.productName() + copy.subjectSuffix() + " — ASOBI";
 		return new EmailMessage(subscription.getEmail(), subject,
 				templateEngine.process("email/product-alert", context), unsubscribeUrl);
+	}
+
+	private static Copy copy(ProductEvent event) {
+		return switch (event.type()) {
+			case PROMOTION -> new Copy("Entrou em promoção! 🎉",
+					"Boa notícia: o jogo que você estava de olho está com preço especial.",
+					"Você recebeu este e-mail porque pediu para ser avisado quando este jogo entrasse em promoção.",
+					" entrou em promoção");
+			case BACK_IN_STOCK -> new Copy("Voltou ao estoque! 🎲",
+					"Boa notícia: o jogo que você estava esperando chegou de novo.",
+					"Você recebeu este e-mail porque pediu para ser avisado quando este jogo voltasse ao estoque.",
+					" voltou ao estoque");
+			case LOW_STOCK -> new Copy("Está acabando! ⏳",
+					"O jogo que você estava de olho está nas últimas unidades. Se ainda quiser, é melhor garantir o seu.",
+					"Você recebeu este e-mail porque pediu para ser avisado quando este jogo estivesse acabando.",
+					": últimas unidades");
+		};
+	}
+
+	private record Copy(String heading, String intro, String reason, String subjectSuffix) {
 	}
 
 	private static String money(BigDecimal value) {

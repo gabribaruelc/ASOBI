@@ -58,6 +58,35 @@
   border-radius: 999px;
 }
 
+.payButton {
+  margin-top: 20px;
+  background: var(--color-secondary);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 32px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.payButton:hover:not(:disabled) {
+  background: var(--color-secondary-dark);
+}
+
+.payButton:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.payError {
+  margin: 12px auto 0;
+  max-width: 480px;
+  color: var(--color-secondary-dark);
+  font-weight: 700;
+}
+
 .items {
   list-style: none;
   padding: 0;

@@ -58,6 +58,16 @@
             <span class="field-error" th:if="${#fields.hasErrors('buttonUrl')}" th:errors="*{buttonUrl}"></span>
           </label>
         </div>
+        <fieldset class="fieldset product-picker" th:unless="${#lists.isEmpty(productOptions)}">
+          <legend>Jogos em destaque <span class="hint">opcional; até 12, viram cartões com foto, preço e link.
+            O preço é o do momento do envio, e jogo esgotado fica de fora.</span></legend>
+          <label class="checkbox" th:each="p : ${productOptions}">
+            <input type="checkbox" th:field="*{productIds}" th:value="${p.id}">
+            <span th:text="${p.name}">Corrida dos Sapos</span>
+            <span class="badge pink" th:if="${p.onSale}">Promoção</span>
+          </label>
+          <span class="field-error" th:if="${#fields.hasErrors('productIds')}" th:errors="*{productIds}"></span>
+        </fieldset>
         <div class="form-actions">
           <button type="submit" class="button">Salvar rascunho</button>
         </div>

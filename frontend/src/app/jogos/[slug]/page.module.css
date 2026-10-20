@@ -118,6 +118,16 @@
   gap: 12px;
 }
 
+.lowStock {
+  align-self: flex-start;
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--color-secondary-tint);
+  color: var(--color-secondary-dark);
+  font-weight: 700;
+}
+
 .oldPrice {
   font-size: 1rem;
   color: var(--color-text-soft);

@@ -228,4 +228,10 @@ class OrderFlowTests {
 		mockMvc.perform(get("/admin").with(user(ADMIN)))
 				.andExpect(content().string(containsString("Aguardando pagamento")));
 	}
+
+	@Test
+	void paymentReminderJobIsOffWithoutKey() throws Exception {
+		mockMvc.perform(post("/api/jobs/payment-reminders").header("X-Job-Key", "qualquer"))
+				.andExpect(status().isNotFound());
+	}
 }
