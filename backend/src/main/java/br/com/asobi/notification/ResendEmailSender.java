@@ -3,6 +3,7 @@ package br.com.asobi.notification;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
@@ -45,6 +46,27 @@ public class ResendEmailSender implements EmailSender {
 
 	@Override
 	public void send(EmailMessage message) {
+		post("/emails", toBody(message));
+	}
+
+	/** https://resend.com/docs/api-reference/emails/send-batch-emails */
+	@Override
+	public void sendAll(List<EmailMessage> messages) {
+		if (!messages.isEmpty()) {
+			post("/emails/batch", messages.stream().map(this::toBody).toList());
+		}
+	}
+
+	private void post(String uri, Object body) {
+		restClient.post()
+				.uri(uri)
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(body)
+				.retrieve()
+				.toBodilessEntity();
+	}
+
+	private Map<String, Object> toBody(EmailMessage message) {
 		Map<String, Object> body = new LinkedHashMap<>();
 		body.put("from", from);
 		body.put("to", message.to());
@@ -53,11 +75,12 @@ public class ResendEmailSender implements EmailSender {
 		if (StringUtils.hasText(replyTo)) {
 			body.put("reply_to", replyTo);
 		}
-		restClient.post()
-				.uri("/emails")
-				.contentType(MediaType.APPLICATION_JSON)
-				.body(body)
-				.retrieve()
-				.toBodilessEntity();
+		if (message.unsubscribeUrl() != null) {
+			// RFC 8058: o programa de e-mail mostra "cancelar inscrição" e faz o POST sozinho
+			body.put("headers", Map.of(
+					"List-Unsubscribe", "<" + message.unsubscribeUrl() + ">",
+					"List-Unsubscribe-Post", "List-Unsubscribe=One-Click"));
+		}
+		return body;
 	}
 }

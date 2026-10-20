@@ -2,7 +2,7 @@ import styles from "./page.module.css";
 import { getAbout } from "../lib/catalog";
 
 // Texto reserva, usado só se o backend não responder. O conteúdo de verdade é o
-// que a Priscila edita em /admin/sobre.
+// que o lojista edita em /admin/sobre.
 const FALLBACK_SOBRE = {
   heroText:
     'O nome ASOBI vem do japonês 遊び ("asobi"), que significa brincadeira. Acreditamos que é brincando que as crianças aprendem melhor — e é por isso que existimos: para levar até as famílias jogos de tabuleiro que unem diversão de verdade com desenvolvimento infantil.',

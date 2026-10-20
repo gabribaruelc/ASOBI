@@ -31,7 +31,6 @@ export default function CheckoutPage() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [lookingUpCep, setLookingUpCep] = useState(false);
-  // Frete automático (liga/desliga no painel admin).
   const [shippingEnabled, setShippingEnabled] = useState(false);
   const [shippingOptions, setShippingOptions] = useState([]);
   const [shippingOptionId, setShippingOptionId] = useState(null);
@@ -93,7 +92,6 @@ export default function CheckoutPage() {
     }
   }
 
-  // Preenche o endereço pelo CEP (ViaCEP — serviço público e gratuito) e cota o frete.
   async function handleCepBlur() {
     const digits = form.postalCode.replace(/\D/g, "");
     if (digits.length !== 8) return;
@@ -112,7 +110,7 @@ export default function CheckoutPage() {
         }));
       }
     } catch {
-      // Sem ViaCEP, a pessoa preenche o endereço à mão.
+      // ViaCEP fora do ar: endereço é preenchido à mão
     } finally {
       setLookingUpCep(false);
     }
@@ -145,7 +143,6 @@ export default function CheckoutPage() {
         }),
       });
       clearCart();
-      // Vai para o Mercado Pago (ou para a página do pedido, no modo manual).
       window.location.href = order.checkoutUrl;
     } catch (err) {
       setError(err.message);

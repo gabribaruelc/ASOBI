@@ -13,9 +13,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
- * Formulário de produto do painel. Os preços seguem o jeito que a Priscila pensa:
- * "preço normal" + (opcional) "preço promocional". No banco isso vira
- * price (quanto se paga) e original_price (preço riscado, só em promoção).
+ * Na tela o preço é "normal" + "promocional" (opcional). No banco vira
+ * price (valor cobrado) e original_price (preço riscado, só em promoção).
  */
 public class ProductForm {
 
@@ -62,7 +61,7 @@ public class ProductForm {
 
 	private boolean cooperative;
 
-	/** Último dia em Novidades (vazio = não aparece em Novidades). */
+	/** Último dia em Novidades; vazio = não é novidade. */
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
 	private LocalDate newUntil;
 

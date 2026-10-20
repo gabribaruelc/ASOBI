@@ -7,11 +7,7 @@ import java.util.List;
 import br.com.asobi.catalog.model.Product;
 import br.com.asobi.review.model.Review;
 
-/**
- * Produto como a loja enxerga. Não expõe a quantidade exata em estoque, só se
- * há estoque; e traz apenas as avaliações já aprovadas. Sem fotos ("images" vazio),
- * a loja mostra o emoji de "icon".
- */
+/** Não expõe a quantidade em estoque e só traz avaliações aprovadas. */
 public record ProductResponse(
 		String slug,
 		String name,

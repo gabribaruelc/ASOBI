@@ -1,10 +1,7 @@
--- Callback do Flyway: roda depois de toda migração, só no Postgres (Supabase).
---
--- O Supabase publica as tabelas do schema public na API REST dele (PostgREST),
--- acessível com a chave "anon", que é pública. A loja não usa essa API — tudo
--- passa pelo backend —, então ligamos o RLS sem nenhuma política: a API do
--- Supabase fica sem acesso e o backend, que conecta como dono das tabelas,
--- continua lendo e gravando normalmente.
+-- Callback do Flyway (só Postgres).
+-- O Supabase expõe o schema public no PostgREST com a chave anon, que é pública.
+-- A loja não usa essa API, então o RLS fica ligado sem nenhuma policy: bloqueia
+-- o PostgREST e o backend (dono das tabelas) continua com acesso normal.
 DO $$
 DECLARE
     t record;

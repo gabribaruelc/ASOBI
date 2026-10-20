@@ -1,4 +1,4 @@
-/* Painel admin ASOBI — mesma identidade da loja (ver CLAUDE.md). */
+/* Mesmas cores e fontes da loja (frontend/src/app/globals.css). */
 :root {
   --white: #FFFFFF;
   --blue: #2E7CF6;
@@ -191,6 +191,9 @@ td.actions > * + * { margin-left: 12px; }
   gap: 16px;
 }
 .login-card .alert { margin: 0; }
+.code-form { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+.code-form input { font-size: 1.4rem; letter-spacing: .3em; text-align: center; }
+.login-card .link-button { margin: 0 auto; }
 .dev-login { display: flex; flex-direction: column; gap: 12px; text-align: left; border-top: 1px dashed var(--line); padding-top: 16px; }
 
 /* Celular */
@@ -244,3 +247,25 @@ td.badges .badge { margin: 2px 4px 2px 0; }
 .toggle > span { display: flex; flex-direction: column; gap: 4px; }
 .form-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 800px) { .form-grid.four { grid-template-columns: 1fr 1fr; } }
+
+/* Métricas do dashboard */
+.metrics-header { align-items: center; margin-top: 32px; }
+.metrics-header h2 { margin: 0; }
+.metrics-header .tabs { margin-top: 0; }
+.metrics-header + .stats { margin-top: 16px; }
+.stat .hint { margin-top: 4px; }
+h3 { font-size: 1.05rem; margin: 0 0 8px; }
+.chart-scale { margin: 0 0 8px; font-size: .8rem; color: var(--muted); }
+.chart { display: flex; align-items: flex-end; gap: 2px; height: 180px; border-top: 1px dashed var(--line); border-bottom: 1px solid var(--line); }
+.chart-col { flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.chart-col:hover { background: var(--blue-tint); }
+.chart-bar { width: 100%; max-width: 28px; min-height: 2px; background: var(--blue); border-radius: 4px 4px 0 0; }
+.chart-col:hover .chart-bar { background: var(--blue-dark); }
+.chart-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: .8rem; color: var(--muted); }
+.chart-table { margin-top: 12px; }
+.chart-table summary { cursor: pointer; color: var(--blue); font-weight: 700; font-size: .875rem; }
+.table-title { padding: 16px 16px 0; }
+.table-empty { padding: 0 16px 16px; margin: 0; }
+
+/* Newsletter */
+.email-preview { display: block; width: 100%; height: 640px; border: 1px solid var(--line); border-radius: 12px; background: var(--blue-tint); }

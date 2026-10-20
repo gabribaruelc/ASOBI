@@ -36,7 +36,7 @@ import br.com.asobi.order.repository.OrderRepository;
 @Transactional
 class OrderEmailTests {
 
-	private static final String ADMIN = "priscila@asobi.com.br";
+	private static final String ADMIN = "admin@asobi.com.br";
 
 	private static final String ADDRESS = """
 			"shippingAddress": {"postalCode": "01310100", "street": "Av. Paulista", "number": "1000",

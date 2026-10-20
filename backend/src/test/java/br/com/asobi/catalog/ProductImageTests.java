@@ -42,7 +42,7 @@ import jakarta.persistence.EntityManager;
 @Transactional
 class ProductImageTests {
 
-	private static final String ADMIN = "priscila@asobi.com.br";
+	private static final String ADMIN = "admin@asobi.com.br";
 
 	// Só o começo do arquivo importa: é por ele que o tipo é reconhecido.
 	private static final byte[] PNG = { (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0 };

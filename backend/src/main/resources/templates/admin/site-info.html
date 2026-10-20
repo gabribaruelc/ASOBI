@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Contato e rodapé')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Contato e rodapé</h1>
+    <p class="muted">Aparece no rodapé da loja e em
+      <a th:href="${storeUrl + '/fale-conosco'}" target="_blank" rel="noopener">/fale-conosco</a>.
+      O que ficar em branco não aparece.</p>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <form th:action="@{/admin/contato}" th:object="${form}" method="post" novalidate>
+      <section class="card">
+        <h2>Atendimento</h2>
+        <div class="form-grid">
+          <label>E-mail de atendimento
+            <input type="email" th:field="*{contactEmail}" maxlength="254" placeholder="contato@asobi.com.br">
+            <span class="field-error" th:if="${#fields.hasErrors('contactEmail')}" th:errors="*{contactEmail}"></span>
+          </label>
+          <label>Telefone / WhatsApp
+            <input type="text" th:field="*{contactPhone}" maxlength="30" placeholder="(11) 91234-5678">
+            <span class="hint">Com DDD. O botão de WhatsApp da loja usa este número.</span>
+            <span class="field-error" th:if="${#fields.hasErrors('contactPhone')}" th:errors="*{contactPhone}"></span>
+          </label>
+          <label class="full">Horário de atendimento
+            <input type="text" th:field="*{businessHours}" maxlength="100" placeholder="Seg. a sex., 9h às 18h">
+            <span class="field-error" th:if="${#fields.hasErrors('businessHours')}" th:errors="*{businessHours}"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Redes sociais</h2>
+        <div class="form-grid">
+          <label>Instagram
+            <input type="url" th:field="*{instagramUrl}" maxlength="200" placeholder="https://instagram.com/asobi">
+            <span class="field-error" th:if="${#fields.hasErrors('instagramUrl')}" th:errors="*{instagramUrl}"></span>
+          </label>
+          <label>Facebook
+            <input type="url" th:field="*{facebookUrl}" maxlength="200" placeholder="https://facebook.com/asobi">
+            <span class="field-error" th:if="${#fields.hasErrors('facebookUrl')}" th:errors="*{facebookUrl}"></span>
+          </label>
+          <label>TikTok
+            <input type="url" th:field="*{tiktokUrl}" maxlength="200" placeholder="https://tiktok.com/@asobi">
+            <span class="field-error" th:if="${#fields.hasErrors('tiktokUrl')}" th:errors="*{tiktokUrl}"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Dados da empresa</h2>
+        <div class="form-grid">
+          <label>Razão social
+            <input type="text" th:field="*{legalName}" maxlength="150">
+            <span class="field-error" th:if="${#fields.hasErrors('legalName')}" th:errors="*{legalName}"></span>
+          </label>
+          <label>CNPJ
+            <input type="text" th:field="*{cnpj}" maxlength="18" placeholder="12.345.678/0001-90">
+            <span class="field-error" th:if="${#fields.hasErrors('cnpj')}" th:errors="*{cnpj}"></span>
+          </label>
+          <label class="full">Endereço
+            <input type="text" th:field="*{address}" maxlength="200" placeholder="Rua, número — Cidade/UF">
+            <span class="field-error" th:if="${#fields.hasErrors('address')}" th:errors="*{address}"></span>
+          </label>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit" class="button">Salvar contato</button>
+      </div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

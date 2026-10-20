@@ -13,7 +13,6 @@ import br.com.asobi.common.exception.BusinessException;
 import br.com.asobi.common.exception.NotFoundException;
 import br.com.asobi.common.text.Slugs;
 
-/** Faixas etárias, gerenciadas pelo painel admin. */
 @Service
 @Transactional
 public class CategoryService {
@@ -39,7 +38,7 @@ public class CategoryService {
 		return categoryRepository.findAllByOrderByPositionAscNameAsc();
 	}
 
-	/** O slug (usado na URL da loja, ex.: /jogos?idade=4-a-6-anos) é gerado do nome e não muda depois. */
+	/** O slug vai para a URL da loja (/jogos?idade=...), então não muda depois de criado. */
 	public Category create(CategoryForm form) {
 		String slug = Slugs.slugify(form.getName());
 		if (slug.isEmpty()) {

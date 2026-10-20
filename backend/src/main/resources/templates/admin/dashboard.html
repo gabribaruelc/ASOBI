@@ -35,6 +35,95 @@
         <span class="stat-label">Avaliações aguardando →</span>
       </a>
     </div>
+
+    <div class="page-header metrics-header">
+      <h2>Vendas e visitas</h2>
+      <div class="tabs">
+        <a th:each="period : ${periods}" th:href="@{/admin(periodo=${period})}"
+           th:classappend="${period == metrics.days} ? 'active'" th:text="${period + ' dias'}">30 dias</a>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value" th:text="${'R$ ' + #numbers.formatDecimal(metrics.revenue, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</span>
+        <span class="stat-label">Faturamento</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" th:text="${metrics.paidOrders}">0</span>
+        <span class="stat-label">Pedidos pagos</span>
+        <span class="hint" th:text="${metrics.placedOrders + ' pedidos feitos no período'}">0 pedidos feitos no período</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" th:text="${'R$ ' + #numbers.formatDecimal(metrics.averageTicket, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</span>
+        <span class="stat-label">Valor médio por pedido</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" th:text="${metrics.views}">0</span>
+        <span class="stat-label">Visualizações de produtos</span>
+      </div>
+    </div>
+
+    <section class="card">
+      <h3>Faturamento por dia</h3>
+      <p class="muted" th:if="${metrics.paidOrders == 0}">Nenhum pedido pago nos últimos <span th:text="${metrics.days}">30</span> dias.</p>
+      <div th:unless="${metrics.paidOrders == 0}">
+        <p class="chart-scale" th:text="${'Melhor dia: R$ ' + #numbers.formatDecimal(metrics.bestDay, 1, 'POINT', 2, 'COMMA')}">Melhor dia: R$ 0,00</p>
+        <div class="chart" role="img" th:aria-label="${'Faturamento por dia nos últimos ' + metrics.days + ' dias'}">
+          <div class="chart-col" th:each="day : ${metrics.daily}"
+               th:title="${#temporals.format(day.date, 'dd/MM') + ' · R$ ' + #numbers.formatDecimal(day.revenue, 1, 'POINT', 2, 'COMMA')}">
+            <span class="chart-bar" th:if="${day.revenue.signum() > 0}" th:style="${'height:' + day.percent + '%'}"></span>
+          </div>
+        </div>
+        <div class="chart-axis">
+          <span th:text="${#temporals.format(metrics.daily[0].date, 'dd/MM')}">01/09</span>
+          <span>hoje</span>
+        </div>
+        <details class="chart-table">
+          <summary>Ver em tabela</summary>
+          <table>
+            <thead><tr><th>Dia</th><th>Faturamento</th></tr></thead>
+            <tbody>
+              <tr th:each="day : ${metrics.daily}" th:if="${day.revenue.signum() > 0}">
+                <td th:text="${#temporals.format(day.date, 'dd/MM/yyyy')}">22/09/2026</td>
+                <td th:text="${'R$ ' + #numbers.formatDecimal(day.revenue, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+      </div>
+    </section>
+
+    <div class="detail-grid">
+      <section class="card table-wrap">
+        <h3 class="table-title">Mais vendidos</h3>
+        <p class="muted table-empty" th:if="${metrics.bestSellers.isEmpty()}">Nenhuma venda no período.</p>
+        <table th:unless="${metrics.bestSellers.isEmpty()}">
+          <thead><tr><th>Jogo</th><th>Unidades</th><th>Faturamento</th></tr></thead>
+          <tbody>
+            <tr th:each="item : ${metrics.bestSellers}">
+              <td th:text="${item.name}">Corrida dos Sapos</td>
+              <td th:text="${item.quantity}">3</td>
+              <td th:text="${'R$ ' + #numbers.formatDecimal(item.revenue, 1, 'POINT', 2, 'COMMA')}">R$ 0,00</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card table-wrap">
+        <h3 class="table-title">Mais vistos</h3>
+        <p class="muted table-empty" th:if="${metrics.mostViewed.isEmpty()}">Nenhuma visualização no período.</p>
+        <table th:unless="${metrics.mostViewed.isEmpty()}">
+          <thead><tr><th>Jogo</th><th>Visualizações</th></tr></thead>
+          <tbody>
+            <tr th:each="item : ${metrics.mostViewed}">
+              <td><a th:href="${storeUrl + '/jogos/' + item.slug}" target="_blank" rel="noopener" th:text="${item.name}">Corrida dos Sapos</a></td>
+              <td th:text="${item.views}">12</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
   </main>
 </div>
 </body>

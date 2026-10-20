@@ -58,6 +58,34 @@ class ResendEmailSenderTests {
 	}
 
 	@Test
+	void sendsBatchWithUnsubscribeHeaders() {
+		server.expect(requestTo("https://api.resend.com/emails/batch"))
+				.andExpect(method(HttpMethod.POST))
+				.andExpect(jsonPath("$.length()").value(2))
+				.andExpect(jsonPath("$[1].to[0]").value("joao@example.com"))
+				.andExpect(jsonPath("$[1].headers.List-Unsubscribe").value("<https://api.asobi.com.br/sair/2>"))
+				.andExpect(jsonPath("$[1].headers.List-Unsubscribe-Post").value("List-Unsubscribe=One-Click"))
+				.andRespond(withSuccess("{\"data\": []}", MediaType.APPLICATION_JSON));
+
+		sender("").sendAll(List.of(
+				new EmailMessage(List.of("maria@example.com"), "Oi", "<p>Oi</p>", "https://api.asobi.com.br/sair/1"),
+				new EmailMessage(List.of("joao@example.com"), "Oi", "<p>Oi</p>", "https://api.asobi.com.br/sair/2")));
+
+		server.verify();
+	}
+
+	@Test
+	void transactionalEmailHasNoUnsubscribeHeader() {
+		server.expect(requestTo("https://api.resend.com/emails"))
+				.andExpect(jsonPath("$.headers").doesNotExist())
+				.andRespond(withSuccess("{\"id\": \"abc\"}", MediaType.APPLICATION_JSON));
+
+		sender("").send(MESSAGE);
+
+		server.verify();
+	}
+
+	@Test
 	void providerErrorIsThrown() {
 		server.expect(requestTo("https://api.resend.com/emails")).andRespond(withStatus(HttpStatus.FORBIDDEN)
 				.contentType(MediaType.APPLICATION_JSON).body("{\"message\": \"The domain is not verified\"}"));

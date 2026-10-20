@@ -16,12 +16,11 @@ import br.com.asobi.common.exception.BusinessException;
 import br.com.asobi.order.model.OrderStatus;
 import br.com.asobi.order.service.OrderService;
 
-/** Pedidos (/admin/pedidos). */
 @Controller
 @RequestMapping("/admin/pedidos")
 public class AdminOrderController {
 
-	/** Abas da lista: nome na URL → status (null = todos). */
+	/** Nome da aba na URL -> status (null = todos). */
 	private static final Map<String, OrderStatus> TABS = new LinkedHashMap<>();
 
 	static {

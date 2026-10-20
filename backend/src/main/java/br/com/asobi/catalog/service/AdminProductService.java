@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -11,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import br.com.asobi.catalog.dto.AdminProductRow;
 import br.com.asobi.catalog.dto.ProductForm;
+import br.com.asobi.catalog.event.ProductEvent;
 import br.com.asobi.catalog.model.Category;
 import br.com.asobi.catalog.model.Product;
 import br.com.asobi.catalog.repository.CategoryRepository;
@@ -20,7 +22,6 @@ import br.com.asobi.common.exception.NotFoundException;
 import br.com.asobi.common.text.Slugs;
 import br.com.asobi.common.time.StoreTime;
 
-/** Cadastro de produtos pelo painel admin. */
 @Service
 @Transactional
 public class AdminProductService {
@@ -28,13 +29,15 @@ public class AdminProductService {
 	private final ProductRepository productRepository;
 	private final CategoryRepository categoryRepository;
 	private final ProductImageService imageService;
+	private final ApplicationEventPublisher events;
 	private final Clock clock;
 
 	public AdminProductService(ProductRepository productRepository, CategoryRepository categoryRepository,
-			ProductImageService imageService, Clock clock) {
+			ProductImageService imageService, ApplicationEventPublisher events, Clock clock) {
 		this.productRepository = productRepository;
 		this.categoryRepository = categoryRepository;
 		this.imageService = imageService;
+		this.events = events;
 		this.clock = clock;
 	}
 
@@ -86,8 +89,11 @@ public class AdminProductService {
 	/** O slug não muda na edição: é o link público do produto. As fotos enviadas são acrescentadas. */
 	public Product update(Long id, ProductForm form, List<MultipartFile> photos) {
 		Product product = getProduct(id);
+		boolean wasOnSale = product.isOnSale();
+		boolean wasInStock = product.isInStock();
 		apply(product, form);
 		imageService.add(product, photos);
+		publishChanges(product, wasOnSale, wasInStock);
 		return product;
 	}
 
@@ -95,10 +101,12 @@ public class AdminProductService {
 		if (stock < 0) {
 			throw new BusinessException("O estoque não pode ser negativo.");
 		}
-		getProduct(id).setStock(stock);
+		Product product = getProduct(id);
+		boolean wasInStock = product.isInStock();
+		product.setStock(stock);
+		publishChanges(product, product.isOnSale(), wasInStock);
 	}
 
-	/** Tira da promoção: volta a cobrar o preço normal. */
 	public void endSale(Long id) {
 		Product product = getProduct(id);
 		if (product.isOnSale()) {
@@ -111,6 +119,17 @@ public class AdminProductService {
 		Product product = getProduct(id);
 		imageService.deleteFiles(product);
 		productRepository.delete(product);
+		events.publishEvent(ProductEvent.of(ProductEvent.Type.DELETED, product));
+	}
+
+	/** Só a virada interessa: entrar em promoção ou sair do esgotado. */
+	private void publishChanges(Product product, boolean wasOnSale, boolean wasInStock) {
+		if (!wasOnSale && product.isOnSale()) {
+			events.publishEvent(ProductEvent.of(ProductEvent.Type.SALE_STARTED, product));
+		}
+		if (!wasInStock && product.isInStock()) {
+			events.publishEvent(ProductEvent.of(ProductEvent.Type.BACK_IN_STOCK, product));
+		}
 	}
 
 	private void apply(Product product, ProductForm form) {

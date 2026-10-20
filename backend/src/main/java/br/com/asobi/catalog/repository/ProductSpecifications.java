@@ -9,7 +9,6 @@ import org.springframework.data.jpa.domain.Specification;
 import br.com.asobi.catalog.model.Product;
 import jakarta.persistence.criteria.Predicate;
 
-/** Filtros do catálogo (faixa etária, cooperativos, novidades, promoções). */
 public final class ProductSpecifications {
 
 	private ProductSpecifications() {

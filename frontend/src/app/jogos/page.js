@@ -3,18 +3,22 @@ import styles from "./page.module.css";
 import ProductCard from "../components/ProductCard";
 import CatalogUnavailable from "../components/CatalogUnavailable";
 import { getAgeFilters, getProducts } from "../lib/catalog";
+import { matchesSearch } from "../lib/products";
 
 export default async function JogosPage({ searchParams }) {
-  const { idade, estilo } = await searchParams;
+  const { idade, estilo, busca } = await searchParams;
   const [products, ageFilters] = await Promise.all([
     getProducts(),
     getAgeFilters(),
   ]);
 
   const cooperativeOnly = estilo === "cooperativos";
+  // Vem do campo de busca do Header.
+  const search = typeof busca === "string" ? busca.trim().slice(0, 80) : "";
   const filtered = (products || []).filter((product) => {
     if (idade && product.ageKey !== idade) return false;
     if (cooperativeOnly && !product.cooperative) return false;
+    if (search && !matchesSearch(product, search)) return false;
     return true;
   });
 
@@ -40,7 +44,7 @@ export default async function JogosPage({ searchParams }) {
           <div className={styles.filters}>
             <Link
               href="/jogos"
-              className={`${styles.pill} ${!idade && !cooperativeOnly ? styles.pillActive : ""}`}
+              className={`${styles.pill} ${!idade && !cooperativeOnly && !search ? styles.pillActive : ""}`}
             >
               Todos
             </Link>
@@ -61,10 +65,19 @@ export default async function JogosPage({ searchParams }) {
             </Link>
           </div>
 
-          {activeLabel && products && (
+          {(activeLabel || search) && products && (
             <p className={styles.resultCount}>
-              Mostrando <strong>{filtered.length}</strong> jogo(s) em{" "}
-              <strong>{activeLabel}</strong>
+              Mostrando <strong>{filtered.length}</strong> jogo(s)
+              {search && (
+                <>
+                  {" "}para <strong>“{search}”</strong>
+                </>
+              )}
+              {activeLabel && (
+                <>
+                  {" "}em <strong>{activeLabel}</strong>
+                </>
+              )}
             </p>
           )}
 
@@ -78,7 +91,11 @@ export default async function JogosPage({ searchParams }) {
             </div>
           ) : (
             <div className={styles.empty}>
-              <p>Nenhum jogo encontrado com esse filtro.</p>
+              <p>
+                {search
+                  ? "Nenhum jogo encontrado para essa busca. Tente outra palavra."
+                  : "Nenhum jogo encontrado com esse filtro."}
+              </p>
               <Link href="/jogos" className={styles.clearLink}>
                 Ver todos os jogos
               </Link>

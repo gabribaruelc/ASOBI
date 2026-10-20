@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: notification-service
+  config:
+    # notification-service/.env local; no Cloud Run vem do Secret Manager
+    import: optional:file:.env[.properties]
+  profiles:
+    # H2 local por padrão; em produção SPRING_PROFILES_ACTIVE=supabase
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      # esquema fica a cargo do Flyway
+      ddl-auto: validate
+
+server:
+  # 8080 backend, 8081 shipping-service, 8082 two-factor-service, 8083 admin-auth-service
+  port: ${PORT:8084}
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+notification-service:
+  # vazia = não confere o X-Api-Key (só local)
+  api-key: ${NOTIFICATION_SERVICE_API_KEY:}
+
+notification:
+  # Endereço público deste serviço: é ele que vai no link de descadastro dos e-mails.
+  public-url: ${PUBLIC_URL:http://localhost:8084}
+  # Para o botão "voltar para a loja" da página de descadastro.
+  store-url: ${STORE_URL:http://localhost:3000}
+  # A mesma pessoa não recebe o mesmo aviso de novo antes desse intervalo.
+  cooldown: 24h
+  email:
+    # Vazio = os e-mails só aparecem no log.
+    resend-api-key: ${RESEND_API_KEY:}
+    # O domínio do remetente precisa estar verificado no Resend.
+    from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
+    # Para onde vão as respostas (e-mail de atendimento). Opcional.
+    reply-to: ${EMAIL_REPLY_TO:}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    # modo PostgreSQL para usar as mesmas migrações do Supabase
+    url: jdbc:h2:file:./data/notification;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+
+---
+spring:
+  config:
+    activate:
+      on-profile: supabase
+  datasource:
+    # mesmo banco do backend (Session pooler), mas com usuário e esquema próprios
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+  flyway:
+    # criado pelo Flyway se não existir; fora do schema public, não aparece no PostgREST do Supabase
+    default-schema: ${DB_SCHEMA:notification}
+  jpa:
+    properties:
+      hibernate:
+        default_schema: ${DB_SCHEMA:notification}

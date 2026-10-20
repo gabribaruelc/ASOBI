@@ -6,20 +6,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 
+import br.com.asobi.admin.directory.AdminDirectory;
 import br.com.asobi.admin.security.AdminOidcUserService;
 import br.com.asobi.admin.security.CurrentAdmin;
-import br.com.asobi.admin.service.AdminUserService;
+import br.com.asobi.admin.twofactor.TwoFactorSession;
 
 /**
- * - /api/**: loja (Next.js). Pública e sem sessão; CSRF desligado (não usa cookie de login).
- * - /admin/**: painel Thymeleaf. Exige login com Google E e-mail presente em admin_users,
- *   conferido no banco a cada requisição — remover um admin corta o acesso na hora.
+ * /api/** é público e sem sessão (sem CSRF). /admin/** confere o e-mail no
+ * AdminDirectory a cada requisição, então remover um admin corta o acesso sem esperar a sessão expirar.
+ * Com o two-factor-service configurado, o painel só abre depois do código enviado por e-mail;
+ * até lá o admin logado só alcança /admin/verificacao. O descadastro da newsletter é público e
+ * sem CSRF: quem autoriza é o token do link, e o programa de e-mail faz o POST sozinho (RFC 8058).
  */
 @Configuration
 public class SecurityConfig {
@@ -31,27 +35,40 @@ public class SecurityConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http,
-			AdminUserService adminUserService,
+			AdminDirectory adminDirectory,
 			AdminOidcUserService adminOidcUserService,
+			TwoFactorSession twoFactorSession,
 			SecurityContextRepository securityContextRepository,
 			ObjectProvider<ClientRegistrationRepository> clientRegistrations) throws Exception {
 
 		http
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/admin/login", "/admin/dev-login").permitAll()
-						.requestMatchers("/admin/**").access((authentication, context) ->
-								new AuthorizationDecision(adminUserService.isAdmin(
-										CurrentAdmin.emailOf(authentication.get()))))
+						.requestMatchers("/admin/verificacao", "/admin/verificacao/**")
+						.access((authentication, context) -> new AuthorizationDecision(
+								adminDirectory.isAdmin(CurrentAdmin.emailOf(authentication.get()))))
+						.requestMatchers("/admin/**").access((authentication, context) -> {
+							String email = CurrentAdmin.emailOf(authentication.get());
+							return new AuthorizationDecision(adminDirectory.isAdmin(email)
+									&& twoFactorSession.isSatisfied(context.getRequest(), email));
+						})
 						.anyRequest().permitAll())
 				.securityContext(context -> context.securityContextRepository(securityContextRepository))
-				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**"))
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/h2-console/**", "/newsletter/descadastro/**"))
 				.cors(Customizer.withDefaults())
-				// Console do H2 (só no perfil local) usa frames.
+				// console do H2 usa frames
 				.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 				.exceptionHandling(exceptions -> exceptions
 						.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/admin/login"))
 						.accessDeniedHandler((request, response, denied) -> {
-							// Logado, mas sem permissão (ex.: e-mail removido da lista de admins).
+							String email = CurrentAdmin.emailOf(
+									SecurityContextHolder.getContext().getAuthentication());
+							if (adminDirectory.isAdmin(email) && !twoFactorSession.isSatisfied(request, email)) {
+								// é admin, só falta o código do e-mail
+								response.sendRedirect(request.getContextPath() + "/admin/verificacao");
+								return;
+							}
+							// logado, mas o e-mail saiu da lista de admins
 							var session = request.getSession(false);
 							if (session != null) {
 								session.invalidate();

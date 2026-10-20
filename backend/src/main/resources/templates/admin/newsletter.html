@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Newsletter')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <div class="page-header">
+      <div>
+        <h1>Newsletter</h1>
+        <p class="muted">Escreva e envie e-mails para quem pediu novidades pelo formulário da loja. Cada e-mail
+          sai com um link para a pessoa sair da lista sozinha.</p>
+      </div>
+      <a th:href="@{/admin/newsletter/campanhas/nova}" class="button pink">✉ Escrever newsletter</a>
+    </div>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <h2>Newsletters</h2>
+    <p class="card muted" th:if="${#lists.isEmpty(campaigns)}">Nenhuma newsletter escrita ainda.</p>
+
+    <div class="card table-wrap" th:unless="${#lists.isEmpty(campaigns)}">
+      <table>
+        <thead>
+          <tr><th>Assunto</th><th>Situação</th><th>Criada em</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="c : ${campaigns}">
+            <td><a th:href="@{/admin/newsletter/campanhas/{id}(id=${c.campaign.id})}" th:text="${c.campaign.subject}">Jogos novos</a></td>
+            <td>
+              <span class="badge gray" th:unless="${c.campaign.started}">Rascunho</span>
+              <span class="badge green" th:if="${c.done}" th:text="${'Enviada para ' + c.sent}">Enviada para 120</span>
+              <span class="badge pink" th:if="${c.campaign.started and !c.done}"
+                    th:text="${'Enviando: ' + c.sent + ' de ' + (c.sent + c.pending)}">Enviando: 80 de 120</span>
+            </td>
+            <td class="muted" th:text="${@dates.dateTime(c.campaign.createdAt)}">12/10/2026 10:00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-header">
+      <div>
+        <h2 th:text="${'Inscritos (' + #lists.size(subscribers) + ')'}">Inscritos (12)</h2>
+        <p class="muted">Se alguém pedir para sair por outro canal, remova o e-mail aqui.</p>
+      </div>
+      <a th:unless="${#lists.isEmpty(subscribers)}" th:href="@{/admin/newsletter/exportar}" class="button secondary">⬇ Baixar lista (CSV)</a>
+    </div>
+
+    <p class="card muted" th:if="${#lists.isEmpty(subscribers)}">Ninguém se inscreveu ainda.</p>
+
+    <div class="card table-wrap" th:unless="${#lists.isEmpty(subscribers)}">
+      <table>
+        <thead>
+          <tr><th>E-mail</th><th>Inscrito em</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="s : ${subscribers}">
+            <td th:text="${s.email}">responsavel@gmail.com</td>
+            <td class="muted" th:text="${@dates.dateTime(s.createdAt)}">12/10/2026 10:00</td>
+            <td class="actions">
+              <form th:action="@{/admin/newsletter/{id}/excluir(id=${s.id})}" method="post"
+                    onsubmit="return confirm('Remover este e-mail da newsletter?');">
+                <button type="submit" class="link-button danger">Remover</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</body>
+</html>

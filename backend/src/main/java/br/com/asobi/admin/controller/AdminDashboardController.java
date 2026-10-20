@@ -3,6 +3,7 @@ package br.com.asobi.admin.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import br.com.asobi.admin.service.AdminDashboardService;
 
@@ -16,8 +17,13 @@ public class AdminDashboardController {
 	}
 
 	@GetMapping("/admin")
-	public String dashboard(Model model) {
+	public String dashboard(@RequestParam(name = "periodo", required = false) Integer period, Model model) {
+		int days = period != null && AdminDashboardService.PERIODS.contains(period)
+				? period
+				: AdminDashboardService.DEFAULT_PERIOD;
 		model.addAttribute("summary", dashboardService.summary());
+		model.addAttribute("metrics", dashboardService.metrics(days));
+		model.addAttribute("periods", AdminDashboardService.PERIODS);
 		return "admin/dashboard";
 	}
 }

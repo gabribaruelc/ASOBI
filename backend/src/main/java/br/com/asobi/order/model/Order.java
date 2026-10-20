@@ -31,7 +31,7 @@ public class Order {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	/** Identificador usado fora do painel (link de acompanhamento, Mercado Pago). Não dá para adivinhar. */
+	/** Id exposto fora do painel (link do pedido, Mercado Pago); UUID para não ser adivinhado. */
 	@Column(name = "public_id", nullable = false, unique = true, updatable = false)
 	private UUID publicId = UUID.randomUUID();
 
@@ -61,7 +61,7 @@ public class Order {
 	@Column(nullable = false, precision = 10, scale = 2)
 	private BigDecimal total = BigDecimal.ZERO;
 
-	/** Serviço de entrega escolhido (ex.: "Correios PAC · 5 dias úteis"); null = frete a combinar. */
+	/** null = frete a combinar. */
 	@Column(name = "shipping_service", length = 120)
 	private String shippingService;
 
@@ -126,7 +126,6 @@ public class Order {
 		this.shippingService = shippingService;
 	}
 
-	/** Registra o que o provedor de pagamento informou (sem mudar o status do pedido). */
 	public void recordPayment(String provider, String paymentId, String paymentStatus, String paymentMethod) {
 		this.paymentProvider = provider;
 		this.paymentId = paymentId;
@@ -134,7 +133,7 @@ public class Order {
 		this.paymentMethod = paymentMethod;
 	}
 
-	/** @return true se mudou de status agora (para baixar o estoque só uma vez). */
+	/** @return false se já estava pago (o estoque não deve baixar de novo) */
 	public boolean markPaid(Instant when) {
 		if (status == OrderStatus.PAID || status == OrderStatus.SHIPPED) {
 			return false;

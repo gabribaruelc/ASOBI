@@ -20,15 +20,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import br.com.asobi.common.exception.BusinessException;
 
-/**
- * Cliente HTTP do microsserviço de frete (shipping-service), que fala com o Melhor Envio.
- * O backend só manda origem, destino e volumes; o token da transportadora fica no serviço.
- */
+/** Cliente do shipping-service. O token do Melhor Envio fica só lá. */
 public class ShippingServiceClient implements ShippingQuoteProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(ShippingServiceClient.class);
 
-	/** O serviço pode estar "acordando" no Cloud Run (escala a zero). */
+	// folga para o cold start do Cloud Run
 	private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
 	private static final String UNAVAILABLE = "Não foi possível calcular o frete agora. Tente novamente em instantes.";
@@ -40,7 +37,6 @@ public class ShippingServiceClient implements ShippingQuoteProvider {
 		this(properties, RestClient.builder().requestFactory(timeoutRequestFactory()));
 	}
 
-	/** Construtor para testes (MockRestServiceServer). */
 	ShippingServiceClient(ShippingServiceProperties properties, RestClient.Builder builder) {
 		this.hasUrl = StringUtils.hasText(properties.url());
 		RestClient.Builder configured = builder.defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE);
@@ -60,7 +56,6 @@ public class ShippingServiceClient implements ShippingQuoteProvider {
 		return factory;
 	}
 
-	/** Configurado = URL definida e o serviço responde que tem token da transportadora. */
 	@Override
 	public boolean isConfigured() {
 		if (!hasUrl) {
@@ -90,8 +85,7 @@ public class ShippingServiceClient implements ShippingQuoteProvider {
 					});
 			return options == null ? List.of() : options.stream().map(RemoteOption::toOption).toList();
 		} catch (RestClientResponseException ex) {
-			// Falhas da transportadora (5xx) vêm em RFC 9457 com mensagem pronta para o cliente.
-			// 4xx aqui é erro nosso (chave, payload) e não deve vazar para a loja.
+			// 5xx traz mensagem pronta para o cliente; 4xx é erro nosso (chave, payload) e não vaza.
 			ProblemDetail problem = readProblem(ex);
 			String detail = problem == null ? null : problem.getDetail();
 			log.warn("Serviço de frete respondeu {}: {}", ex.getStatusCode(), detail);

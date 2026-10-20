@@ -24,10 +24,7 @@ import com.mercadopago.resources.preference.Preference;
 import br.com.asobi.order.model.Order;
 import br.com.asobi.order.model.OrderItem;
 
-/**
- * Mercado Pago Checkout Pro: o cliente paga (Pix, cartão, boleto) na página do
- * Mercado Pago. Nenhum dado de cartão passa pela ASOBI.
- */
+/** Checkout Pro: o pagamento acontece na página do Mercado Pago, sem dados de cartão aqui. */
 public class MercadoPagoGateway implements PaymentGateway {
 
 	private static final Logger log = LoggerFactory.getLogger(MercadoPagoGateway.class);
@@ -38,10 +35,6 @@ public class MercadoPagoGateway implements PaymentGateway {
 	private final PreferenceClient preferenceClient;
 	private final PaymentClient paymentClient;
 
-	/**
-	 * @param storeUrl  loja (Next.js), para onde o cliente volta depois de pagar
-	 * @param publicUrl endereço público deste backend, para o webhook
-	 */
 	public MercadoPagoGateway(String accessToken, String storeUrl, String publicUrl) {
 		this(accessToken, storeUrl, publicUrl, new PreferenceClient(), new PaymentClient());
 	}
@@ -65,7 +58,6 @@ public class MercadoPagoGateway implements PaymentGateway {
 	public String createCheckout(Order order) {
 		try {
 			Preference preference = preferenceClient.create(buildPreferenceRequest(order));
-			// Credenciais de teste (TEST-...) usam o checkout de sandbox.
 			return accessToken.startsWith("TEST-") ? preference.getSandboxInitPoint() : preference.getInitPoint();
 		} catch (MPApiException ex) {
 			log.error("Mercado Pago recusou a preferência do pedido #{}: {} {}", order.getId(),
@@ -140,7 +132,7 @@ public class MercadoPagoGateway implements PaymentGateway {
 						.build())
 				.statementDescriptor("ASOBI");
 
-		// O Mercado Pago só aceita retorno automático e webhook para endereços públicos em HTTPS.
+		// o Mercado Pago recusa auto_return e notification_url sem HTTPS
 		if (storeUrl.startsWith("https://")) {
 			builder.autoReturn("approved");
 		}

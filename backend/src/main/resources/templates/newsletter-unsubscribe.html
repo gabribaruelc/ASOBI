@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!-- Página do link de descadastro da newsletter (NewsletterUnsubscribeController). -->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Newsletter da ASOBI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&display=swap">
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+           background: #EAF2FF; color: #1E2A45; font-family: Nunito, sans-serif; font-size: 17px; line-height: 1.5; }
+    main { width: 100%; max-width: 460px; margin: 16px; padding: 32px; background: #FFFFFF; border-radius: 24px;
+           text-align: center; }
+    .logo { font-family: Fredoka, sans-serif; font-size: 40px; font-weight: 600; letter-spacing: -1px; }
+    .logo .aso { color: #2E7CF6; }
+    .logo .bi { color: #FF5FA2; }
+    h1 { margin: 12px 0; font-family: Fredoka, sans-serif; font-size: 26px; font-weight: 500; line-height: 1.25; }
+    p { margin: 0 0 20px; }
+    form { margin: 0 0 12px; }
+    button, .button { display: inline-block; width: 100%; box-sizing: border-box; padding: 12px 24px; border: 0;
+                      border-radius: 999px; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+    .primary { background: #FF5FA2; color: #FFFFFF; }
+    .primary:hover { background: #E8408A; }
+    .secondary { background: #EAF2FF; color: #1E5FD1; }
+    .secondary:hover { background: #D6E6FF; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="logo"><span class="aso">aso</span><span class="bi">bi</span></div>
+
+  <th:block th:if="${state == 'confirm'}">
+    <h1>Quer sair da newsletter?</h1>
+    <p>A gente apaga o seu e-mail da lista e não manda mais novidades.</p>
+    <form method="post">
+      <button type="submit" class="primary">Sair da newsletter</button>
+    </form>
+    <a class="button secondary" th:href="${storeUrl}" href="#">Continuar recebendo</a>
+  </th:block>
+
+  <th:block th:if="${state == 'done'}">
+    <h1>Pronto, você saiu da lista! 👋</h1>
+    <p>Você não vai mais receber a newsletter. Se mudar de ideia, é só se inscrever de novo na loja.</p>
+    <a class="button primary" th:href="${storeUrl}" href="#">Voltar para a loja</a>
+  </th:block>
+</main>
+</body>
+</html>

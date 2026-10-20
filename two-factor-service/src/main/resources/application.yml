@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: two-factor-service
+  config:
+    # two-factor-service/.env local; no Cloud Run vem do Secret Manager
+    import: optional:file:.env[.properties]
+  profiles:
+    # H2 local por padrão; em produção SPRING_PROFILES_ACTIVE=supabase
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      # esquema fica a cargo do Flyway
+      ddl-auto: validate
+
+server:
+  # 8080 backend, 8081 shipping-service, 8083 admin-auth-service, 8084 notification-service
+  port: ${PORT:8082}
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+two-factor-service:
+  # vazia = não confere o X-Api-Key (só local)
+  api-key: ${TWO_FACTOR_SERVICE_API_KEY:}
+
+two-factor:
+  # Chave do HMAC que protege os códigos no banco. Vazia = chave aleatória a cada subida
+  # (só local: os códigos pendentes deixam de valer quando o serviço reinicia).
+  code-secret: ${TWO_FACTOR_CODE_SECRET:}
+  code-ttl: 10m
+  # erros permitidos por código
+  max-attempts: 5
+  # códigos que o mesmo e-mail pode pedir dentro da janela
+  max-challenges: 5
+  challenge-window: 15m
+  # login abre a tela duas vezes (aba duplicada, pré-carregamento): o segundo pedido fica com o mesmo código
+  resend-cooldown: 30s
+  email:
+    # Vazio = o e-mail (com o código) só aparece no log.
+    resend-api-key: ${RESEND_API_KEY:}
+    # O domínio do remetente precisa estar verificado no Resend.
+    from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    # modo PostgreSQL para usar as mesmas migrações do Supabase
+    url: jdbc:h2:file:./data/two-factor;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+
+---
+spring:
+  config:
+    activate:
+      on-profile: supabase
+  datasource:
+    # mesmo banco do backend (Session pooler), mas com usuário e esquema próprios
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+  flyway:
+    # criado pelo Flyway se não existir; fora do schema public, não aparece no PostgREST do Supabase
+    default-schema: ${DB_SCHEMA:two_factor}
+  jpa:
+    properties:
+      hibernate:
+        default_schema: ${DB_SCHEMA:two_factor}

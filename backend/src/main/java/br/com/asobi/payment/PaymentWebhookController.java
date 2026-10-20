@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.asobi.common.exception.NotFoundException;
 import br.com.asobi.order.service.OrderService;
 
-/**
- * Notificações do Mercado Pago. Nunca confia no corpo da notificação: usa só o
- * id do pagamento e consulta o pagamento na API do Mercado Pago.
- */
+/** Só usa o id da notificação; o status é sempre consultado na API do Mercado Pago. */
 @RestController
 public class PaymentWebhookController {
 
@@ -49,7 +46,6 @@ public class PaymentWebhookController {
 			log.warn("Notificação do Mercado Pago com assinatura inválida (data.id={})", dataId);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
-		// Só interessam pagamentos (ignora merchant_order, planos etc.).
 		if (!"payment".equals(type) || !StringUtils.hasText(dataId)) {
 			return ResponseEntity.ok().build();
 		}
@@ -58,7 +54,7 @@ public class PaymentWebhookController {
 			try {
 				orderService.applyPayment(update);
 			} catch (NotFoundException ex) {
-				// Pagamento de outro sistema/conta: responde 200 para o Mercado Pago não reenviar.
+				// responde 200 mesmo assim, senão o Mercado Pago fica reenviando
 				log.warn("Pagamento {} aponta para pedido inexistente {}", dataId, update.orderPublicId());
 			}
 		}, () -> log.warn("Pagamento {} não encontrado no Mercado Pago", dataId));

@@ -15,10 +15,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-/**
- * Só o backend da loja chama este serviço: /api/** exige o cabeçalho X-Api-Key.
- * O health check (/actuator/health) fica aberto para o Cloud Run.
- */
+/** Exige X-Api-Key em /api/**. O /actuator/health fica aberto para o Cloud Run. */
 @Component
 public class ApiKeyFilter extends OncePerRequestFilter {
 

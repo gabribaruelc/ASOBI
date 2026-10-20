@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!-- E-mail com o código de verificação. Montado pelo CodeEmailComposer. Estilos inline e
+     tabelas: é o que os programas de e-mail entendem. Fredoka e Nunito só carregam onde o
+     programa deixa (Apple Mail, por exemplo); nos outros vale a fonte reserva. -->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light only">
+  <title>Seu código de verificação</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#EAF2FF;color:#1E2A45;font-family:'Nunito','Trebuchet MS',Verdana,Arial,sans-serif;font-size:16px;line-height:1.5;">
+<!-- texto que aparece ao lado do assunto na caixa de entrada -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#EAF2FF;">Use este código para entrar no painel da ASOBI. Ele vale por <span th:text="${validFor}">10 minutos</span>.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EAF2FF;">
+  <tr>
+    <td align="center" style="padding:32px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#FFFFFF;border-radius:24px;overflow:hidden;">
+        <tr>
+          <td style="padding:0;font-size:0;line-height:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="62%" height="8" style="background:#2E7CF6;font-size:0;line-height:0;">&nbsp;</td>
+                <td width="38%" height="8" style="background:#FF5FA2;font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:28px 32px 0;font-family:'Fredoka','Trebuchet MS',Verdana,Arial,sans-serif;font-size:40px;font-weight:600;letter-spacing:-1px;line-height:1;">
+            <span style="color:#2E7CF6;">aso</span><span style="color:#FF5FA2;">bi</span>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:24px 32px 0;">
+            <div style="font-size:44px;line-height:1;">🎲</div>
+            <h1 style="margin:12px 0 8px;font-family:'Fredoka','Trebuchet MS',Verdana,Arial,sans-serif;font-size:26px;font-weight:600;line-height:1.25;color:#1E2A45;">Seu código chegou!</h1>
+            <p style="margin:0;color:#1E2A45;">Digite os números abaixo para confirmar que é você entrando no painel da loja.</p>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:24px 24px 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="background:#FFEAF3;border:2px dashed #FF5FA2;border-radius:20px;">
+              <tr>
+                <td align="center" style="padding:16px 22px 16px 32px;font-family:'Fredoka','Trebuchet MS',Verdana,Arial,sans-serif;font-size:40px;font-weight:600;letter-spacing:10px;line-height:1.1;color:#1E2A45;"
+                    th:text="${code}">123456</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:20px 32px 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" style="background:#EAF2FF;border-radius:999px;">
+              <tr>
+                <td style="padding:8px 18px;font-size:14px;color:#1E5FD1;font-weight:bold;">
+                  ⏳ Vale por <span th:text="${validFor}">10 minutos</span> e só pode ser usado uma vez
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr><td height="1" style="background:#EAF2FF;font-size:0;line-height:0;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:20px 32px 28px;font-size:13px;line-height:1.5;color:#5B6680;">
+            Não foi você quem pediu? É só ignorar este e-mail.<br>
+            <strong style="color:#1E2A45;">Nunca passe este código para ninguém.</strong>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
+        <tr>
+          <td align="center" style="padding:16px 32px 0;font-size:12px;color:#5B6680;">
+            ASOBI · jogos de tabuleiro para brincar junto
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

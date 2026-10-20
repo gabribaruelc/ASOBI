@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Newsletter')}"></head>
+<body>
+<div class="shell">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content" th:with="started=${status != null and status.campaign.started}">
+    <div class="page-header">
+      <div>
+        <h1 th:text="${status == null ? 'Nova newsletter' : status.campaign.subject}">Nova newsletter</h1>
+        <p class="muted" th:if="${status == null or !started}">
+          Escreva o e-mail, salve o rascunho, confira a prévia e mande um teste para você antes de enviar
+          para os <strong th:text="${subscriberCount}">12</strong> inscritos.
+        </p>
+        <p class="muted" th:if="${started}">
+          Envio começou em <span th:text="${@dates.dateTime(status.campaign.startedAt)}">12/10/2026 10:00</span>.
+          Só recebe quem já estava inscrito nesse momento.
+        </p>
+      </div>
+      <a th:href="@{/admin/newsletter}" class="button secondary">← Voltar</a>
+    </div>
+    <div th:replace="~{admin/fragments :: flash}"></div>
+
+    <section class="card" th:if="${started}">
+      <h2 th:text="${status.done ? 'Enviada ✅' : 'Envio em andamento'}">Envio em andamento</h2>
+      <p>Recebida por <strong th:text="${status.sent}">80</strong> de
+        <strong th:text="${status.sent + status.pending}">120</strong> inscritos.</p>
+      <th:block th:unless="${status.done}">
+        <p class="muted" th:if="${remainingQuota == 0}">
+          O limite de <span th:text="${dailyLimit}">80</span> e-mails por dia acabou. Volte amanhã para continuar.
+        </p>
+        <form th:if="${remainingQuota > 0}" th:action="@{/admin/newsletter/campanhas/{id}/envio(id=${status.campaign.id})}"
+              method="post" onsubmit="this.querySelector('button').disabled = true;">
+          <button type="submit" class="button pink">Continuar envio</button>
+          <span class="hint" th:text="${'Cabem mais ' + remainingQuota + ' e-mails hoje.'}">Cabem mais 80 e-mails hoje.</span>
+        </form>
+      </th:block>
+    </section>
+
+    <form th:unless="${started}" th:object="${form}" method="post" novalidate
+          th:action="${status == null} ? @{/admin/newsletter/campanhas} : @{/admin/newsletter/campanhas/{id}(id=${status.campaign.id})}">
+      <section class="card">
+        <label>Assunto
+          <input type="text" th:field="*{subject}" maxlength="200" placeholder="Jogos novos para as férias 🎲">
+          <span class="field-error" th:if="${#fields.hasErrors('subject')}" th:errors="*{subject}"></span>
+        </label>
+        <label>Texto <span class="hint">Deixe uma linha em branco entre os parágrafos.</span>
+          <textarea th:field="*{body}" maxlength="20000" rows="12"></textarea>
+          <span class="field-error" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></span>
+        </label>
+        <div class="form-grid">
+          <label>Texto do botão <span class="hint">opcional; padrão "Ver os jogos na loja"</span>
+            <input type="text" th:field="*{buttonLabel}" maxlength="60">
+            <span class="field-error" th:if="${#fields.hasErrors('buttonLabel')}" th:errors="*{buttonLabel}"></span>
+          </label>
+          <label>Link do botão <span class="hint">opcional; padrão a página inicial da loja</span>
+            <input type="url" th:field="*{buttonUrl}" maxlength="500" placeholder="https://">
+            <span class="field-error" th:if="${#fields.hasErrors('buttonUrl')}" th:errors="*{buttonUrl}"></span>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="button">Salvar rascunho</button>
+        </div>
+      </section>
+    </form>
+
+    <section class="card" th:if="${status != null and !started}">
+      <h2>Enviar</h2>
+      <p class="muted">O envio usa o texto salvo. Mudou alguma coisa? Salve o rascunho antes.</p>
+      <div class="form-actions">
+        <form th:action="@{/admin/newsletter/campanhas/{id}/teste(id=${status.campaign.id})}" method="post">
+          <button type="submit" class="button secondary" th:text="${'Enviar teste para ' + currentAdminEmail}">Enviar teste para mim</button>
+        </form>
+        <form th:if="${status.pending > 0 and remainingQuota > 0}"
+              th:action="@{/admin/newsletter/campanhas/{id}/envio(id=${status.campaign.id})}" method="post"
+              th:data-confirm="${'Enviar a newsletter para ' + status.pending + ' inscritos? Depois disso o texto não pode mais ser mudado.'}"
+              onsubmit="if (!confirm(this.dataset.confirm)) return false; this.querySelector('button').disabled = true;">
+          <button type="submit" class="button pink" th:text="${'Enviar para ' + status.pending + ' inscritos'}">Enviar para 12 inscritos</button>
+        </form>
+        <form th:action="@{/admin/newsletter/campanhas/{id}/excluir(id=${status.campaign.id})}" method="post"
+              onsubmit="return confirm('Excluir este rascunho?');">
+          <button type="submit" class="link-button danger">Excluir rascunho</button>
+        </form>
+      </div>
+      <p class="muted small" th:if="${status.pending == 0}">Ainda não há ninguém inscrito na newsletter.</p>
+      <p class="muted small" th:if="${status.pending > 0 and remainingQuota == 0}">
+        O limite de <span th:text="${dailyLimit}">80</span> e-mails por dia acabou. Volte amanhã para enviar.
+      </p>
+      <p class="muted small" th:if="${status.pending > remainingQuota and remainingQuota > 0}"
+         th:text="${'Hoje cabem ' + remainingQuota + ' e-mails (limite de ' + dailyLimit + ' por dia, para sobrar espaço para os e-mails de pedido). O resto você continua amanhã, sem repetir ninguém.'}">
+      </p>
+    </section>
+
+    <section class="card" th:if="${status != null}">
+      <h2>Prévia</h2>
+      <iframe class="email-preview" th:srcdoc="${previewHtml}" sandbox title="Prévia da newsletter"></iframe>
+    </section>
+  </main>
+</div>
+</body>
+</html>

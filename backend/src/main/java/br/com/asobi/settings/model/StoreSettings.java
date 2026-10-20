@@ -10,7 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** Configurações da loja (linha única, id = 1). */
+/** Linha única (id = 1). */
 @Entity
 @Table(name = "store_settings")
 public class StoreSettings {
@@ -51,7 +51,6 @@ public class StoreSettings {
 	protected StoreSettings() {
 	}
 
-	/** Frete grátis vale para este subtotal? */
 	public boolean qualifiesForFreeShipping(BigDecimal itemsTotal) {
 		return freeShippingThreshold != null && itemsTotal.compareTo(freeShippingThreshold) >= 0;
 	}

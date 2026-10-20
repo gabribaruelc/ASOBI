@@ -1,6 +1,7 @@
 import Link from "next/link";
 import styles from "./page.module.css";
 import ProductCard from "./components/ProductCard";
+import NewsletterForm from "./NewsletterForm";
 import { getAgeFilters, getProducts } from "./lib/catalog";
 
 const SKILLS = [
@@ -177,12 +178,7 @@ export default async function Home() {
                 brincar com seus filhos.
               </p>
             </div>
-            <form className={styles.newsletterForm}>
-              <input type="email" placeholder="Seu melhor e-mail" />
-              <button type="submit" className={styles.btnPrimary}>
-                Quero receber
-              </button>
-            </form>
+            <NewsletterForm />
           </div>
         </div>
       </section>

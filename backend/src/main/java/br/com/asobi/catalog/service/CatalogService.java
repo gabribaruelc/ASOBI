@@ -22,7 +22,6 @@ import br.com.asobi.review.model.Review;
 import br.com.asobi.review.model.ReviewStatus;
 import br.com.asobi.review.repository.ReviewRepository;
 
-/** Leitura pública do catálogo, usada pela loja (Next.js). */
 @Service
 @Transactional(readOnly = true)
 public class CatalogService {
@@ -61,7 +60,7 @@ public class CatalogService {
 		return toResponses(List.of(product), clock.instant()).get(0);
 	}
 
-	/** Busca as avaliações aprovadas de todos os produtos numa única consulta. */
+	/** Uma única consulta de avaliações para a lista toda (evita N+1). */
 	private List<ProductResponse> toResponses(List<Product> products, Instant now) {
 		if (products.isEmpty()) {
 			return List.of();

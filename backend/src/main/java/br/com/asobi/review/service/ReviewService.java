@@ -13,7 +13,6 @@ import br.com.asobi.review.model.Review;
 import br.com.asobi.review.model.ReviewStatus;
 import br.com.asobi.review.repository.ReviewRepository;
 
-/** Avaliações: a loja envia, o painel modera. Nada aparece na loja sem aprovação. */
 @Service
 @Transactional
 public class ReviewService {

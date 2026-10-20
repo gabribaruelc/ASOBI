@@ -14,7 +14,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
-/** Conteúdo da página "Sobre a ASOBI" (linha única, id = 1). */
+/** Linha única (id = 1). */
 @Entity
 @Table(name = "about_page")
 public class AboutPage {

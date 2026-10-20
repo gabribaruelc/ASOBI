@@ -7,10 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
-/**
- * Com MERCADO_PAGO_ACCESS_TOKEN definido, usa o Mercado Pago; sem ele, o modo
- * manual (a Priscila confirma os pagamentos no painel).
- */
 @Configuration
 public class PaymentConfig {
 

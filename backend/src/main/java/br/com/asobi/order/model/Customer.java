@@ -3,7 +3,6 @@ package br.com.asobi.order.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
-/** Adulto responsável pela compra. */
 @Embeddable
 public class Customer {
 
@@ -37,7 +36,6 @@ public class Customer {
 		return phone;
 	}
 
-	/** Link wa.me para falar com o cliente (número brasileiro, com DDD). */
 	public String getWhatsappUrl() {
 		String digits = phone == null ? "" : phone.replaceAll("\\D", "");
 		if (digits.startsWith("55") && digits.length() > 11) {

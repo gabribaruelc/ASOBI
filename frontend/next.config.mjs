@@ -1,3 +1,5 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "");
 
 /** @type {import('next').NextConfig} */
@@ -14,3 +16,6 @@ const nextConfig = {
 };
 
 export default nextConfig;
+
+// bindings do Cloudflare no `next dev`
+initOpenNextCloudflareForDev();

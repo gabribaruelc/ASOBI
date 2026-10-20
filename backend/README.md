@@ -49,30 +49,65 @@ Supabase (a chave `anon` é pública); o backend conecta como dono das tabelas e
 | `DB_PASSWORD` | senha do banco no Supabase |
 | `FRONTEND_ORIGINS` | `https://asobi.com.br,https://www.asobi.com.br` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | credenciais OAuth do Google (login do painel) |
-| `ADMIN_BOOTSTRAP_EMAIL` | conta Google do primeiro admin (usado só se ainda não houver nenhum) |
+| `ADMIN_AUTH_SERVICE_URL` | URL do `admin-auth-service` (dono da lista de admins). Vazio = lista em memória, só para desenvolvimento |
+| `ADMIN_AUTH_SERVICE_API_KEY` | a mesma chave configurada no `admin-auth-service` |
+| `ADMIN_BOOTSTRAP_EMAIL` | só vale sem `ADMIN_AUTH_SERVICE_URL`; em produção o primeiro admin é configurado no `admin-auth-service` |
 | `STORE_URL` | `https://asobi.com.br` (loja; retorno do pagamento e links do painel) |
 | `PUBLIC_URL` | URL pública deste backend no Cloud Run (monta o webhook do Mercado Pago) |
 | `MERCADO_PAGO_ACCESS_TOKEN` | `TEST-...` (sandbox) ou `APP_USR-...` (produção). Vazio = modo manual |
 | `MERCADO_PAGO_WEBHOOK_SECRET` | "assinatura secreta" gerada ao configurar Webhooks no painel do Mercado Pago |
 | `SHIPPING_SERVICE_URL` | URL do microsserviço de frete ([`../shipping-service`](../shipping-service/README.md)); local: `http://localhost:8081`. Vazio = frete "a combinar" |
 | `SHIPPING_SERVICE_API_KEY` | a mesma chave configurada no `shipping-service` (cabeçalho `X-Api-Key`) |
+| `TWO_FACTOR_SERVICE_URL` | URL do [`two-factor-service`](../two-factor-service/README.md); local: `http://localhost:8082`. Com ela, o painel pede um código por e-mail depois do login. Vazio = só o login |
+| `TWO_FACTOR_SERVICE_API_KEY` | a mesma chave configurada no `two-factor-service` |
+| `NOTIFICATION_SERVICE_URL` | URL do [`notification-service`](../notification-service/README.md); local: `http://localhost:8084`. Com ela, a loja mostra o "avise-me" na ficha do jogo. Vazio = avisos desligados |
+| `NOTIFICATION_SERVICE_API_KEY` | a mesma chave configurada no `notification-service` |
 | `SUPABASE_URL` | `https://<id-do-projeto>.supabase.co` (fotos de produto). Vazio = pasta local, que **some** a cada nova instância do Cloud Run |
 | `SUPABASE_SERVICE_KEY` | chave **secreta** do Supabase (Project Settings → API Keys → `service_role` / `sb_secret_...`). Nunca a `anon`. Também usada para conferir o login de cliente |
 | `SUPABASE_STORAGE_BUCKET` | opcional; padrão `product-images` |
 | `RESEND_API_KEY` | chave do [Resend](https://resend.com) (`re_...`). Vazio = os e-mails só aparecem no log |
 | `EMAIL_FROM` | remetente, ex.: `ASOBI <pedidos@asobi.com.br>` (domínio verificado no Resend) |
 | `EMAIL_REPLY_TO` | opcional; e-mail de atendimento que recebe as respostas dos clientes |
+| `NEWSLETTER_DAILY_LIMIT` | opcional; máximo de e-mails de newsletter a cada 24 horas (padrão `80`, para sobrar espaço para os de pedido no plano gratuito do Resend) |
 
 Nunca commitar essas credenciais.
 
 ## Painel admin
 
 `/admin` — Thymeleaf, renderizado pelo backend. Só entra quem faz login com Google **e** tem o
-e-mail cadastrado em `/admin/admins` (conferido no banco a cada requisição). A sessão fica no
-banco (Spring Session JDBC), então sobrevive ao Cloud Run desligar a instância.
+e-mail cadastrado em `/admin/admins`. A lista de admins e a conferência do login ficam no
+microsserviço [`admin-auth-service`](../admin-auth-service/README.md): o backend pergunta a ele a cada
+requisição (guardando a resposta por 30 segundos). A sessão fica no banco (Spring Session JDBC), então
+sobrevive ao Cloud Run desligar a instância.
+
+- **Localmente** o backend procura o serviço em `http://localhost:8083`: suba o `admin-auth-service` junto
+  (`.\mvnw.cmd spring-boot:run` na pasta dele). Os admins ficam gravados em `admin-auth-service/data/` e
+  continuam lá depois de reiniciar. Com o serviço parado ninguém entra no painel.
+- **Com `ADMIN_AUTH_SERVICE_URL` vazia** (`ADMIN_AUTH_SERVICE_URL=` no `.env`), a lista fica em memória, só com
+  `ADMIN_BOOTSTRAP_EMAIL`, e o que for adicionado some a cada reinício. É o modo dos testes automatizados.
+- **Código por e-mail (segundo fator)**: com `TWO_FACTOR_SERVICE_URL` definida, depois do login o painel manda
+  um código de 6 números para o e-mail do admin e só abre quando ele é digitado em `/admin/verificacao`.
+  Quem gera, envia e confere é o [`two-factor-service`](../two-factor-service/README.md); com ele fora do ar
+  ninguém passa dessa tela. Localmente, sem `RESEND_API_KEY` no serviço, o código aparece no log dele. Vale
+  também para o login de desenvolvimento.
+- **Avisos de produto**: com `NOTIFICATION_SERVICE_URL` definida, a ficha do jogo na loja mostra o "avise-me"
+  (`POST /api/product-alerts`). Quando o lojista coloca um jogo em promoção ou repõe o estoque de um jogo
+  esgotado, o backend avisa o [`notification-service`](../notification-service/README.md), que envia os
+  e-mails. Excluir um produto apaga os pedidos de aviso dele.
+- **Newsletter** (`/admin/newsletter`): o lojista escreve o e-mail (assunto, texto e um botão opcional), salva
+  o rascunho, vê a prévia, manda um teste para si e envia. Cada e-mail sai com o link de descadastro do
+  inscrito (`/newsletter/descadastro/{token}`, página do próprio backend) e o cabeçalho `List-Unsubscribe`;
+  sair da lista apaga o e-mail. O envio para em `NEWSLETTER_DAILY_LIMIT` e-mails por 24 horas: o que faltar,
+  o lojista continua no dia seguinte pelo botão "Continuar envio", sem repetir ninguém. Depois do primeiro
+  envio o texto não muda mais e só recebe quem já estava inscrito. A lista continua exportável em CSV.
+- **Dashboard** (`/admin`): contadores e métricas dos últimos 7, 30 ou 90 dias (faturamento pela data do
+  pagamento, pedidos pagos, valor médio, faturamento por dia, mais vendidos e mais vistos). As visualizações
+  são um contador por produto e por dia (`product_views`), somado quando a loja abre a ficha; não guarda quem viu.
+- **Políticas** (`/admin/politicas`) e **Contato e rodapé** (`/admin/contato`): textos das páginas de
+  Privacidade, Trocas e Frete, e telefone/WhatsApp, e-mail, redes sociais, razão social e CNPJ da loja.
 
 - **Local**: tela de login tem um "modo desenvolvimento" que entra só com o e-mail
-  (admin inicial `priscila@asobi.com.br`). Nunca ligado em produção (`asobi.admin.dev-login-enabled`).
+  (admin inicial `admin@asobi.com.br`). Nunca ligado em produção (`asobi.admin.dev-login-enabled`).
 - **Google (produção)**: no [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
   crie um "ID do cliente OAuth" do tipo *Aplicativo da Web* com a URI de redirecionamento
   `https://<url-do-cloud-run>/login/oauth2/code/google` (e `http://localhost:8080/login/oauth2/code/google`
@@ -89,8 +124,8 @@ gcloud run deploy asobi-backend \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
-  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,ADMIN_BOOTSTRAP_EMAIL=<email-google-da-priscila>,SHIPPING_SERVICE_URL=<url-do-shipping-service> \
-  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest
+  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service>,TWO_FACTOR_SERVICE_URL=<url-do-two-factor-service>,NOTIFICATION_SERVICE_URL=<url-do-notification-service> \
+  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,TWO_FACTOR_SERVICE_API_KEY=asobi-two-factor-api-key:latest,NOTIFICATION_SERVICE_API_KEY=asobi-notification-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest
 ```
 
 Acrescente em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.co` e
@@ -111,12 +146,12 @@ Acrescente em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.c
 
 Configuração no [painel do Mercado Pago](https://www.mercadopago.com.br/developers/panel/app):
 Webhooks → URL `https://<url-do-cloud-run>/api/webhooks/mercadopago`, evento **Pagamentos**.
-Sem `MERCADO_PAGO_ACCESS_TOKEN`, a loja funciona em **modo manual**: o cliente vê o pedido e a Priscila
+Sem `MERCADO_PAGO_ACCESS_TOKEN`, a loja funciona em **modo manual**: o cliente vê o pedido e o lojista
 confirma o pagamento no painel (também serve para Pix direto).
 
 ## Frete (microsserviço shipping-service, com liga/desliga)
 
-Em `/admin/configuracoes` a Priscila liga ou desliga o **frete automático**, define o CEP de origem,
+Em `/admin/configuracoes` o lojista liga ou desliga o **frete automático**, define o CEP de origem,
 o valor para frete grátis (a opção mais barata sai por R$ 0) e as medidas da caixa padrão.
 
 - **Desligado** (padrão): o checkout mostra "Frete a combinar".
@@ -131,7 +166,7 @@ Integrações → Tokens de acesso, com permissão `shipping-calculate`).
 
 ## Fotos de produto (Supabase Storage)
 
-No formulário de produto (`/admin/produtos`), a Priscila envia até **6 fotos** (JPG, PNG ou WebP, 5 MB cada).
+No formulário de produto (`/admin/produtos`), o lojista envia até **6 fotos** (JPG, PNG ou WebP, 5 MB cada).
 A primeira é a capa; dá para trocar a capa e excluir fotos na tela de edição. Produto sem foto continua
 mostrando o emoji.
 
@@ -157,7 +192,8 @@ a cada pedido pago. O modelo é `templates/email/order.html`.
   domínio em *Domains* (o Resend mostra os registros DNS para cadastrar no registro.br). Enquanto o
   domínio não é verificado, o remetente de teste `onboarding@resend.dev` só entrega para o e-mail dono da
   conta do Resend.
-- Free tier: 100 e-mails por dia (cada pedido completo usa 3 do cliente + 1 por admin).
+- Free tier: 100 e-mails por dia (cada pedido completo usa 3 do cliente + 1 por admin), somando a newsletter;
+  por isso ela para em `NEWSLETTER_DAILY_LIMIT` (80) por dia.
 - **Local**: sem `RESEND_API_KEY`, nada é enviado; o assunto e o destinatário aparecem no log.
 
 ## Conta do cliente (login com Google pelo Supabase Auth)

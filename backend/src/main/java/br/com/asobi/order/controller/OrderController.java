@@ -47,7 +47,7 @@ public class OrderController {
 		return orderService.getOrderStatus(orderId);
 	}
 
-	/** Chamado pela página do pedido quando o cliente volta do Mercado Pago (?payment_id=...). */
+	/** Chamado quando o cliente volta do Mercado Pago com ?payment_id=... */
 	@PostMapping("/{orderId}/payment-sync")
 	public OrderStatusResponse syncPayment(@PathVariable UUID orderId,
 			@Validated @RequestBody PaymentSyncRequest request) {

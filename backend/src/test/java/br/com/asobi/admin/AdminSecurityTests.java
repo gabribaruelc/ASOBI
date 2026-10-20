@@ -20,8 +20,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.asobi.admin.model.AdminUser;
-import br.com.asobi.admin.repository.AdminUserRepository;
+import br.com.asobi.admin.directory.AdminAccount;
+import br.com.asobi.admin.directory.AdminDirectory;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,13 +29,13 @@ import br.com.asobi.admin.repository.AdminUserRepository;
 @Transactional
 class AdminSecurityTests {
 
-	private static final String ADMIN = "priscila@asobi.com.br";
+	private static final String ADMIN = "admin@asobi.com.br";
 
 	@Autowired
 	private MockMvc mockMvc;
 
 	@Autowired
-	private AdminUserRepository adminUserRepository;
+	private AdminDirectory adminDirectory;
 
 	@Test
 	void anonymousIsRedirectedToLogin() throws Exception {
@@ -72,7 +72,7 @@ class AdminSecurityTests {
 
 	@Test
 	void devLoginWithAdminEmailOpensPanel() throws Exception {
-		mockMvc.perform(post("/admin/dev-login").param("email", " Priscila@Asobi.com.br ").with(csrf()))
+		mockMvc.perform(post("/admin/dev-login").param("email", " Admin@Asobi.com.br ").with(csrf()))
 				.andExpect(redirectedUrl("/admin"));
 	}
 
@@ -84,9 +84,9 @@ class AdminSecurityTests {
 
 	@Test
 	void adminFormsRequireCsrf() throws Exception {
-		mockMvc.perform(post("/admin/admins").param("email", "nova@example.com").with(user(ADMIN)))
+		mockMvc.perform(post("/admin/admins").param("email", "sem-csrf@example.com").with(user(ADMIN)))
 				.andExpect(status().is3xxRedirection());
-		org.assertj.core.api.Assertions.assertThat(adminUserRepository.existsByEmail("nova@example.com")).isFalse();
+		org.assertj.core.api.Assertions.assertThat(adminDirectory.isAdmin("sem-csrf@example.com")).isFalse();
 	}
 
 	@Test
@@ -94,7 +94,7 @@ class AdminSecurityTests {
 		mockMvc.perform(post("/admin/admins").param("email", "  Nova@Example.com").with(user(ADMIN)).with(csrf()))
 				.andExpect(redirectedUrl("/admin/admins"))
 				.andExpect(flash().attributeExists("success"));
-		org.assertj.core.api.Assertions.assertThat(adminUserRepository.existsByEmail("nova@example.com")).isTrue();
+		org.assertj.core.api.Assertions.assertThat(adminDirectory.isAdmin("nova@example.com")).isTrue();
 	}
 
 	@Test
@@ -106,16 +106,16 @@ class AdminSecurityTests {
 
 	@Test
 	void cannotRemoveYourself() throws Exception {
-		Long ownId = adminUserRepository.findAll().stream()
-				.filter(admin -> admin.getEmail().equals(ADMIN)).findFirst().orElseThrow().getId();
+		Long ownId = adminDirectory.listAdmins().stream()
+				.filter(admin -> admin.email().equals(ADMIN)).findFirst().orElseThrow().id();
 		mockMvc.perform(post("/admin/admins/{id}/excluir", ownId).with(user(ADMIN)).with(csrf()))
 				.andExpect(flash().attribute("error", "Você não pode remover o seu próprio acesso."));
 	}
 
 	@Test
 	void removedAdminLosesAccessImmediately() throws Exception {
-		AdminUser other = adminUserRepository.save(new AdminUser("outra@example.com", ADMIN));
-		mockMvc.perform(post("/admin/admins/{id}/excluir", other.getId()).with(user(ADMIN)).with(csrf()))
+		AdminAccount other = adminDirectory.addAdmin("outra@example.com", ADMIN);
+		mockMvc.perform(post("/admin/admins/{id}/excluir", other.id()).with(user(ADMIN)).with(csrf()))
 				.andExpect(flash().attributeExists("success"));
 
 		mockMvc.perform(get("/admin").with(user("outra@example.com")))

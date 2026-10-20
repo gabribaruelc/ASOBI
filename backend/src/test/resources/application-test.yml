@@ -8,5 +8,5 @@ asobi:
   storage:
     local-dir: target/test-uploads
   admin:
-    bootstrap-email: priscila@asobi.com.br
+    bootstrap-email: admin@asobi.com.br
     dev-login-enabled: true

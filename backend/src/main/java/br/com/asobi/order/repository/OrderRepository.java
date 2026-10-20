@@ -1,14 +1,17 @@
 package br.com.asobi.order.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import br.com.asobi.order.dto.ProductSales;
 import br.com.asobi.order.model.Order;
 import br.com.asobi.order.model.OrderStatus;
 
@@ -35,4 +38,19 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 	List<Order> findByCustomerUserIdOrderByCreatedAtDesc(UUID customerUserId);
 
 	long countByStatus(OrderStatus status);
+
+	/** Pedidos com pagamento aprovado a partir de {@code from}, sem os itens. */
+	@Query("select o from Order o where o.paidAt >= :from order by o.paidAt")
+	List<Order> findPaidSince(@Param("from") Instant from);
+
+	long countByCreatedAtGreaterThanEqual(Instant from);
+
+	@Query("""
+			select new br.com.asobi.order.dto.ProductSales(i.productName, sum(i.quantity), sum(i.lineTotal))
+			from OrderItem i
+			where i.order.paidAt >= :from
+			group by i.productSlug, i.productName
+			order by sum(i.quantity) desc, i.productName asc
+			""")
+	List<ProductSales> findBestSellersSince(@Param("from") Instant from, Pageable pageable);
 }
