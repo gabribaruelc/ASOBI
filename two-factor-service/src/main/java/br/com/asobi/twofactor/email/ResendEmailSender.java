@@ -24,7 +24,7 @@ public class ResendEmailSender implements EmailSender {
 		this(properties, RestClient.builder().requestFactory(timeoutRequestFactory()));
 	}
 
-	/** Construtor para testes (MockRestServiceServer). */
+	/** Usado só nos testes, que trocam o servidor de verdade por um falso. */
 	ResendEmailSender(EmailProperties properties, RestClient.Builder builder) {
 		this.from = properties.from();
 		this.restClient = builder

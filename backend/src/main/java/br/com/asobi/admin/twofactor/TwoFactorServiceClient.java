@@ -28,7 +28,7 @@ public class TwoFactorServiceClient implements TwoFactorGateway {
 	/** Um código pedido para outra finalidade não abre o painel. */
 	static final String PURPOSE = "admin-login";
 
-	// folga para o cold start do Cloud Run
+	// tempo extra, porque o Cloud Run pode estar "acordando" (ele desliga quando ninguém usa)
 	private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
 	private static final String UNAVAILABLE = "Não foi possível falar com o serviço de verificação agora. Tente novamente em instantes.";

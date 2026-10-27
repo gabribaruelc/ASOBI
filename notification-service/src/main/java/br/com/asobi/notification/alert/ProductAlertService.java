@@ -35,9 +35,9 @@ public class ProductAlertService {
 	}
 
 	/**
-	 * Avisa quem pediu esse tipo de aviso para o produto. Sem transação de propósito: a chamada
-	 * ao Resend não pode segurar uma conexão do banco. Quem recebeu é marcado logo depois de
-	 * cada lote, então repetir o mesmo evento não manda o e-mail duas vezes.
+	 * Avisa quem pediu esse tipo de aviso para o jogo. Não usa @Transactional de propósito:
+	 * enquanto espera o Resend, não pode ficar segurando uma conexão do banco. Quem recebeu é
+	 * marcado logo depois de cada grupo, então mandar o mesmo evento de novo não repete o e-mail.
 	 */
 	public AlertResult notifySubscribers(ProductEvent event) {
 		Instant now = clock.instant();

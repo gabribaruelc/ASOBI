@@ -17,7 +17,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import br.com.asobi.notification.subscription.SubscriptionNotFoundException;
 
-/** RFC 9457 para as rotas /api/**. */
+/** Devolve os erros das rotas /api/** em JSON no formato padrão (RFC 9457). */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 

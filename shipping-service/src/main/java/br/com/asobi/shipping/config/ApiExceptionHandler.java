@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import br.com.asobi.shipping.provider.ProviderFailureException;
 import br.com.asobi.shipping.provider.ProviderUnavailableException;
 
-/** RFC 9457; o detail já vem pronto para mostrar ao cliente. */
+/** Devolve os erros em JSON no formato padrão (RFC 9457). O detail já vem pronto para mostrar ao cliente. */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 

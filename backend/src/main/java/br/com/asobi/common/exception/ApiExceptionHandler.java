@@ -19,7 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import br.com.asobi.account.UnauthorizedException;
 import br.com.asobi.payment.PaymentException;
 
-/** Erros da API em RFC 9457 (problem+json). Não afeta o painel Thymeleaf. */
+/** Devolve os erros da API em JSON no formato padrão (RFC 9457). Não vale para as telas do painel. */
 @RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 

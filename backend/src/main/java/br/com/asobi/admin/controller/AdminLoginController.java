@@ -61,7 +61,7 @@ public class AdminLoginController {
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
 		context.setAuthentication(authentication);
 		SecurityContextHolder.setContext(context);
-		// evita session fixation
+		// troca a sessão no login, para ninguém aproveitar uma sessão criada antes (ataque "session fixation")
 		if (request.getSession(false) != null) {
 			request.changeSessionId();
 		}

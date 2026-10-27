@@ -1,12 +1,43 @@
-# ASOBI: análise da solução e decomposição em serviços
+# ASOBI: análise da solução e divisão em serviços
 
-Este documento parte do problema que a loja resolve e chega até os serviços que a compõem. Segue a cadeia
-**necessidade → requisito → funcionalidade → processo → domínio → serviço → dados → contratos → fluxos**,
-e cada decisão de decomposição vem com a sua justificativa.
+Este documento começa pelo problema que a loja resolve e vai até os serviços que formam o sistema,
+nesta ordem: **necessidade → requisito → funcionalidade → processo → domínio → serviço → dados → contratos → fluxos**.
+Cada decisão vem com o motivo.
 
-Detalhes de execução e deploy ficam no README de cada serviço: [backend](../backend/README.md),
-[shipping-service](../shipping-service/README.md), [admin-auth-service](../admin-auth-service/README.md),
-[two-factor-service](../two-factor-service/README.md) e [notification-service](../notification-service/README.md).
+Como rodar e colocar no ar cada serviço está no documento de cada um, aqui em `docs/`: [backend](backend.md),
+[shipping-service](shipping-service.md), [admin-auth-service](admin-auth-service.md),
+[two-factor-service](two-factor-service.md) e [notification-service](notification-service.md).
+
+## Resumo em poucas palavras
+
+- A **loja** (Next.js) é o site que o cliente vê. Ela não guarda nada: pede tudo ao backend.
+- O **backend** (Java + Spring Boot) é o centro: cuida de jogos, pedidos, estoque, avaliações, textos do
+  site e do painel do lojista.
+- Quatro **serviços menores** fazem tarefas separadas, cada um com o seu motivo:
+  - `shipping-service`: calcula o frete com o Melhor Envio;
+  - `admin-auth-service`: guarda a lista de admins e confere o login com Google;
+  - `two-factor-service`: manda e confere o código por e-mail do login do painel;
+  - `notification-service`: manda os e-mails de "avise-me" (promoção, voltou ao estoque, está acabando).
+- Tudo usa planos gratuitos: Cloudflare (loja), Google Cloud Run (Java) e Supabase (banco e fotos).
+- Pedido, estoque e pagamento ficaram **juntos no backend** de propósito: eles precisam ser salvos ao
+  mesmo tempo, e separar isso daria muito trabalho sem ganho para uma loja pequena.
+
+## Palavras usadas neste documento
+
+| Palavra | O que quer dizer aqui |
+|---|---|
+| **Serviço / microsserviço** | Um programa separado, com o próprio endereço, que faz uma tarefa só |
+| **API / REST / JSON** | O jeito como os programas conversam: um chama um endereço (`GET /api/products`) e recebe os dados em JSON |
+| **Domínio** | Um "assunto" do negócio: catálogo, pedidos, avaliações etc. |
+| **Webhook** | Quando um sistema de fora (o Mercado Pago) chama o nosso para avisar que algo mudou |
+| **Transação** | Um grupo de gravações no banco que acontece inteiro ou não acontece (se uma falhar, todas são desfeitas) |
+| **Lock (trava)** | Enquanto um pedido mexe no estoque de um jogo, outro pedido espera, para os dois não venderem a mesma unidade |
+| **Idempotente** | Pode repetir a mesma chamada várias vezes que o resultado é o mesmo (ex.: não baixa o estoque duas vezes) |
+| **Snapshot (cópia)** | Uma cópia do dado guardada no momento da compra (ex.: o preço que o cliente pagou), que não muda depois |
+| **Cache** | Guardar uma resposta por um tempo para não perguntar de novo toda hora |
+| **Desliga sozinho (escala a zero)** | O Cloud Run desliga o serviço quando ninguém usa e liga de novo no próximo acesso; por isso o custo fica perto de zero |
+| **`X-Api-Key`** | Uma senha que vai em toda chamada entre o backend e os serviços menores, para ninguém de fora usar |
+| **Esquema (schema)** | Uma "pasta" dentro do banco. Cada serviço tem a sua e não enxerga a dos outros |
 
 ---
 
@@ -122,8 +153,11 @@ Ciclo de vida do pedido: `PENDING_PAYMENT → PAID → SHIPPED`, com `CANCELED` 
 
 ## 6. Domínios de negócio
 
-Classificação segundo o DDD: *core* é o diferencial do negócio, *supporting* é necessário mas específico
-da loja, e *generic* é um problema comum que pode ser terceirizado.
+Cada domínio recebeu um tipo (classificação do DDD, *Domain-Driven Design*):
+
+- *core* (principal): é o coração do negócio, o que faz a loja ser a loja;
+- *supporting* (apoio): é necessário e feito sob medida para a loja, mas não é o principal;
+- *generic* (genérico): é um problema que toda loja tem e que dá para resolver com um serviço de fora.
 
 | Domínio | Tipo | Responsabilidade | Dados (tabelas) |
 |---|---|---|---|
@@ -160,22 +194,25 @@ Cada domínio foi avaliado como candidato a serviço independente:
 
 | Candidato | Domínio | Responsabilidade | Decisão | Justificativa |
 |---|---|---|---|---|
-| **shipping-service** | shipping | Cotar frete na transportadora e normalizar a resposta | ✅ **Extraído** | Integração externa instável e lenta: isolada, uma falha não afeta a loja (RNF06). Sem estado e sem banco. Trocar de transportadora não mexe na loja (RNF07). O token do Melhor Envio fica só nele. |
-| catalog-service | catalog | Produtos, estoque, promoção | ⏸ Mantido no backend | A baixa de estoque precisa estar na **mesma transação** da confirmação do pagamento (lock na linha do produto). Separar exigiria saga/compensação, complexidade injustificável para um negócio com uma operadora. |
-| order-service | order | Pedidos | ⏸ Mantido no backend | Mesmo motivo acima: pedido + estoque + pagamento formam uma unidade transacional. |
-| payment-service | payment | Mercado Pago | ⏸ Mantido no backend | Já é terceirizado (o Mercado Pago é o "serviço"). O módulo local só adapta, atrás da interface `PaymentGateway`. |
-| **two-factor-service** | (novo) autenticação | Gerar, enviar por e-mail e conferir código de uso único | ✅ **Extraído** | Segundo passo do login do painel. Sem dependência transacional com pedido ou estoque. Guarda só o HMAC do código, com validade curta, uso único e limite de tentativas. |
-| **admin-auth-service** | admin | Conferir o login Google do painel e ser o dono da lista de e-mails de admin | ✅ **Extraído** | Identidade é um subdomínio *generic*, sem transação com pedido ou estoque. O serviço tem a própria tabela (`admin_users`, esquema `admin_auth`) e decide sozinho quem entra; o backend só mantém a sessão do navegador. |
-| **notification-service** | (novo) notification | Avisar por e-mail que um produto entrou em promoção ou voltou ao estoque | ✅ **Extraído** | Recebe eventos de preço/estoque do backend e envia os e-mails; uma falha não afeta a venda. Guarda as inscrições com consentimento (LGPD) e link de descadastro. |
-| review-moderation-service | review | Filtro de conteúdo antes da fila | 🔜 Candidato futuro | Bom candidato quando houver filtro automático (lista de palavras, IA). Hoje é só CRUD + aprovação. |
-| recommendation-service | catalog (leitura) | Sugerir jogos por idade/habilidade | 🔜 Candidato futuro | Só leitura do catálogo; pode consumir a API pública. |
-| content / settings / admin | — | Conteúdo, parâmetros e acesso | ⏸ Mantidos | Pouco volume e nenhuma integração externa. Separar só adicionaria custo (cold start, mais conexões no Supabase free). |
+| **shipping-service** | shipping | Calcular o frete com a transportadora e devolver num formato simples | ✅ **Separado** | O Melhor Envio é de fora e pode ficar lento ou cair; separado, uma falha dele não afeta a loja (RNF06). Não tem banco. Trocar de transportadora não mexe na loja (RNF07). O token do Melhor Envio fica só nele. |
+| catalog-service | catalog | Jogos, estoque, promoção | ⏸ Ficou no backend | A baixa do estoque precisa ser salva **junto** com a confirmação do pagamento (com a linha do jogo travada). Separar exigiria um mecanismo de "desfazer" entre serviços (saga), complicado demais para uma loja cuidada por uma pessoa. |
+| order-service | order | Pedidos | ⏸ Ficou no backend | Mesmo motivo: pedido, estoque e pagamento precisam ser salvos juntos. |
+| payment-service | payment | Mercado Pago | ⏸ Ficou no backend | O pagamento já é feito fora (o Mercado Pago é o "serviço"). O backend só tem uma camada que conversa com ele, atrás da interface `PaymentGateway`. |
+| **two-factor-service** | (novo) autenticação | Criar, mandar por e-mail e conferir o código de uso único | ✅ **Separado** | É a segunda etapa do login do painel e não precisa ser salvo junto com pedido ou estoque. Guarda só o HMAC do código, que vence rápido, só vale uma vez e tem limite de tentativas. |
+| **admin-auth-service** | admin | Conferir o login com Google do painel e guardar a lista de admins | ✅ **Separado** | Login é um problema *generic* e não precisa ser salvo junto com pedido ou estoque. O serviço tem a própria tabela (`admin_users`, esquema `admin_auth`) e decide sozinho quem entra; o backend só lembra que a pessoa está logada. |
+| **notification-service** | (novo) notification | Avisar por e-mail que um jogo entrou em promoção, voltou ao estoque ou está acabando | ✅ **Separado** | Recebe do backend as mudanças de preço e estoque e manda os e-mails; se falhar, a venda não é afetada. Guarda os pedidos de aviso com a concordância da pessoa (LGPD) e o link para cancelar. |
+| review-moderation-service | review | Filtrar comentários antes de irem para a fila do lojista | 🔜 Talvez no futuro | Vale a pena quando houver um filtro automático (lista de palavras, IA). Hoje é só cadastrar e aprovar. |
+| recommendation-service | catalog (só leitura) | Sugerir jogos pela idade e habilidade | 🔜 Talvez no futuro | Só precisa ler o catálogo, o que dá para fazer pela API pública. |
+| content / settings / admin | — | Textos do site, configurações e acesso | ⏸ Ficaram no backend | São pouco usados e não falam com nenhum sistema de fora. Separar só traria custo (mais tempo para "acordar", mais conexões no Supabase grátis). |
 
-**Por que não "um microsserviço por domínio"?** O free tier do Supabase tem poucas conexões (o backend já
-usa `maximum-pool-size: 3`). Cada serviço extra no Cloud Run também tem seu próprio *cold start*. E o lojista
-precisa operar sem ajuda técnica (RNF01, RNF02). A decomposição escolhida é um **backend modular** (fronteiras de
-domínio claras em pacotes) + **microsserviços onde há ganho real**. Hoje isso vale para o frete e para a
-autenticação de admins, para o código por e-mail do painel e para os avisos de produto.
+**Por que não fazer um microsserviço para cada domínio?**
+
+- O plano grátis do Supabase aceita poucas conexões ao mesmo tempo (o backend sozinho já usa até 3).
+- Cada serviço a mais no Cloud Run demora alguns segundos para "acordar" depois de um tempo parado.
+- O lojista precisa conseguir cuidar de tudo sem ajuda técnica (RNF01, RNF02). Menos serviços = menos coisa para quebrar.
+
+Por isso a escolha foi: **um backend organizado em pastas por assunto** + **serviços separados só onde
+separar ajuda de verdade**. Hoje são quatro: frete, login dos admins, código por e-mail e avisos de produto.
 
 ---
 
@@ -234,13 +271,16 @@ flowchart LR
 | **backend** | Regras da loja: catálogo, pedido, estoque, moderação, conteúdo, configurações, acesso; **política** de frete (toggle, frete grátis, caixa padrão) | Qual transportadora é usada e como a API dela funciona |
 | **shipping-service** | Integração com a transportadora: autenticação, formato da API, timeout, normalização e ordenação das opções | Produtos, preços de venda, pedidos, toggle, frete grátis, banco de dados |
 | **admin-auth-service** | Lista de e-mails de admin (tabela própria), conferência do ID token do Google, regra "ninguém remove a si mesmo", primeiro admin (`ADMIN_BOOTSTRAP_EMAIL`) | Sessão do navegador, telas do painel, produtos, pedidos |
-
 | **two-factor-service** | Código de uso único: sorteio, HMAC, validade, limite de tentativas e de pedidos, e-mail com o código | Quem é a pessoa, por que o código foi pedido, sessão, telas |
 | **notification-service** | Pedidos de aviso (e-mail + produto + tipo) com consentimento, envio dos avisos, intervalo mínimo entre avisos, descadastro | Catálogo (nome, preço e link vêm no evento), pedidos, newsletter |
 
-Não há sobreposição: a regra "frete grátis acima de R$ X" é **comercial** e fica no backend (domínio
-`settings`). A regra "como pedir preço ao Melhor Envio" é **técnica/integração** e fica no shipping-service.
-O backend recota o frete ao fechar o pedido, de modo que o preço nunca vem do navegador.
+Um não faz o trabalho do outro. Exemplo do frete:
+
+- "Frete grátis acima de R$ X" é uma **regra da loja**, então fica no backend (domínio `settings`).
+- "Como perguntar o preço ao Melhor Envio" é uma **questão técnica**, então fica no shipping-service.
+
+Quando o cliente fecha o pedido, o backend calcula o frete de novo. Assim o preço nunca vem do navegador
+(que poderia ser alterado por alguém mal-intencionado).
 
 ---
 
@@ -333,18 +373,21 @@ sequenceDiagram
 | account | order | "Meus pedidos" lista os pedidos da conta; o `order` recebe a identidade do cliente ao fechar pedido |
 | notification | order, admin | Escuta o evento `OrderEvent` e monta os e-mails; lê os e-mails dos admins para o aviso de pedido pago |
 
-Ciclos conhecidos que ainda restam: `catalog ⇄ review`, `order ⇄ payment` e `settings ⇄ shipping`. Eles são
-tolerados porque ficam **dentro do mesmo deploy**. Na extração do frete, o ciclo `order ⇄ shipping` foi
-removido (o endpoint de cotação agora tem DTO próprio) e o `GET /api/settings` passou para o domínio
-`settings`. Se algum desses domínios virar serviço, o ciclo vira evento (ex.: `PaymentApproved`) ou uma
-interface (porta) no lado dependente.
+Ainda existem três pares de módulos que dependem um do outro nos dois sentidos: `catalog ⇄ review`,
+`order ⇄ payment` e `settings ⇄ shipping`. Isso não é um problema hoje, porque todos estão dentro do mesmo
+programa (o backend). Na separação do frete, o par `order ⇄ shipping` deixou de existir (a cotação ganhou um
+DTO próprio) e o `GET /api/settings` foi para o domínio `settings`. Se algum desses domínios virar um serviço
+separado um dia, a dependência teria que virar um evento (ex.: `PaymentApproved`) ou uma interface.
 
-O módulo `order` **não** depende de `notification`: ele só publica `OrderEvent` (`PLACED`, `PAID`, `SHIPPED`,
-`PAYMENT_REMINDER`) e o `notification` escuta. Quando a baixa de estoque de um pedido pago cruza o limite de
-estoque baixo, o `order` publica `ProductEvent` `LOW_STOCK`: o `notification` avisa os admins e o `alert`
-repassa ao notification-service. O e-mail é montado dentro da transação do pedido, mas enviado só **depois do
-commit** (`EmailDispatcher`), de forma síncrona — no Cloud Run a CPU é cortada quando a resposta sai, então
-uma tarefa em segundo plano poderia não rodar.
+**Como os e-mails saem sem o pedido depender deles:**
+
+1. O módulo `order` não chama o `notification` direto. Ele só "anuncia" um `OrderEvent` (`PLACED`, `PAID`,
+   `SHIPPED`, `PAYMENT_REMINDER`), e o `notification` está "escutando".
+2. Quando uma venda deixa um jogo no limite de estoque baixo, o `order` anuncia um `ProductEvent` `LOW_STOCK`.
+   O `notification` avisa os admins e o `alert` repassa para o notification-service.
+3. O e-mail é preparado junto com o pedido, mas só é enviado **depois que o pedido foi salvo no banco**
+   (`EmailDispatcher`). O envio acontece antes de responder ao navegador, e não em segundo plano, porque o
+   Cloud Run corta o processador assim que a resposta sai, e uma tarefa em segundo plano poderia nem rodar.
 
 ---
 
@@ -494,10 +537,10 @@ erDiagram
 Todas as tabelas usam `snake_case` no plural e datas `TIMESTAMP WITH TIME ZONE`. Valores em dinheiro são
 `NUMERIC(10,2)`, nunca ponto flutuante.
 
-### 11.2 shipping-service: sem banco (stateless)
+### 11.2 shipping-service: sem banco
 
-O modelo do serviço existe **só em memória**, como contrato de entrada e saída. Ele não persiste nada: cada
-cotação é calculada na hora pela transportadora.
+Este serviço não salva nada. As classes abaixo só descrevem o que entra e o que sai de cada chamada,
+e cada cotação é calculada na hora pela transportadora.
 
 ```mermaid
 classDiagram
@@ -600,7 +643,8 @@ solto, sem chave estrangeira. `consented_at` é o registro do consentimento (LGP
 
 ## 12. Autonomia dos dados e bancos previstos
 
-**Regra adotada: *database per service*.** Um serviço só acessa dados de outro pela API dele, nunca pelo banco.
+**Regra adotada: cada serviço tem o seu banco (*database per service*).** Se um serviço precisa de um dado
+de outro, ele pede pela API do outro. Nunca lê direto o banco alheio.
 
 | Serviço | Banco previsto | Quem acessa | Situação |
 |---|---|---|---|
@@ -613,24 +657,25 @@ solto, sem chave estrangeira. `consented_at` é o registro do consentimento (LGP
 | review-moderation-service (candidato) | Banco próprio: esquema `moderation` no mesmo projeto Supabase, com usuário próprio (sem acesso ao `public`) | Só ele | Previsto |
 | recommendation-service (candidato) | Modelo de leitura próprio (projeção do catálogo: slug, idade, habilidade), atualizado pela API pública `GET /api/products` | Só ele | Previsto |
 
-Como cada serviço fica autônomo:
+Como cada serviço fica independente:
 
-- **O shipping-service não sabe o que é um produto.** Ele recebe só `id`, quantidade, valor declarado e
-  medidas. Preço de venda, estoque e toggle continuam no banco do backend.
-- **O backend não guarda dados da transportadora.** Do frete ele guarda só o *resultado* escolhido, como
-  snapshot no pedido (`shipping_cost`, `shipping_service`). Se o Melhor Envio for trocado, pedidos antigos
-  continuam corretos.
-- **Os segredos também são separados.** O `MELHOR_ENVIO_TOKEN` existe só no shipping-service, e as
-  credenciais do esquema `public` existem só no backend. As chaves `SHIPPING_SERVICE_API_KEY` e
-  `ADMIN_AUTH_SERVICE_API_KEY` são os únicos segredos compartilhados, cada uma com um serviço.
-- **A lista de admins não está no banco do backend.** O backend pergunta ao admin-auth-service e guarda a
-  resposta por 30 segundos; remover um admin pelo painel limpa esse cache na hora.
-- **Serviços futuros no mesmo Supabase** (para ficar no free tier) usam **esquema e usuário próprios** com
-  `GRANT` só no seu esquema. A separação lógica garante a autonomia sem pagar um segundo banco.
-- **Dentro do backend**, a autonomia é por módulo: cada tabela tem um único módulo dono (§11.1). As chaves
-  estrangeiras entre módulos (`reviews → products`, `order_items → products`) são as costuras que precisariam
-  virar referência por id/slug se o módulo fosse extraído. Em `order_items` isso já está preparado: o item
-  guarda slug, nome e preço, e a chave para `products` é opcional (`ON DELETE SET NULL`).
+- **O shipping-service não sabe o que é um jogo.** Ele recebe só um `id`, a quantidade, o valor e as medidas
+  da caixa. Preço de venda, estoque e o botão de liga/desliga ficam no banco do backend.
+- **O backend não guarda nada da transportadora.** Do frete, ele guarda só o que o cliente escolheu, como
+  uma cópia no pedido (`shipping_cost`, `shipping_service`). Se a loja trocar o Melhor Envio por outro,
+  os pedidos antigos continuam certos.
+- **As senhas também são separadas.** O `MELHOR_ENVIO_TOKEN` só existe no shipping-service, e a senha do
+  banco do backend só existe no backend. As únicas senhas que dois programas conhecem são as `X-Api-Key`
+  (cada uma combinada entre o backend e um serviço).
+- **A lista de admins não fica no banco do backend.** O backend pergunta ao admin-auth-service e guarda a
+  resposta por 30 segundos. Quando alguém é removido pelo painel, essa memória é apagada na hora.
+- **Todos os serviços usam o mesmo projeto do Supabase** (para continuar no plano grátis), mas cada um com o
+  seu esquema e o seu usuário, que só tem permissão (`GRANT`) no próprio esquema. É como se fossem bancos
+  separados, sem pagar por um segundo banco.
+- **Dentro do backend**, cada tabela tem um único módulo dono (§11.1). Onde uma tabela aponta para a de outro
+  módulo (`reviews → products`, `order_items → products`), seria preciso trocar por um id ou slug se o módulo
+  virasse serviço. Em `order_items` isso já está pronto: o item guarda slug, nome e preço, e a ligação com
+  `products` é opcional (se o jogo for apagado, ela fica vazia: `ON DELETE SET NULL`).
 
 ---
 
@@ -645,38 +690,42 @@ Como cada serviço fica autônomo:
 | Mercado Pago → backend | **Assíncrona** (webhook, pode repetir ou atrasar) | Só o `data.id` do pagamento | Mercado Pago (o backend sempre reconsulta) |
 | frontend → backend | Síncrona REST | Catálogo, pedidos, avaliações | Backend |
 
-### 13.2 Estratégias por fronteira
+### 13.2 Como os dados ficam certos em cada situação
 
-| Onde | Estratégia | Como está implementado |
+| Situação | Estratégia | Como funciona |
 |---|---|---|
-| Pedido + estoque + pagamento (dentro do backend) | **Consistência forte (ACID)** numa transação | `OrderService` é `@Transactional`. Ao aprovar, o pedido vira `PAID` e o estoque baixa na **mesma transação**, com lock pessimista na linha do produto (`findByIdForUpdate`, `PESSIMISTIC_WRITE`). |
-| Webhook do Mercado Pago | **Consistência eventual + idempotência** | O pedido nasce `PENDING_PAYMENT`. O webhook só traz um id, e o backend **reconsulta** o pagamento na API. `markPaid()` retorna `false` se o pedido já estiver pago, então notificações repetidas não baixam o estoque duas vezes. Um webhook de pedido inexistente responde 200 para o Mercado Pago não reenviar. |
-| Webhook atrasado ou perdido | **Reconciliação ativa** | Quando o cliente volta do checkout, a loja chama `POST /api/orders/{id}/payment-sync`, que faz a mesma consulta. Se o Mercado Pago não estiver configurado, o lojista usa o **modo manual** ("marcar como pago"). |
-| Venda do último item para dois clientes | **Compensação** (em vez de reserva distribuída) | O estoque é conferido ao criar o pedido, mas só baixa no pagamento. Se dois pagarem o último item, o estoque vai a 0 e o pedido ganha `stock_issue = true`, com alerta no painel. O lojista compensa (estorno ou prazo maior). Aceito porque o volume é baixo e evita reservas com expiração. |
-| backend ↔ shipping-service | **Sem estado compartilhado + revalidação** | A cotação é leitura pura, sem efeito colateral, então pode ser repetida à vontade e não precisa de transação distribuída. O preço mostrado no checkout **não é confiável**: ao fechar o pedido, o backend **recota** e usa o preço do servidor para o `shippingOptionId` escolhido. Se a opção sumiu, o pedido é recusado com mensagem clara (HTTP 422). |
-| Falha do shipping-service | **Falha rápida e isolada** | Timeout de 15 s no backend e de 8 s no serviço até a transportadora. Erro 5xx vira `BusinessException` (422) com mensagem amigável; erro 4xx (chave ou payload) vira mensagem genérica. Nenhum pedido é gravado sem frete válido. |
-| Mudanças no catálogo depois da compra | **Snapshot (desnormalização intencional)** | `order_items` copia `product_slug`, `product_name` e `unit_price`, e `orders` copia `shipping_cost` e `shipping_service`. Editar ou excluir produto, preço ou transportadora não altera pedidos antigos. |
-| Toggle de frete × disponibilidade do serviço | **Validação na escrita** | Só dá para ligar o frete se `GET /api/provider` responder `configured: true`. Se o serviço cair depois, vale a linha "Falha do shipping-service". |
-| Criação do pedido × Mercado Pago | **Tudo ou nada local** | Se `createCheckout` falhar, a exceção desfaz a transação e nenhum pedido "fantasma" fica gravado. |
-| Sessão do painel com várias instâncias no Cloud Run | **Estado externo** | A sessão fica no banco (Spring Session JDBC), então qualquer instância atende. |
+| Pedido + estoque + pagamento (dentro do backend) | **Tudo junto numa transação** (consistência forte, ACID) | O `OrderService` usa `@Transactional`. Quando o pagamento é aprovado, o pedido vira `PAID` e o estoque baixa **na mesma transação**: ou as duas coisas acontecem, ou nenhuma. Enquanto isso, a linha do jogo fica travada (`findByIdForUpdate`, `PESSIMISTIC_WRITE`), para dois pedidos não mexerem nela ao mesmo tempo. |
+| Aviso (webhook) do Mercado Pago | **Fica certo um pouco depois + pode repetir sem problema** (consistência eventual + idempotência) | O pedido começa como `PENDING_PAYMENT`. O aviso do Mercado Pago só traz um número, e o backend **pergunta de novo** ao Mercado Pago como está o pagamento. Se o pedido já estiver pago, `markPaid()` devolve `false` e nada muda; por isso avisos repetidos não baixam o estoque duas vezes. Se o pedido não existir, o backend responde 200 mesmo assim, para o Mercado Pago parar de reenviar. |
+| Aviso do Mercado Pago atrasado ou perdido | **Conferir de novo quando o cliente volta** | Quando o cliente volta do pagamento, a loja chama `POST /api/orders/{id}/payment-sync`, que faz a mesma pergunta. Sem Mercado Pago configurado, o lojista usa o **modo manual** ("marcar como pago"). |
+| Dois clientes comprando a última unidade | **Resolver depois** (compensação), em vez de reservar o jogo | O estoque é conferido ao criar o pedido, mas só baixa quando o pagamento é aprovado. Se os dois pagarem, o estoque vai a 0 e o segundo pedido fica marcado com `stock_issue = true`, com alerta no painel. O lojista resolve (devolve o dinheiro ou combina um prazo maior). Foi aceito assim porque a loja vende pouco e reservar unidades com prazo de validade seria bem mais complicado. |
+| backend ↔ shipping-service | **Nada compartilhado + conferir de novo** | Calcular frete só lê, não muda nada; então dá para repetir quantas vezes quiser. O preço que aparece no checkout **não é confiável** (vem do navegador): ao fechar o pedido, o backend **calcula de novo** e usa o preço dele para a opção escolhida (`shippingOptionId`). Se a opção não existir mais, o pedido é recusado com uma mensagem clara (HTTP 422). |
+| shipping-service fora do ar | **Falhar rápido, sem derrubar o resto** | O backend espera no máximo 15 s pelo serviço, e o serviço espera no máximo 8 s pelo Melhor Envio. Erro do lado deles (5xx) vira uma `BusinessException` (422) com mensagem amigável; erro do nosso lado (4xx, ex.: senha errada) vira uma mensagem genérica. Nenhum pedido é salvo sem um frete válido. |
+| Jogo alterado depois da compra | **Cópia no pedido** (snapshot) | `order_items` copia `product_slug`, `product_name` e `unit_price`, e `orders` copia `shipping_cost` e `shipping_service`. Mudar o preço, apagar o jogo ou trocar de transportadora não muda os pedidos antigos. |
+| Ligar o frete × serviço no ar | **Conferir antes de salvar** | Só dá para ligar o frete se `GET /api/provider` responder `configured: true`. Se o serviço cair depois, vale a linha "shipping-service fora do ar". |
+| Criar pedido × Mercado Pago | **Tudo ou nada** | Se der erro ao criar o pagamento (`createCheckout`), a transação é desfeita e nenhum pedido "fantasma" fica salvo. |
+| Login do painel com o Cloud Run rodando várias cópias | **Login salvo no banco** | A sessão fica no banco (Spring Session JDBC), então qualquer cópia do backend reconhece o admin. |
 
-### 13.3 Se outros domínios forem extraídos
+### 13.3 Se outros domínios virarem serviços um dia
 
-Nesse caso, a consistência forte entre pedido e estoque deixa de ser possível numa transação local. A estratégia
-prevista é uma **saga coreografada com *transactional outbox***:
+Se pedido e estoque ficassem em serviços diferentes, não daria mais para salvar os dois numa transação só.
+O plano para esse caso é uma **saga com *transactional outbox***, que funciona assim:
 
-1. `order` grava o pedido e o evento `PaymentApproved` na tabela `outbox` na mesma transação.
-2. Um publicador lê a outbox e entrega o evento (ex.: Pub/Sub, que tem tier gratuito).
-3. `catalog` consome o evento e baixa o estoque de forma idempotente (chave = id do pedido). Se faltar
-   estoque, publica `StockShortage`, e `order` marca `stock_issue` (a mesma compensação de hoje).
+1. O `order` salva o pedido e, na mesma transação, salva uma mensagem `PaymentApproved` numa tabela `outbox`
+   (uma "caixa de saída").
+2. Um programa lê essa caixa de saída e entrega a mensagem (ex.: pelo Pub/Sub do Google, que tem plano grátis).
+3. O `catalog` recebe a mensagem e baixa o estoque, sem repetir se a mesma mensagem chegar duas vezes (usa o
+   número do pedido para saber). Se faltar estoque, ele manda `StockShortage` de volta, e o `order` marca o
+   pedido com `stock_issue` (o mesmo que acontece hoje).
 
 ---
 
 ## 14. Endpoints e contratos das APIs REST
 
-Convenções comuns:
+Regras que valem para todas as APIs:
 
-- JSON UTF-8, recursos no plural em kebab-case, e **erros no padrão RFC 9457** (`application/problem+json`):
+- Os dados vão em JSON (UTF-8). Os nomes das rotas ficam no plural e com hífen (`/product-alerts`).
+- Os erros seguem um formato padrão, o **RFC 9457** (`application/problem+json`). O campo `detail` já traz
+  a mensagem pronta para mostrar ao usuário:
 
   ```json
   { "type": "about:blank", "title": "Unprocessable Entity", "status": 422,
@@ -685,9 +734,10 @@ Convenções comuns:
 
   Erros de validação (400) trazem também `errors`, com a mensagem de cada campo:
   `{"status": 400, "detail": "Dados inválidos.", "errors": {"customer.email": "E-mail inválido."}}`.
-- Dinheiro vai como número decimal com 2 casas (`89.90`) e datas em ISO-8601 UTC (`2026-10-01T03:00:00Z`).
-- Códigos: `200` ok · `201` criado · `202` aceito para processamento · `400` dados inválidos ·
-  `401` sem autorização · `404` não encontrado · `422` regra de negócio · `502`/`503` dependência externa.
+- Dinheiro vai como número com 2 casas decimais (`89.90`). Datas vão no formato ISO-8601, no fuso UTC (`2026-10-01T03:00:00Z`).
+- Códigos de resposta: `200` deu certo · `201` criado · `202` recebido, vai ser analisado · `400` dados errados ·
+  `401` sem permissão · `404` não encontrado · `422` uma regra da loja impediu (ex.: jogo esgotado) ·
+  `502`/`503` um sistema de fora falhou.
 
 ### 14.1 backend: API pública da loja (`/api/**`, CORS liberado só para `FRONTEND_ORIGINS`)
 
@@ -861,9 +911,12 @@ CSRF), protegidas por login Google e pelo e-mail conferido no admin-auth-service
 
 ## 15. Fluxos de comunicação
 
-Todos os fluxos entre componentes, com o contrato usado e o comportamento em falha. Eles seguem a
-arquitetura da §9: o navegador só fala com o backend, e só o backend fala com o shipping-service, o
-Mercado Pago e o banco.
+Cada linha é uma conversa entre duas partes do sistema: quem chama quem, por qual rota e o que acontece se
+der errado. A regra geral (§9): o navegador só fala com o backend, e só o backend fala com o
+shipping-service, o Mercado Pago e o banco.
+
+"Síncrono" quer dizer que quem chamou espera a resposta. "Assíncrono" quer dizer que o aviso chega depois,
+quando o outro sistema quiser (como o webhook do Mercado Pago).
 
 | # | Fluxo | Origem → destino | Estilo | Contrato | Em falha |
 |---|---|---|---|---|---|
@@ -958,18 +1011,20 @@ Rotas e contratos de cada serviço: §14.
 
 ## 17. Justificativa da decomposição
 
-1. **Funcional.** O frete é um subdomínio *generic* com fronteira natural: entra "origem + destino +
-   caixas" e sai "opções com preço e prazo". Ele não precisa conhecer nada da loja, e a loja não precisa
-   saber qual transportadora está por trás.
-2. **Técnica.**
-   - **Isolamento de falha:** o Melhor Envio é externo e pode ficar lento. O timeout e os erros ficam no
-     serviço, e o backend converte qualquer falha em mensagem amigável. Uma queda do frete afeta só a
-     cotação, nunca catálogo, painel ou pagamentos (RNF06).
-   - **Segurança:** o token da transportadora sai do backend e fica só no serviço, que é protegido por chave.
-   - **Substituição:** outra transportadora ou um agregador próprio significa outra implementação de
-     `ShippingQuoteProvider` dentro do serviço, sem deploy do backend (RNF07).
-   - **Escala e custo:** o serviço não tem estado nem banco, escala a zero no Cloud Run e não consome
-     conexões do Supabase (RNF01).
-3. **Por que parar aqui.** Pedido, estoque e pagamento exigem consistência transacional forte. Separá-los
-   custaria sagas, filas e mais serviços pagos, sem benefício para uma loja operada por uma pessoa. Os demais
-   domínios continuam com fronteiras explícitas em pacotes e ficam prontos para extração (seção 8).
+Usando o frete como exemplo:
+
+1. **Pelo negócio.** O frete é um problema *generic* com uma divisão clara: entra "origem + destino + caixas"
+   e sai "opções com preço e prazo". Ele não precisa saber nada da loja, e a loja não precisa saber qual
+   transportadora está por trás.
+2. **Pela parte técnica.**
+   - **Uma falha não derruba o resto:** o Melhor Envio é de fora e pode ficar lento. O tempo de espera e os
+     erros ficam dentro do serviço, e o backend transforma qualquer falha numa mensagem amigável. Se o frete
+     cair, só o cálculo do frete para; catálogo, painel e pagamentos continuam (RNF06).
+   - **Segurança:** o token da transportadora não fica no backend, só no serviço, que é protegido por senha.
+   - **Fácil de trocar:** usar outra transportadora é só criar outra classe que implementa
+     `ShippingQuoteProvider` dentro do serviço, sem mexer no backend (RNF07).
+   - **Custo:** o serviço não tem banco, desliga sozinho quando ninguém usa e não gasta conexões do Supabase (RNF01).
+3. **Por que não separar mais.** Pedido, estoque e pagamento precisam ser salvos juntos (numa transação).
+   Separar daria muito trabalho (sagas, filas, mais serviços, talvez pagos) sem vantagem para uma loja
+   cuidada por uma pessoa só. Os outros domínios já estão em pastas separadas e podem virar serviços se um
+   dia precisar (seção 8).

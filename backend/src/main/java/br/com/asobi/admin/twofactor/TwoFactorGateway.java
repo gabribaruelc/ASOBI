@@ -12,7 +12,7 @@ public interface TwoFactorGateway {
 	/**
 	 * Envia um código novo para o e-mail.
 	 *
-	 * @return id do desafio, para conferir o código depois
+	 * @return id do pedido de código (challenge), para conferir o código depois
 	 * @throws br.com.asobi.common.exception.BusinessException com mensagem pronta para a tela
 	 */
 	String requestCode(String email);

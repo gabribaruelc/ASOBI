@@ -28,11 +28,11 @@ public class AdminAuthServiceClient implements AdminDirectory {
 
 	private static final Logger log = LoggerFactory.getLogger(AdminAuthServiceClient.class);
 
-	// folga para o cold start do Cloud Run
+	// tempo extra, porque o Cloud Run pode estar "acordando" (ele desliga quando ninguém usa)
 	private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
 	// O painel pergunta "é admin?" a cada requisição; a resposta vale por este tempo.
-	// Remover um admin por este backend limpa o cache na hora.
+	// Quando um admin é removido por aqui, essa resposta guardada é apagada na hora.
 	private static final Duration CACHE_TTL = Duration.ofSeconds(30);
 
 	private static final String UNAVAILABLE = "Não foi possível falar com o serviço de admins agora. Tente novamente em instantes.";
