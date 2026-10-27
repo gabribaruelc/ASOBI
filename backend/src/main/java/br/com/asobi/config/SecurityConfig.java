@@ -19,11 +19,14 @@ import br.com.asobi.admin.security.CurrentAdmin;
 import br.com.asobi.admin.twofactor.TwoFactorSession;
 
 /**
- * /api/** é público e sem sessão (sem CSRF). /admin/** confere o e-mail no
- * AdminDirectory a cada requisição, então remover um admin corta o acesso sem esperar a sessão expirar.
- * Com o two-factor-service configurado, o painel só abre depois do código enviado por e-mail;
- * até lá o admin logado só alcança /admin/verificacao. O descadastro da newsletter é público e
- * sem CSRF: quem autoriza é o token do link, e o programa de e-mail faz o POST sozinho (RFC 8058).
+ * Regras de acesso:
+ * - /api/** é aberto para a loja e não usa sessão, então não precisa da proteção CSRF.
+ * - /admin/** pergunta ao AdminDirectory, a cada clique, se o e-mail ainda é admin. Assim, quem
+ *   for removido perde o acesso na hora, sem esperar o login vencer.
+ * - Com o two-factor-service configurado, o painel só abre depois do código por e-mail; até lá
+ *   o admin só consegue ver /admin/verificacao.
+ * - O descadastro da newsletter é aberto e sem CSRF: quem prova que é a pessoa certa é o token
+ *   do link, e o programa de e-mail faz o POST sozinho, sem formulário (padrão RFC 8058).
  */
 @Configuration
 public class SecurityConfig {

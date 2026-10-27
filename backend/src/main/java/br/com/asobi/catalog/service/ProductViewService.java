@@ -28,8 +28,9 @@ public class ProductViewService {
 		this.clock = clock;
 	}
 
-	// Sem transação em volta: cada passo confirma sozinho, para a corrida pela primeira
-	// visualização do dia poder cair no catch e somar na linha que a outra requisição criou.
+	// Sem @Transactional de propósito: cada passo é salvo na hora. Se duas pessoas abrirem o jogo
+	// ao mesmo tempo na primeira visita do dia, as duas tentam criar a linha; a segunda cai no catch
+	// e só soma na linha que a primeira criou.
 	public void recordView(String slug) {
 		Product product = productRepository.findBySlug(slug)
 				.orElseThrow(() -> new NotFoundException("Jogo não encontrado."));

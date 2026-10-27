@@ -39,7 +39,7 @@ public class SupabaseAuthClient {
 		this(properties, RestClient.builder().requestFactory(timeoutRequestFactory()));
 	}
 
-	/** Construtor para testes (MockRestServiceServer). */
+	/** Usado só nos testes, que trocam o servidor de verdade por um falso. */
 	SupabaseAuthClient(CustomerAuthProperties properties, RestClient.Builder builder) {
 		this.configured = StringUtils.hasText(properties.supabaseUrl())
 				&& StringUtils.hasText(properties.supabaseKey());

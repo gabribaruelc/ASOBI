@@ -11,8 +11,9 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.util.StringUtils;
 
 /**
- * Header x-signature: HMAC-SHA256 de "id:{data.id};request-id:{x-request-id};ts:{ts};"
- * com a assinatura secreta do webhook.
+ * Confere se o aviso veio mesmo do Mercado Pago. O cabeçalho x-signature traz um HMAC-SHA256
+ * (uma "assinatura") do texto "id:{data.id};request-id:{x-request-id};ts:{ts};", feito com a
+ * senha secreta do webhook. Calculamos a mesma conta aqui e comparamos.
  */
 public class MercadoPagoSignatureVerifier {
 

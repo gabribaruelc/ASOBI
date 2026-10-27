@@ -3,8 +3,8 @@ package br.com.asobi.order.event;
 import br.com.asobi.order.model.Order;
 
 /**
- * Algo aconteceu com um pedido. Publicado pelo OrderService dentro da transação;
- * quem escuta (ex.: e-mails) decide o que fazer, sem o pedido depender disso.
+ * Avisa que algo aconteceu com um pedido. O OrderService anuncia, e quem está "escutando"
+ * (ex.: os e-mails) decide o que fazer. Assim o pedido não depende do módulo de e-mail.
  */
 public record OrderEvent(Type type, Order order) {
 

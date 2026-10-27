@@ -30,7 +30,7 @@ public class ResendEmailSender implements EmailSender {
 		this(properties, RestClient.builder().requestFactory(timeoutRequestFactory()));
 	}
 
-	/** Construtor para testes (MockRestServiceServer). */
+	/** Usado só nos testes, que trocam o servidor de verdade por um falso. */
 	ResendEmailSender(EmailProperties properties, RestClient.Builder builder) {
 		this.from = properties.from();
 		this.replyTo = properties.replyTo();
@@ -69,7 +69,7 @@ public class ResendEmailSender implements EmailSender {
 		if (StringUtils.hasText(replyTo)) {
 			body.put("reply_to", replyTo);
 		}
-		// RFC 8058: o programa de e-mail mostra "cancelar inscrição" e faz o POST sozinho
+		// com estes cabeçalhos, o Gmail e outros mostram o botão "cancelar inscrição" (padrão RFC 8058)
 		body.put("headers", Map.of(
 				"List-Unsubscribe", "<" + message.unsubscribeUrl() + ">",
 				"List-Unsubscribe-Post", "List-Unsubscribe=One-Click"));

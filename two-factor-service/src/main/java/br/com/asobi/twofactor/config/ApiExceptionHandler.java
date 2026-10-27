@@ -21,7 +21,7 @@ import br.com.asobi.twofactor.challenge.EmailDeliveryException;
 import br.com.asobi.twofactor.challenge.TooManyChallengesException;
 import br.com.asobi.twofactor.challenge.WrongCodeException;
 
-/** RFC 9457; o detail já vem pronto para mostrar a quem está digitando o código. */
+/** Devolve os erros em JSON no formato padrão (RFC 9457). O detail já vem pronto para mostrar a quem está digitando o código. */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 

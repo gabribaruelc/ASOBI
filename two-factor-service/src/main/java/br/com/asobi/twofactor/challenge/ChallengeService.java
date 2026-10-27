@@ -48,13 +48,13 @@ public class ChallengeService {
 	}
 
 	/**
-	 * Gera o código, grava o hash e envia o e-mail. Sem transação de propósito: a chamada ao
-	 * Resend não pode segurar uma conexão do banco. Se o envio falhar, o desafio é apagado e
-	 * o código anterior (se houver) continua valendo.
+	 * Cria o código, salva o hash dele e manda o e-mail. Não usa @Transactional de propósito:
+	 * enquanto espera o Resend, não pode ficar segurando uma conexão do banco. Se o e-mail
+	 * falhar, o pedido de código (challenge) é apagado e o código anterior, se tiver, continua valendo.
 	 * <p>
-	 * Pedidos repetidos dentro de {@code resendCooldown} recebem o desafio que já existe, sem
-	 * novo e-mail. Dois pedidos simultâneos gravam cada um o seu e depois conferem: fica o mais
-	 * antigo e o outro se apaga antes de enviar. Assim sai um e-mail só, e o código dele vale.
+	 * Se o mesmo pedido chegar de novo dentro de {@code resendCooldown}, devolve o que já existe,
+	 * sem mandar outro e-mail. Se dois pedidos chegarem ao mesmo tempo, cada um salva o seu e
+	 * depois confere: fica o mais antigo e o outro se apaga antes de enviar. Assim sai um e-mail só.
 	 */
 	public Challenge create(String email, String purpose) {
 		String normalized = normalize(email);

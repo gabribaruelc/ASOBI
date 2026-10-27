@@ -11,7 +11,7 @@ import br.com.asobi.admin.directory.AdminAccount;
 import br.com.asobi.admin.directory.AdminDirectory;
 import br.com.asobi.catalog.event.ProductEvent;
 
-/** Avisa os admins quando uma venda deixa um jogo com estoque baixo. O envio é depois do commit. */
+/** Avisa os admins quando uma venda deixa um jogo com estoque baixo. Só envia depois que a venda foi salva no banco. */
 @Component
 public class StockEmailListener {
 

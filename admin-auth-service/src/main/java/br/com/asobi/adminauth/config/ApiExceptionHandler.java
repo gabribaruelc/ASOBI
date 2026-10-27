@@ -21,7 +21,7 @@ import br.com.asobi.adminauth.login.InvalidTokenException;
 import br.com.asobi.adminauth.login.LoginUnavailableException;
 import br.com.asobi.adminauth.login.NotAdminException;
 
-/** RFC 9457; o detail de 404 e 409 já vem pronto para o painel mostrar. */
+/** Devolve os erros em JSON no formato padrão (RFC 9457). Nos erros 404 e 409, o detail já vem pronto para o painel mostrar. */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 

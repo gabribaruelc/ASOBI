@@ -65,7 +65,7 @@ public class CatalogService {
 		return toResponses(List.of(product), clock.instant()).get(0);
 	}
 
-	/** Uma única consulta de avaliações para a lista toda (evita N+1). */
+	/** Busca as avaliações de todos os jogos da lista numa consulta só, em vez de uma consulta por jogo. */
 	private List<ProductResponse> toResponses(List<Product> products, Instant now) {
 		if (products.isEmpty()) {
 			return List.of();

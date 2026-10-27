@@ -22,7 +22,7 @@ public class NotificationServiceClient implements ProductAlertGateway {
 
 	private static final Logger log = LoggerFactory.getLogger(NotificationServiceClient.class);
 
-	// folga para o cold start do Cloud Run e para o envio em lote dos e-mails
+	// tempo extra: o Cloud Run pode estar "acordando" e o envio dos e-mails em grupo demora
 	private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
 	private static final String DISABLED = "Os avisos por e-mail não estão disponíveis no momento.";

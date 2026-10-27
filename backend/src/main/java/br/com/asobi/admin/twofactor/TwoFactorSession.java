@@ -63,7 +63,7 @@ public class TwoFactorSession {
 	 * Envia o código da primeira visita. A sessão fica no banco e só é gravada no fim da
 	 * requisição, então duas requisições simultâneas (aba duplicada, pré-carregamento do
 	 * navegador) veriam as duas "sem código" e sairiam dois e-mails, um deles já vencido.
-	 * Aqui a segunda espera a primeira e fica com o mesmo desafio.
+	 * Aqui a segunda espera a primeira e usa o mesmo código.
 	 */
 	public String requestFirstCode(HttpSession session, String email) {
 		Instant now = Instant.now();

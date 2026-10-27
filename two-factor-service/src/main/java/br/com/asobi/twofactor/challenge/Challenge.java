@@ -8,7 +8,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** Um código de uso único enviado para um e-mail. Guarda só o HMAC do código. */
+/** Um código de uso único enviado para um e-mail. No banco fica só a "impressão digital" (HMAC) do código, nunca o código. */
 @Entity
 @Table(name = "challenges")
 public class Challenge {

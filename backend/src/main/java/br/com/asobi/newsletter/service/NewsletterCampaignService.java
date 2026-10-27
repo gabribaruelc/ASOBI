@@ -35,7 +35,8 @@ import br.com.asobi.notification.EmailSender;
  * gratuito do Resend tem 100 e-mails por dia somando os de pedido; o que faltar, o lojista
  * continua depois, sem repetir quem já recebeu.
  *
- * O envio não roda numa transação: a chamada ao Resend não pode segurar uma conexão do banco.
+ * O envio não usa @Transactional: enquanto espera o Resend responder, não pode ficar
+ * segurando uma conexão do banco (o plano grátis do Supabase tem poucas).
  */
 @Service
 public class NewsletterCampaignService {

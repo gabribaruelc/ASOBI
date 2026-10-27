@@ -7,12 +7,12 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Envia o e-mail só depois que a transação atual é confirmada: assim ninguém recebe
- * "pagamento aprovado" de uma operação que foi desfeita, e a chamada ao provedor não
- * segura a trava do estoque. Falha de e-mail nunca derruba o pedido — só vai para o log.
+ * Só envia o e-mail depois que tudo foi salvo no banco. Assim ninguém recebe "pagamento
+ * aprovado" de algo que foi desfeito, e o estoque não fica travado esperando o Resend.
+ * Se o e-mail falhar, o pedido continua normal; o erro só vai para o log.
  *
- * O envio é síncrono de propósito: no Cloud Run a CPU é cortada assim que a resposta
- * sai, então uma tarefa em segundo plano poderia nunca rodar.
+ * O envio espera a resposta (não roda em segundo plano) de propósito: o Cloud Run corta o
+ * processador assim que a resposta sai, então uma tarefa em segundo plano poderia nem rodar.
  */
 @Component
 public class EmailDispatcher {

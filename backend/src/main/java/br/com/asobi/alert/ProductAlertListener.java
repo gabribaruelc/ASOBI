@@ -10,12 +10,12 @@ import br.com.asobi.alert.ProductAlertGateway.Alert;
 import br.com.asobi.catalog.event.ProductEvent;
 
 /**
- * Repassa ao notification-service o que mudou no catálogo. Roda só depois do commit: ninguém
- * recebe aviso de uma alteração que foi desfeita. Uma falha aqui nunca derruba o que o
- * lojista salvou no painel, só vai para o log.
+ * Conta ao notification-service o que mudou num jogo. Só roda depois que a mudança foi salva
+ * no banco, para ninguém receber aviso de algo que foi desfeito. Se der erro aqui, o que o
+ * lojista salvou no painel continua salvo; o erro só vai para o log.
  *
- * A chamada é síncrona de propósito: no Cloud Run a CPU é cortada assim que a resposta sai,
- * então uma tarefa em segundo plano poderia nunca rodar.
+ * A chamada espera a resposta (não roda em segundo plano) de propósito: o Cloud Run corta o
+ * processador assim que a resposta sai, então uma tarefa em segundo plano poderia nem rodar.
  */
 @Component
 public class ProductAlertListener {

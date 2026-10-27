@@ -5,10 +5,10 @@ import java.math.BigDecimal;
 import br.com.asobi.catalog.model.Product;
 
 /**
- * Algo mudou num produto: pelo painel (AdminProductService) ou por uma venda (OrderService, que
- * publica {@link Type#LOW_STOCK}). Publicado dentro da transação;
- * quem escuta (ex.: avisos por e-mail) decide o que fazer, sem o catálogo depender disso.
- * Leva uma cópia dos dados, porque quem escuta roda depois do commit.
+ * Avisa que algo mudou num jogo: pelo painel (AdminProductService) ou por uma venda (OrderService,
+ * que manda o {@link Type#LOW_STOCK}). É anunciado no meio da gravação; quem está "escutando"
+ * (ex.: os avisos por e-mail) decide o que fazer, e o catálogo não precisa saber quem é.
+ * Leva uma cópia dos dados, porque quem escuta só roda depois que tudo foi salvo no banco.
  *
  * @param price         valor cobrado agora (em promoção, o promocional)
  * @param originalPrice preço cheio; só preenchido em promoção

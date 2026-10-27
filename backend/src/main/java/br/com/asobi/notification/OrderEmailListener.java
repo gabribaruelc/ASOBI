@@ -13,8 +13,9 @@ import br.com.asobi.order.event.OrderEvent;
 import br.com.asobi.order.model.Order;
 
 /**
- * E-mails transacionais do pedido. Roda dentro da transação do pedido (para ler itens e
- * admins), mas o envio em si só acontece depois do commit — ver {@link EmailDispatcher}.
+ * E-mails do pedido (recebido, pago, enviado). Monta o e-mail junto com a gravação do pedido
+ * (para conseguir ler os itens e os admins), mas só envia depois que tudo foi salvo no banco.
+ * Ver {@link EmailDispatcher}.
  */
 @Component
 public class OrderEmailListener {

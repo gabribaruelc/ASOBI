@@ -152,7 +152,7 @@ public class OrderService {
 		return OrderStatusResponse.from(order, isPayable(order));
 	}
 
-	/** Idempotente: o webhook pode chegar mais de uma vez, mas o estoque só baixa na primeira aprovação. */
+	/** Pode ser chamado mais de uma vez: o Mercado Pago às vezes avisa repetido, mas o estoque só baixa na primeira aprovação. */
 	public void applyPayment(PaymentUpdate update) {
 		Order order = orderRepository.findByPublicId(update.orderPublicId())
 				.orElseThrow(() -> new NotFoundException("Pedido não encontrado: " + update.orderPublicId()));

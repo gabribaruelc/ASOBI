@@ -18,9 +18,10 @@ import org.springframework.util.StringUtils;
 import br.com.asobi.twofactor.config.TwoFactorProperties;
 
 /**
- * HMAC-SHA256 do código, com chave que só o serviço conhece. Um hash simples não bastaria:
- * com só um milhão de códigos possíveis, quem lesse o banco descobriria todos por força bruta.
- * O id do desafio entra na conta para o mesmo código gerar hashes diferentes.
+ * Transforma o código numa "impressão digital" (HMAC-SHA256) usando uma chave que só este
+ * serviço conhece. Um hash comum, sem chave, não serviria: como só existem um milhão de códigos,
+ * quem visse o banco conseguiria testar todos. O id do pedido também entra na conta, para o
+ * mesmo código gerar resultados diferentes em pedidos diferentes.
  */
 @Component
 public class CodeHasher {

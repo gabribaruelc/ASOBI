@@ -34,7 +34,7 @@ public class SupabaseImageStorage implements ImageStorage {
 		this(properties, RestClient.builder().requestFactory(timeoutRequestFactory()));
 	}
 
-	/** Construtor para testes (MockRestServiceServer). */
+	/** Usado só nos testes, que trocam o servidor de verdade por um falso. */
 	SupabaseImageStorage(StorageProperties properties, RestClient.Builder builder) {
 		this.baseUrl = properties.supabaseUrl().trim().replaceAll("/+$", "");
 		this.bucket = properties.bucket();

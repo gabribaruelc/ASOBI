@@ -25,7 +25,7 @@ public class ShippingServiceClient implements ShippingQuoteProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(ShippingServiceClient.class);
 
-	// folga para o cold start do Cloud Run
+	// tempo extra, porque o Cloud Run pode estar "acordando" (ele desliga quando ninguém usa)
 	private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
 	private static final String UNAVAILABLE = "Não foi possível calcular o frete agora. Tente novamente em instantes.";
