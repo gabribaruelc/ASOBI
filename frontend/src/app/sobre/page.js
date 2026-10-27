@@ -5,12 +5,12 @@ import { getAbout } from "../lib/catalog";
 // que o lojista edita em /admin/sobre.
 const FALLBACK_SOBRE = {
   heroText:
-    'O nome ASOBI vem do japonês 遊び ("asobi"), que significa brincadeira. Acreditamos que é brincando que as crianças aprendem melhor — e é por isso que existimos: para levar até as famílias jogos de tabuleiro que unem diversão de verdade com desenvolvimento infantil.',
+    'O nome ASOBI vem do japonês 遊び ("asobi"), que quer dizer brincadeira. Acreditamos que brincar é coisa séria: é jogando que as crianças aprendem a esperar a vez, a ganhar e a perder, a resolver problemas e a inventar histórias.',
   values: [],
   missionEmoji: "🎲",
-  missionTitle: "Ajudar cada família a escolher o jogo certo",
+  missionTitle: "Ajudar cada família a encontrar o jogo certo",
   missionText:
-    "Em cada produto do nosso catálogo, mostramos a idade recomendada, o número de jogadores e a habilidade que aquele jogo estimula. Assim, escolher o presente certo fica mais simples e divertido.",
+    "Em cada ficha mostramos a idade recomendada, o número de jogadores e a habilidade que o jogo estimula. Assim, escolher o presente certo fica mais simples e divertido.",
 };
 
 export default async function SobrePage() {
