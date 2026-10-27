@@ -5,3 +5,6 @@ AGENTS.md
 
 # Arquivos temporários do Office
 ~$*
+
+# Relatórios de erro da JVM
+hs_err_pid*.log
