@@ -66,6 +66,7 @@ dono das tabelas.
 | `SHIPPING_SERVICE_API_KEY` | a mesma senha configurada no `shipping-service` (vai no cabeçalho `X-Api-Key`) |
 | `TWO_FACTOR_SERVICE_URL` | endereço do [`two-factor-service`](two-factor-service.md); no computador: `http://localhost:8082`. Preenchida, o painel pede um código por e-mail depois do login. Vazia = só o login |
 | `TWO_FACTOR_SERVICE_API_KEY` | a mesma senha configurada no `two-factor-service` |
+| `ADMIN_PASSWORD_HASH` | hash BCrypt da senha do painel da conta `admin@asobi.com.br` (outra conta: `ADMIN_PASSWORD_EMAIL`). Preenchido, essa conta digita a senha em vez de receber o código. Vazio = ela também recebe o código |
 | `NOTIFICATION_SERVICE_URL` | endereço do [`notification-service`](notification-service.md); no computador: `http://localhost:8084`. Preenchida, a página do jogo mostra o "avise-me". Vazia = avisos desligados |
 | `NOTIFICATION_SERVICE_API_KEY` | a mesma senha configurada no `notification-service` |
 | `SUPABASE_URL` | `https://<id-do-projeto>.supabase.co` (fotos dos jogos). Vazio = as fotos vão para uma pasta local, que **some** sempre que o Cloud Run reinicia |
@@ -107,6 +108,10 @@ Cloud Run desliga e liga de novo.
   Quem cria, envia e confere o código é o [`two-factor-service`](two-factor-service.md).
   Se ele estiver fora do ar, ninguém passa dessa tela. No computador, sem `RESEND_API_KEY` no serviço,
   o código aparece no log dele. Vale também para o modo desenvolvimento.
+- **Senha da conta principal**: `admin@asobi.com.br` não recebe código. Depois do login ela digita a senha do
+  painel na mesma tela. Só o hash fica guardado (`ADMIN_PASSWORD_HASH`); 5 erros em 15 minutos bloqueiam a
+  senha por 15 minutos. Para trocar a senha, gere outro hash BCrypt (custo 12) e atualize o segredo
+  `asobi-admin-password-hash`. Isso vale mesmo com `TWO_FACTOR_SERVICE_URL` vazia.
 
 ### O que tem no painel
 
@@ -159,7 +164,7 @@ gcloud run deploy asobi-backend \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
   --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service>,TWO_FACTOR_SERVICE_URL=<url-do-two-factor-service>,NOTIFICATION_SERVICE_URL=<url-do-notification-service> \
-  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,TWO_FACTOR_SERVICE_API_KEY=asobi-two-factor-api-key:latest,NOTIFICATION_SERVICE_API_KEY=asobi-notification-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest,JOBS_API_KEY=asobi-jobs-api-key:latest
+  --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,TWO_FACTOR_SERVICE_API_KEY=asobi-two-factor-api-key:latest,NOTIFICATION_SERVICE_API_KEY=asobi-notification-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest,JOBS_API_KEY=asobi-jobs-api-key:latest,ADMIN_PASSWORD_HASH=asobi-admin-password-hash:latest
 ```
 
 Também coloque em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.co` e

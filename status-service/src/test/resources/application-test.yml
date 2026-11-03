@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:status-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+
+status-service:
+  api-key: test-key
+
+status:
+  store-url: https://asobi.com.br
+  fallback-emails: reserva@asobi.com.br
+  admin-auth-service:
+    url: http://admin-auth.test
+  targets:
+    - name: store
+      label: Loja (site)
+      url: https://asobi.com.br
+    - name: backend
+      label: API da loja e painel admin
+      url: https://backend.test
+      path: /actuator/health
+    - name: not-deployed
+      label: Ainda não está no ar
+      url: ""

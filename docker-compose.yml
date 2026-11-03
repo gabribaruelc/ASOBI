@@ -4,6 +4,7 @@
 #   two-factor-service    http://localhost:8082  (código de verificação por e-mail)
 #   admin-auth-service    http://localhost:8083  (lista de admins e login Google do painel)
 #   notification-service  http://localhost:8084  (avisos de promoção e de volta ao estoque)
+#   status-service        http://localhost:8085  (avisa os admins quando algo sai do ar)
 # A loja (frontend/) roda à parte com `npm run dev` em http://localhost:3000.
 #
 # Uso: docker compose up --build
@@ -83,8 +84,30 @@ services:
     volumes:
       - notification-data:/app/data
 
+  # Confere os outros a cada chamada de POST /api/checks (no ar, o Cloud Scheduler chama de 5 em 5 minutos):
+  #   curl -X POST localhost:8085/api/checks -H "X-Api-Key: dev-status-key"
+  # Sem RESEND_API_KEY o aviso aparece em `docker compose logs -f status-service`.
+  status-service:
+    build: ./status-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      STATUS_SERVICE_API_KEY: dev-status-key
+      ADMIN_AUTH_SERVICE_URL: http://admin-auth-service:8083
+      ADMIN_AUTH_SERVICE_API_KEY: dev-admin-auth-key
+      STORE_URL: http://host.docker.internal:3000
+      BACKEND_URL: http://backend:8080
+      SHIPPING_SERVICE_URL: http://shipping-service:8081
+      TWO_FACTOR_SERVICE_URL: http://two-factor-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    volumes:
+      - status-data:/app/data
+
 volumes:
   backend-data:
   admin-auth-data:
   two-factor-data:
   notification-data:
+  status-data:

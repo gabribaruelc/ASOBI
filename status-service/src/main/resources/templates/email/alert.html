@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!-- Aviso aos admins de que algo saiu do ar ou voltou. Montado pelo AlertEmailComposer.
+     Estilos inline e tabelas: é o que os programas de e-mail entendem. -->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light only">
+  <title th:text="${heading}">Algo saiu do ar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#EAF2FF;color:#1E2A45;font-family:'Nunito','Trebuchet MS',Verdana,Arial,sans-serif;font-size:16px;line-height:1.5;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EAF2FF;">
+  <tr>
+    <td align="center" style="padding:32px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#FFFFFF;border-radius:24px;overflow:hidden;">
+        <tr>
+          <td style="padding:0;font-size:0;line-height:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="62%" height="8" style="background:#2E7CF6;font-size:0;line-height:0;">&nbsp;</td>
+                <td width="38%" height="8" style="background:#FF5FA2;font-size:0;line-height:0;">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:28px 32px 0;font-family:'Fredoka','Trebuchet MS',Verdana,Arial,sans-serif;font-size:40px;font-weight:600;letter-spacing:-1px;line-height:1;">
+            <span style="color:#2E7CF6;">aso</span><span style="color:#FF5FA2;">bi</span>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:24px 32px 0;">
+            <div style="font-size:44px;line-height:1;" th:text="${tone == 'down'} ? '🚨' : '🎉'">🚨</div>
+            <h1 style="margin:12px 0 8px;font-family:'Fredoka','Trebuchet MS',Verdana,Arial,sans-serif;font-size:26px;font-weight:600;line-height:1.25;color:#1E2A45;"
+                th:text="${heading}">Algo saiu do ar</h1>
+            <p style="margin:0;color:#1E2A45;" th:text="${intro}">A conferência automática não conseguiu falar com:</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 24px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   th:style="${tone == 'down'} ? 'background:#FFEAF3;border-radius:16px;' : 'background:#EAF2FF;border-radius:16px;'">
+              <tr th:each="line : ${lines}">
+                <td style="padding:12px 18px;">
+                  <strong style="font-family:'Fredoka','Trebuchet MS',Verdana,Arial,sans-serif;font-size:17px;" th:text="${line.label}">API da loja e painel</strong><br>
+                  <span style="font-size:14px;color:#5B6680;" th:text="${line.info}">não respondeu em 30 segundos</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:20px 32px 0;font-size:15px;" th:text="${outro}">Não precisa fazer nada.</td>
+        </tr>
+        <tr th:if="${storeUrl}">
+          <td align="center" style="padding:20px 32px 0;">
+            <a th:href="${storeUrl}" href="#" style="display:inline-block;background:#2E7CF6;color:#FFFFFF;text-decoration:none;font-weight:bold;padding:12px 24px;border-radius:999px;">Abrir a loja</a>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:24px 32px 28px;font-size:13px;line-height:1.5;color:#5B6680;">
+            Este aviso vai para todos os admins do painel. A loja é conferida a cada 5 minutos.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

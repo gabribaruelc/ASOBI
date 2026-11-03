@@ -52,6 +52,7 @@ random_secret asobi-two-factor-api-key
 random_secret asobi-two-factor-code-secret
 random_secret asobi-notification-api-key
 random_secret asobi-jobs-api-key
+random_secret asobi-status-api-key
 
 echo "Banco (Supabase)"
 from_env asobi-db-url backend/.env DB_URL
@@ -63,6 +64,11 @@ from_env asobi-two-factor-db-user two-factor-service/.env DB_USER
 from_env asobi-two-factor-db-password two-factor-service/.env DB_PASSWORD
 from_env asobi-notification-db-user notification-service/.env DB_USER
 from_env asobi-notification-db-password notification-service/.env DB_PASSWORD
+from_env asobi-status-db-user status-service/.env DB_USER
+from_env asobi-status-db-password status-service/.env DB_PASSWORD
+
+echo "Senha do painel (admin@asobi.com.br)"
+from_env asobi-admin-password-hash backend/.env ADMIN_PASSWORD_HASH
 
 echo "Contas externas"
 ask asobi-supabase-service-key "Supabase: chave secreta (service_role / sb_secret_...)"
