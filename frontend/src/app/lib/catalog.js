@@ -18,7 +18,7 @@ async function fetchJson(path) {
 }
 
 // Backend fora do ar (ou ainda acordando no Cloud Run): devolve o valor reserva em
-// vez de derrubar a página — e o build. A próxima revalidação tenta de novo.
+// vez de derrubar a página (e o build). A próxima revalidação tenta de novo.
 async function fetchOr(path, fallback) {
   try {
     return (await fetchJson(path)) ?? fallback;

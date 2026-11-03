@@ -170,7 +170,7 @@ public class ProductImageService {
 	private record Upload(byte[] content, ImageType type) {
 	}
 
-	/** Tipo descoberto pelo começo do arquivo — não confia na extensão nem no navegador. */
+	/** Tipo descoberto pelo começo do arquivo; não confia na extensão nem no navegador. */
 	enum ImageType {
 		JPEG("jpg", "image/jpeg"), PNG("png", "image/png"), WEBP("webp", "image/webp");
 

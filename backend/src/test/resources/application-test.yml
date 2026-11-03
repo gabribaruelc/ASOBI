@@ -10,3 +10,9 @@ asobi:
   admin:
     bootstrap-email: admin@asobi.com.br
     dev-login-enabled: true
+  # o backend/.env local pode ter a senha; nos testes, só AdminPasswordTests liga
+  admin-password:
+    hash: ""
+  # idem para a chave das rotinas: só os testes que precisam ligam
+  jobs:
+    api-key: ""

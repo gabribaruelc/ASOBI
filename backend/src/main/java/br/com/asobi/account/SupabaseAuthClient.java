@@ -76,7 +76,7 @@ public class SupabaseAuthClient {
 			return Optional.of(new CustomerIdentity(user.id(), user.email().trim().toLowerCase(Locale.ROOT),
 					user.emailConfirmedAt() != null));
 		} catch (RestClientResponseException ex) {
-			// 401/403: token vencido ou inválido — é o caso normal de "não está logado".
+			// 401/403: token vencido ou inválido, que é o caso normal de "não está logado".
 			if (!ex.getStatusCode().is4xxClientError()) {
 				log.warn("Supabase Auth respondeu {} ao conferir o login", ex.getStatusCode());
 			}

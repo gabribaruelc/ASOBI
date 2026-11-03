@@ -6,7 +6,7 @@ import { getSupabase, isAuthEnabled } from "../lib/supabase";
 const AuthContext = createContext(null);
 
 // Conta do cliente (adulto responsável). Guardamos só o que o Google informa:
-// nome e e-mail — nenhum dado de criança (LGPD).
+// nome e e-mail, nenhum dado de criança (LGPD).
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(isAuthEnabled);
