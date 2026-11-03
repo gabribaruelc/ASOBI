@@ -1,0 +1,105 @@
+spring:
+  application:
+    name: status-service
+  config:
+    # status-service/.env local; no Cloud Run vem do Secret Manager
+    import: optional:file:.env[.properties]
+  profiles:
+    # H2 local por padrão; em produção SPRING_PROFILES_ACTIVE=supabase
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      # esquema fica a cargo do Flyway
+      ddl-auto: validate
+
+server:
+  # 8080 backend, 8081 shipping, 8082 two-factor, 8083 admin-auth, 8084 notification
+  port: ${PORT:8085}
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+status-service:
+  # chave que o Cloud Scheduler manda em X-Api-Key; vazia = não confere (só local)
+  api-key: ${STATUS_SERVICE_API_KEY:}
+
+status:
+  # folga para o Cloud Run "acordar" um serviço que estava desligado
+  timeout: 30s
+  # duas falhas seguidas (10 minutos com a rotina de 5 em 5) antes de avisar
+  failures-before-alert: 2
+  # se continuar fora do ar, avisa de novo a cada 6 horas
+  reminder-interval: 6h
+  store-url: ${STORE_URL:http://localhost:3000}
+  # usados só se nunca deu para ler a lista do admin-auth-service; separados por vírgula
+  fallback-emails: ${STATUS_FALLBACK_EMAILS:admin@asobi.com.br}
+  admin-auth-service:
+    url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
+    api-key: ${ADMIN_AUTH_SERVICE_API_KEY:}
+  # endereço vazio = fica de fora da conferência
+  targets:
+    - name: store
+      label: Loja (site)
+      url: ${STORE_URL:http://localhost:3000}
+    - name: backend
+      label: API da loja e painel admin
+      url: ${BACKEND_URL:http://localhost:8080}
+      path: /actuator/health
+    - name: shipping-service
+      label: Cálculo de frete
+      url: ${SHIPPING_SERVICE_URL:http://localhost:8081}
+      path: /actuator/health
+    - name: two-factor-service
+      label: Código de acesso do painel
+      url: ${TWO_FACTOR_SERVICE_URL:http://localhost:8082}
+      path: /actuator/health
+    - name: admin-auth-service
+      label: Lista de admins e login do painel
+      url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
+      path: /actuator/health
+    - name: notification-service
+      label: Avisos de produto (avise-me)
+      url: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+      path: /actuator/health
+  email:
+    # Vazio = o aviso só aparece no log.
+    resend-api-key: ${RESEND_API_KEY:}
+    # O domínio do remetente precisa estar verificado no Resend.
+    from: ${EMAIL_FROM:ASOBI <onboarding@resend.dev>}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    # modo PostgreSQL para usar as mesmas migrações do Supabase
+    url: jdbc:h2:file:./data/status;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+
+---
+spring:
+  config:
+    activate:
+      on-profile: supabase
+  datasource:
+    # mesmo banco do backend (Session pooler), mas com usuário e esquema próprios
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+  flyway:
+    # criado pelo Flyway se não existir; fora do schema public, não aparece no PostgREST do Supabase
+    default-schema: ${DB_SCHEMA:status}
+  jpa:
+    properties:
+      hibernate:
+        default_schema: ${DB_SCHEMA:status}

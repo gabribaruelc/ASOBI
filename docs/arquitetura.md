@@ -6,18 +6,20 @@ Cada decisão vem com o motivo.
 
 Como rodar e colocar no ar cada serviço está no documento de cada um, aqui em `docs/`: [backend](backend.md),
 [shipping-service](shipping-service.md), [admin-auth-service](admin-auth-service.md),
-[two-factor-service](two-factor-service.md) e [notification-service](notification-service.md).
+[two-factor-service](two-factor-service.md), [notification-service](notification-service.md) e
+[status-service](status-service.md).
 
 ## Resumo em poucas palavras
 
 - A **loja** (Next.js) é o site que o cliente vê. Ela não guarda nada: pede tudo ao backend.
 - O **backend** (Java + Spring Boot) é o centro: cuida de jogos, pedidos, estoque, avaliações, textos do
   site e do painel do lojista.
-- Quatro **serviços menores** fazem tarefas separadas, cada um com o seu motivo:
+- Cinco **serviços menores** fazem tarefas separadas, cada um com o seu motivo:
   - `shipping-service`: calcula o frete com o Melhor Envio;
   - `admin-auth-service`: guarda a lista de admins e confere o login com Google;
   - `two-factor-service`: manda e confere o código por e-mail do login do painel;
-  - `notification-service`: manda os e-mails de "avise-me" (promoção, voltou ao estoque, está acabando).
+  - `notification-service`: manda os e-mails de "avise-me" (promoção, voltou ao estoque, está acabando);
+  - `status-service`: confere a cada 5 minutos se tudo está no ar e avisa os admins por e-mail quando algo cai.
 - Tudo usa planos gratuitos: Cloudflare (loja), Google Cloud Run (Java) e Supabase (banco e fotos).
 - Pedido, estoque e pagamento ficaram **juntos no backend** de propósito: eles precisam ser salvos ao
   mesmo tempo, e separar isso daria muito trabalho sem ganho para uma loja pequena.
@@ -201,6 +203,7 @@ Cada domínio foi avaliado como candidato a serviço independente:
 | **two-factor-service** | (novo) autenticação | Criar, mandar por e-mail e conferir o código de uso único | ✅ **Separado** | É a segunda etapa do login do painel e não precisa ser salvo junto com pedido ou estoque. Guarda só o HMAC do código, que vence rápido, só vale uma vez e tem limite de tentativas. |
 | **admin-auth-service** | admin | Conferir o login com Google do painel e guardar a lista de admins | ✅ **Separado** | Login é um problema *generic* e não precisa ser salvo junto com pedido ou estoque. O serviço tem a própria tabela (`admin_users`, esquema `admin_auth`) e decide sozinho quem entra; o backend só lembra que a pessoa está logada. |
 | **notification-service** | (novo) notification | Avisar por e-mail que um jogo entrou em promoção, voltou ao estoque ou está acabando | ✅ **Separado** | Recebe do backend as mudanças de preço e estoque e manda os e-mails; se falhar, a venda não é afetada. Guarda os pedidos de aviso com a concordância da pessoa (LGPD) e o link para cancelar. |
+| **status-service** | (novo) monitoramento | Conferir se a loja e os serviços respondem e avisar todos os admins por e-mail quando algo cai e quando volta | ✅ **Separado** | Precisa ficar de fora do que vigia: se morasse no backend, cairia junto com ele e não avisaria ninguém. Guarda o último estado de cada serviço e uma cópia da lista de admins, para avisar mesmo com o admin-auth-service fora do ar. |
 | review-moderation-service | review | Filtrar comentários antes de irem para a fila do lojista | 🔜 Talvez no futuro | Vale a pena quando houver um filtro automático (lista de palavras, IA). Hoje é só cadastrar e aprovar. |
 | recommendation-service | catalog (só leitura) | Sugerir jogos pela idade e habilidade | 🔜 Talvez no futuro | Só precisa ler o catálogo, o que dá para fazer pela API pública. |
 | content / settings / admin | — | Textos do site, configurações e acesso | ⏸ Ficaram no backend | São pouco usados e não falam com nenhum sistema de fora. Separar só traria custo (mais tempo para "acordar", mais conexões no Supabase grátis). |
@@ -212,7 +215,8 @@ Cada domínio foi avaliado como candidato a serviço independente:
 - O lojista precisa conseguir cuidar de tudo sem ajuda técnica (RNF01, RNF02). Menos serviços = menos coisa para quebrar.
 
 Por isso a escolha foi: **um backend organizado em pastas por assunto** + **serviços separados só onde
-separar ajuda de verdade**. Hoje são quatro: frete, login dos admins, código por e-mail e avisos de produto.
+separar ajuda de verdade**. Hoje são cinco: frete, login dos admins, código por e-mail, avisos de produto
+e aviso de site fora do ar.
 
 ---
 
@@ -237,7 +241,9 @@ flowchart LR
         auth[admin-auth-service<br/>Spring Boot · :8083]
         twofa[two-factor-service<br/>Spring Boot · :8082]
         notif[notification-service<br/>Spring Boot · :8084]
+        status[status-service<br/>Spring Boot · :8085]
     end
+    CS[(Cloud Scheduler)] -->|a cada 5 min · X-Api-Key| status
 
     loja -->|REST JSON| api
     api --- mods
@@ -260,6 +266,11 @@ flowchart LR
     notif -->|REST em lote| RS
     cliente -.->|link de descadastro do e-mail| notif
     MP -->|webhook assinado| api
+    status -.->|GET health| loja
+    status -.->|GET /actuator/health| BE
+    status -->|GET /api/admins · X-Api-Key| auth
+    status -->|JDBC :5432 · esquema status| DB
+    status -->|REST| RS
     painel -->|OAuth2| G[(Google)]
 ```
 
@@ -273,6 +284,7 @@ flowchart LR
 | **admin-auth-service** | Lista de e-mails de admin (tabela própria), conferência do ID token do Google, regra "ninguém remove a si mesmo", primeiro admin (`ADMIN_BOOTSTRAP_EMAIL`) | Sessão do navegador, telas do painel, produtos, pedidos |
 | **two-factor-service** | Código de uso único: sorteio, HMAC, validade, limite de tentativas e de pedidos, e-mail com o código | Quem é a pessoa, por que o código foi pedido, sessão, telas |
 | **notification-service** | Pedidos de aviso (e-mail + produto + tipo) com consentimento, envio dos avisos, intervalo mínimo entre avisos, descadastro | Catálogo (nome, preço e link vêm no evento), pedidos, newsletter |
+| **status-service** | Conferência de saúde de cada serviço, regra de quando avisar (2 falhas seguidas, lembrete a cada 6 h, aviso de volta), cópia da lista de admins | Como cada serviço funciona por dentro, pedidos, catálogo |
 
 Um não faz o trabalho do outro. Exemplo do frete:
 
@@ -310,6 +322,10 @@ Quando o cliente fecha o pedido, o backend calcula o frete de novo. Assim o pre�
 | backend → notification-service | REST/JSON + `X-Api-Key` | Gravar o "avise-me" feito na ficha do jogo; depois do commit, publicar "entrou em promoção" / "voltou ao estoque" e apagar as inscrições de produto excluído | O "avise-me" responde 422 com mensagem amigável; a falha ao publicar só vai para o log. O que o lojista salvou no painel não é desfeito. Sem `NOTIFICATION_SERVICE_URL`, a loja não mostra o "avise-me" |
 | notification-service → Resend | REST + Bearer token (lote de até 100) | Enviar os avisos | O lote conta como `failed` e ninguém é marcado como avisado; o evento pode ser repetido |
 | navegador → notification-service | HTTPS, sem chave (token no link) | Página de descadastro do e-mail | A pessoa tenta de novo depois; o cabeçalho `List-Unsubscribe` aponta para a mesma rota |
+| Cloud Scheduler → status-service | REST + `X-Api-Key`, a cada 5 min | Disparar uma rodada de conferência | Nenhum aviso sai enquanto a rotina não roda (não há "vigia do vigia") |
+| status-service → loja e serviços | HTTP GET (`/` da loja, `/actuator/health` dos Java), espera de 30 s | Saber se cada um responde | É exatamente o que ele avisa: 2 falhas seguidas viram e-mail |
+| status-service → admin-auth-service | REST/JSON + `X-Api-Key` (`GET /api/admins`) | Saber para quem mandar o aviso | Usa a última lista guardada; sem nenhuma, `STATUS_FALLBACK_EMAILS` |
+| status-service → Resend | REST + Bearer token | Enviar o aviso de fora do ar / voltou | Nada é marcado como avisado; a próxima rodada tenta de novo |
 
 ### Fluxo P1 + P2: compra com frete e pagamento
 
@@ -639,6 +655,27 @@ erDiagram
 `(email, product_id, alert_type)` é único. `product_id` é o id do produto no backend, guardado como número
 solto, sem chave estrangeira. `consented_at` é o registro do consentimento (LGPD); o descadastro apaga a linha.
 
+### 11.6 status-service: Supabase PostgreSQL (esquema `status`)
+
+```mermaid
+erDiagram
+    target_states {
+        varchar name PK
+        boolean up
+        int consecutive_failures
+        timestamptz last_checked_at
+        timestamptz down_since
+        varchar last_error
+        timestamptz alerted_at
+    }
+    known_admins {
+        varchar email PK
+    }
+```
+
+`alerted_at` preenchido = já avisou que caiu e ainda deve o aviso de "voltou". `known_admins` é só uma
+cópia da lista do admin-auth-service, refeita a cada rodada; a lista de verdade continua lá.
+
 ---
 
 ## 12. Autonomia dos dados e bancos previstos
@@ -653,6 +690,7 @@ de outro, ele pede pela API do outro. Nunca lê direto o banco alheio.
 | admin-auth-service | Mesmo projeto Supabase, esquema `admin_auth` (fora do `public`, não aparece no PostgREST), com usuário próprio. Local: H2 em modo PostgreSQL (`data/admin-auth`) | **Só o admin-auth-service** | Em uso |
 | two-factor-service | Mesmo projeto Supabase, esquema `two_factor`, com usuário próprio. Local: H2 em modo PostgreSQL (`data/two-factor`) | **Só o two-factor-service** | Em uso local; falta criar o esquema e o usuário no Supabase |
 | notification-service | Mesmo projeto Supabase, esquema `notification`, com usuário próprio. Local: H2 em modo PostgreSQL (`data/notification`) | **Só o notification-service** | Em uso local; falta criar o esquema e o usuário no Supabase |
+| status-service | Mesmo projeto Supabase, esquema `status`, com usuário próprio. Local: H2 em modo PostgreSQL (`data/status`) | **Só o status-service** | Em uso local; falta criar o esquema e o usuário no Supabase |
 | shipping-service (evolução) | Cache em memória das cotações (ex.: Caffeine, TTL de alguns minutos, chave = origem + destino + volumes) | Só o próprio serviço | Previsto, se a cota do Melhor Envio apertar |
 | review-moderation-service (candidato) | Banco próprio: esquema `moderation` no mesmo projeto Supabase, com usuário próprio (sem acesso ao `public`) | Só ele | Previsto |
 | recommendation-service (candidato) | Modelo de leitura próprio (projeção do catálogo: slug, idade, habilidade), atualizado pela API pública `GET /api/products` | Só ele | Previsto |
@@ -888,6 +926,13 @@ rota (`/api/v2/quotes`), mantendo a antiga até o backend migrar.
 | `POST /descadastro/{token}` | sem chave; `all=true` cancela todos os avisos do e-mail | `200` página "aviso cancelado" | — |
 | `GET /actuator/health` | — | `200` | — |
 
+### 14.5.1 status-service: API interna (`/api/**` exige `X-Api-Key`)
+
+| Método e rota | Corpo / parâmetros | Resposta de sucesso | Erros |
+|---|---|---|---|
+| `POST /api/checks` | — (chamado pelo Cloud Scheduler) | `200` `[{name, label, up, detail}]` | `401` |
+| `GET /actuator/health` | — | `200` | — |
+
 ### 14.6 backend: painel admin (`/admin/**`)
 
 Não é uma API REST: são páginas Thymeleaf renderizadas no servidor, com formulários HTML (`POST` + token
@@ -1000,10 +1045,11 @@ sequenceDiagram
 | two-factor-service (Spring Boot) | **8082** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
 | admin-auth-service (Spring Boot) | **8083** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o backend (`X-Api-Key`) |
 | notification-service (Spring Boot) | **8084** | Cloud Run, HTTPS 443 (`PORT` injetada) | API: só o backend (`X-Api-Key`). Página `/descadastro/{token}`: pública |
+| status-service (Spring Boot) | **8085** | Cloud Run, HTTPS 443 (`PORT` injetada) | Só o Cloud Scheduler (`X-Api-Key`) |
 | H2 console (dev) | 8080 `/h2-console` | desligado | Local |
-| Supabase PostgreSQL | — | 5432 (Session pooler, SSL) | O backend (esquema `public`), o admin-auth-service (`admin_auth`), o two-factor-service (`two_factor`) e o notification-service (`notification`), cada um com o seu usuário |
+| Supabase PostgreSQL | — | 5432 (Session pooler, SSL) | O backend (esquema `public`), o admin-auth-service (`admin_auth`), o two-factor-service (`two_factor`), o notification-service (`notification`) e o status-service (`status`), cada um com o seu usuário |
 
-Para subir os cinco serviços Java juntos: `docker compose up --build` na raiz ([docker-compose.yml](../docker-compose.yml)).
+Para subir os seis serviços Java juntos: `docker compose up --build` na raiz ([docker-compose.yml](../docker-compose.yml)).
 
 Rotas e contratos de cada serviço: §14.
 

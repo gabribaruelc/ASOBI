@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import br.com.asobi.admin.security.CurrentAdmin;
+import br.com.asobi.admin.twofactor.AdminPasswordCheck;
 import br.com.asobi.admin.twofactor.TwoFactorGateway;
 import br.com.asobi.admin.twofactor.TwoFactorGateway.Verification;
 import br.com.asobi.admin.twofactor.TwoFactorSession;
@@ -18,8 +19,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
- * Segundo passo do login do painel: o código enviado para o e-mail do admin. Enquanto ele não
- * é digitado, o SecurityConfig manda qualquer tela do painel para cá.
+ * Segundo passo do login do painel: o código enviado para o e-mail do admin ou, na conta
+ * principal, a senha. Enquanto ele não é feito, o SecurityConfig manda qualquer tela do painel para cá.
  */
 @Controller
 @RequestMapping("/admin/verificacao")
@@ -29,10 +30,13 @@ public class AdminTwoFactorController {
 
 	private final TwoFactorGateway gateway;
 	private final TwoFactorSession twoFactorSession;
+	private final AdminPasswordCheck passwordCheck;
 
-	public AdminTwoFactorController(TwoFactorGateway gateway, TwoFactorSession twoFactorSession) {
+	public AdminTwoFactorController(TwoFactorGateway gateway, TwoFactorSession twoFactorSession,
+			AdminPasswordCheck passwordCheck) {
 		this.gateway = gateway;
 		this.twoFactorSession = twoFactorSession;
+		this.passwordCheck = passwordCheck;
 	}
 
 	/**
@@ -45,6 +49,11 @@ public class AdminTwoFactorController {
 		if (twoFactorSession.isSatisfied(request, email)) {
 			return "redirect:/admin";
 		}
+		model.addAttribute("email", email);
+		if (twoFactorSession.usesPassword(email)) {
+			model.addAttribute("passwordMode", true);
+			return "admin/two-factor";
+		}
 		HttpSession session = request.getSession();
 		if (twoFactorSession.challengeId(session) == null && !model.containsAttribute("error")) {
 			try {
@@ -53,7 +62,6 @@ public class AdminTwoFactorController {
 				model.addAttribute("error", ex.getMessage());
 			}
 		}
-		model.addAttribute("email", email);
 		model.addAttribute("codeSent", twoFactorSession.challengeId(session) != null);
 		return "admin/two-factor";
 	}
@@ -64,7 +72,7 @@ public class AdminTwoFactorController {
 		String email = CurrentAdmin.emailOf(authentication);
 		HttpSession session = request.getSession();
 		String challengeId = twoFactorSession.challengeId(session);
-		if (challengeId == null) {
+		if (challengeId == null || twoFactorSession.usesPassword(email)) {
 			return PAGE;
 		}
 		String digits = code.replaceAll("\\s", "");
@@ -86,8 +94,30 @@ public class AdminTwoFactorController {
 		return PAGE;
 	}
 
+	@PostMapping("/senha")
+	public String verifyPassword(@RequestParam String password, Authentication authentication,
+			HttpServletRequest request, RedirectAttributes redirect) {
+		String email = CurrentAdmin.emailOf(authentication);
+		if (!twoFactorSession.usesPassword(email)) {
+			return PAGE;
+		}
+		switch (passwordCheck.check(password)) {
+			case OK -> {
+				twoFactorSession.markVerified(request.getSession(), email);
+				return "redirect:/admin";
+			}
+			case WRONG -> redirect.addFlashAttribute("error", "Senha incorreta.");
+			case LOCKED -> redirect.addFlashAttribute("error",
+					"Muitas tentativas erradas. Espere 15 minutos e tente de novo.");
+		}
+		return PAGE;
+	}
+
 	@PostMapping("/reenviar")
 	public String resend(Authentication authentication, HttpServletRequest request, RedirectAttributes redirect) {
+		if (twoFactorSession.usesPassword(CurrentAdmin.emailOf(authentication))) {
+			return PAGE;
+		}
 		HttpSession session = request.getSession();
 		twoFactorSession.clearChallenge(session);
 		try {

@@ -20,7 +20,8 @@ class TwoFactorSessionTests {
 	private static final String ADMIN = "admin@asobi.com.br";
 
 	private final TwoFactorGateway gateway = mock(TwoFactorGateway.class);
-	private final TwoFactorSession twoFactorSession = new TwoFactorSession(gateway);
+	private final TwoFactorSession twoFactorSession = new TwoFactorSession(gateway,
+			new AdminPasswordCheck(new AdminPasswordProperties(ADMIN, null)));
 
 	@Test
 	void simultaneousFirstVisitsShareOneCode() throws Exception {

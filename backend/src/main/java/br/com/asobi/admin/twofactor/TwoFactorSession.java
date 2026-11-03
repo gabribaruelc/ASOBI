@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
- * Guarda na sessão do painel se o admin logado já digitou o código. O que fica gravado é o
+ * Guarda na sessão do painel se o admin logado já digitou o código (ou a senha, na conta principal). O que fica gravado é o
  * e-mail conferido: se outra conta entrar na mesma sessão, o código é pedido de novo.
  */
 @Component
@@ -25,15 +25,22 @@ public class TwoFactorSession {
 	private static final Duration FIRST_CODE_MEMORY = Duration.ofMinutes(10);
 
 	private final TwoFactorGateway gateway;
+	private final AdminPasswordCheck passwordCheck;
 	private final Map<String, FirstCode> firstCodes = new ConcurrentHashMap<>();
 
-	public TwoFactorSession(TwoFactorGateway gateway) {
+	public TwoFactorSession(TwoFactorGateway gateway, AdminPasswordCheck passwordCheck) {
 		this.gateway = gateway;
+		this.passwordCheck = passwordCheck;
 	}
 
-	/** Com o segundo fator desligado, o login já basta. */
+	/** A conta principal confirma com senha; as outras, com o código por e-mail. */
+	public boolean usesPassword(String email) {
+		return passwordCheck.appliesTo(email);
+	}
+
+	/** Com o código por e-mail desligado, o login já basta (menos para a conta da senha). */
 	public boolean isSatisfied(HttpServletRequest request, String email) {
-		if (!gateway.isEnabled()) {
+		if (!gateway.isEnabled() && !usesPassword(email)) {
 			return true;
 		}
 		HttpSession session = request.getSession(false);

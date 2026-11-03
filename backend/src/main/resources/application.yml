@@ -99,6 +99,11 @@ asobi:
     # Vazio = o painel pede só o login.
     url: ${TWO_FACTOR_SERVICE_URL:}
     api-key: ${TWO_FACTOR_SERVICE_API_KEY:}
+  admin-password:
+    # Esta conta confirma o login com senha em vez do código por e-mail. hash = BCrypt da senha
+    # (ADMIN_PASSWORD_HASH). Vazio = ela também recebe o código.
+    email: ${ADMIN_PASSWORD_EMAIL:admin@asobi.com.br}
+    hash: ${ADMIN_PASSWORD_HASH:}
   notification-service:
     # Avisos de "entrou em promoção" e "voltou ao estoque". Vazio = a loja não mostra o "avise-me".
     url: ${NOTIFICATION_SERVICE_URL:}
