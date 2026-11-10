@@ -20,6 +20,7 @@ status:
       label: API da loja e painel admin
       url: https://backend.test
       path: /actuator/health
+      hint: Sem ele a loja não mostra produtos nem vende.
     - name: not-deployed
       label: Ainda não está no ar
       url: ""

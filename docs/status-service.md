@@ -1,7 +1,9 @@
 # ASOBI — status-service (aviso de site fora do ar)
 
-Confere, a cada 5 minutos, se a loja e os serviços dela estão respondendo. Quando algo cai, manda um
-e-mail para **todos os admins cadastrados no painel**; quando volta, manda outro avisando.
+Confere, a cada 5 minutos, se a loja e os serviços dela estão respondendo e se o que eles usam por fora
+(banco, e-mails, pagamentos, fotos, frete) está funcionando. Quando algo para, manda um e-mail para
+**todos os admins cadastrados no painel** dizendo o que parou e o que fazer; quando volta, manda outro
+avisando.
 
 Ninguém chama este serviço a não ser a rotina do Google Cloud Scheduler. Ele não muda nada na loja.
 
@@ -24,11 +26,31 @@ Ninguém chama este serviço a não ser a rotina do Google Cloud Scheduler. Ele 
 Endereço vazio = fica de fora (útil enquanto um serviço ainda não foi para o ar). Conta como "no ar"
 qualquer resposta de sucesso (HTTP 2xx) em até 30 segundos.
 
+### O que cada serviço usa por fora
+
+O `/actuator/health` de cada serviço Java lista as partes de que ele depende, cada uma com `UP` ou
+`DOWN` (`show-components: always`, sem detalhes). O status-service lê essa lista e avisa a parte que
+parou pelo nome, em vez de dizer só que "a API deu erro":
+
+| Parte | Quem confere | Como | Nome no e-mail |
+|---|---|---|---|
+| `db` | backend, two-factor, admin-auth, notification | conexão com o banco (do próprio Spring) | Banco de dados (Supabase) |
+| `resend` | backend (com `RESEND_API_KEY`) | `GET /domains`: chave aceita e domínio do remetente verificado | E-mails da loja (Resend) |
+| `mercadoPago` | backend (com `MERCADO_PAGO_ACCESS_TOKEN`) | `GET /users/me`: token aceito | Pagamentos (Mercado Pago) |
+| `supabaseStorage` | backend (com `SUPABASE_URL`/`SUPABASE_SERVICE_KEY`) | consulta o bucket das fotos | Fotos dos produtos (Supabase Storage) |
+| `melhorEnvio` | shipping-service (com `MELHOR_ENVIO_TOKEN`) | `GET /api/v2/me`: token aceito (ele vence) | Frete automático (Melhor Envio) |
+
+A mesma parte em vários serviços (o banco, por exemplo) vira um item só no e-mail. O resultado do
+health do backend e do shipping-service fica guardado por 60 segundos, para que acessos repetidos não
+virem chamadas ao Resend, ao Mercado Pago e ao Melhor Envio. O nome e o "o que fazer" de cada item ficam
+em `status.targets[].hint` e `status.dependencies` no `application.yml`; parte sem nome lá aparece com o
+nome técnico.
+
 ## Quando o e-mail sai
 
-- **Fora do ar**: depois de **2 falhas seguidas** (cerca de 10 minutos). Uma falha só não avisa, porque o
+- **Parou**: depois de **2 falhas seguidas** (cerca de 10 minutos). Uma falha só não avisa, porque o
   Cloud Run e o Supabase às vezes demoram para "acordar".
-- **Continua fora do ar**: se não voltar, outro aviso a cada 6 horas.
+- **Continua parado**: se não voltar, outro aviso a cada 6 horas.
 - **Voltou**: um e-mail quando volta a responder, dizendo quanto tempo ficou fora. Só sai se o aviso de
   "fora do ar" saiu antes.
 - Vários serviços caindo juntos viram **um e-mail só**.
@@ -47,13 +69,17 @@ o aviso vai para `STATUS_FALLBACK_EMAILS` (padrão `admin@asobi.com.br`).
 
 - Se o próprio status-service ou o Cloud Scheduler parar, não sai aviso nenhum. Os dois são do Google e
   raramente caem junto com o resto, mas não há um "vigia do vigia".
-- Se o Resend estiver fora do ar, o aviso só sai quando ele voltar.
+- Se o Resend estiver fora do ar, o aviso só sai quando ele voltar. Isso vale também para o aviso de
+  "E-mails da loja (Resend)" parou: como o status-service usa a mesma chave do Resend, ele só chega se o
+  problema for algo que não impede o envio dele (por exemplo, o domínio da loja perdeu a verificação e o
+  `EMAIL_FROM` daqui usa outro), ou quando o Resend voltar. Os registros do Cloud Run mostram a falha.
+- Se um serviço não responde, as partes dele não são conferidas nessa rodada (ficam como estavam).
 
 ## Rotas
 
 | Rota | O que faz |
 |---|---|
-| `POST /api/checks` | Faz uma rodada de conferência e devolve `[{name, label, up, detail}]`. Exige `X-Api-Key` |
+| `POST /api/checks` | Faz uma rodada de conferência e devolve `[{name, label, up, detail}]` (serviços e, com o prefixo `dependency:`, as partes). Exige `X-Api-Key` |
 | `GET /actuator/health` | Diz se o serviço está no ar. Não precisa de senha |
 
 ## Como rodar no computador

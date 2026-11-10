@@ -3,6 +3,7 @@ package br.com.asobi.storage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -27,6 +28,12 @@ public class StorageConfig {
 		}
 		log.warn("Fotos: pasta local {} (SUPABASE_URL/SUPABASE_SERVICE_KEY não definidos).", properties.localDir());
 		return new LocalImageStorage(properties.localDir(), publicUrl);
+	}
+
+	@Bean
+	@ConditionalOnExpression("!'${asobi.storage.supabase-url:}'.isBlank() and !'${asobi.storage.supabase-key:}'.isBlank()")
+	public SupabaseStorageHealthIndicator supabaseStorageHealthIndicator(StorageProperties properties) {
+		return new SupabaseStorageHealthIndicator(properties);
 	}
 
 	/** Serve a pasta local em /uploads/** (só existe no modo local). */

@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +31,15 @@ class HttpHealthProberTests {
 		});
 		server.createContext("/down", exchange -> {
 			exchange.sendResponseHeaders(503, -1);
+			exchange.close();
+		});
+		server.createContext("/health-db-down", exchange -> {
+			byte[] body = """
+					{"status":"DOWN","components":{"db":{"status":"DOWN"},"ping":{"status":"UP"}}}"""
+					.getBytes(StandardCharsets.UTF_8);
+			exchange.getResponseHeaders().add("Content-Type", "application/vnd.spring-boot.actuator.v3+json");
+			exchange.sendResponseHeaders(503, body.length);
+			exchange.getResponseBody().write(body);
 			exchange.close();
 		});
 		server.createContext("/slow", exchange -> {
@@ -59,6 +70,12 @@ class HttpHealthProberTests {
 	void errorStatus() {
 		assertThat(prober.probe(base + "/down", Duration.ofSeconds(5)))
 				.isEqualTo(Probe.failed("respondeu com erro (HTTP 503)"));
+	}
+
+	@Test
+	void serviceThatAnswersWithItsPartsIsUpAndListsThem() {
+		assertThat(prober.probe(base + "/health-db-down", Duration.ofSeconds(5)))
+				.isEqualTo(Probe.ok(Map.of("db", "DOWN", "ping", "UP")));
 	}
 
 	@Test

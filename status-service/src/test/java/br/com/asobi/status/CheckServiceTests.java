@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -105,8 +106,9 @@ class CheckServiceTests {
 		round(Duration.ofMinutes(5));
 		EmailMessage email = lastEmail();
 		assertThat(email.to()).containsExactly("a@asobi.com.br", "b@asobi.com.br");
-		assertThat(email.subject()).isEqualTo("⚠️ ASOBI: fora do ar — API da loja e painel admin");
-		assertThat(email.text()).contains("não respondeu em 30 segundos", "desde 02/11 às 12:00 (5 min)");
+		assertThat(email.subject()).isEqualTo("⚠️ ASOBI: parou de funcionar — API da loja e painel admin");
+		assertThat(email.text()).contains("não respondeu em 30 segundos", "desde 02/11 às 12:00 (5 min)",
+				"O que fazer: Sem ele a loja não mostra produtos");
 
 		clearInvocations(emailSender);
 		round(Duration.ofMinutes(5));
@@ -129,7 +131,7 @@ class CheckServiceTests {
 		round(Duration.ofMinutes(10));
 
 		EmailMessage email = lastEmail();
-		assertThat(email.subject()).isEqualTo("✅ ASOBI: voltou ao ar — API da loja e painel admin");
+		assertThat(email.subject()).isEqualTo("✅ ASOBI: voltou a funcionar — API da loja e painel admin");
 		assertThat(email.text()).contains("voltou depois de 15 min");
 
 		clearInvocations(emailSender);
@@ -147,7 +149,7 @@ class CheckServiceTests {
 		round(Duration.ofHours(5));
 		verify(emailSender, never()).send(any());
 		round(Duration.ofHours(1));
-		assertThat(lastEmail().subject()).isEqualTo("⚠️ ASOBI: continua fora do ar — API da loja e painel admin");
+		assertThat(lastEmail().subject()).isEqualTo("⚠️ ASOBI: continua parado — API da loja e painel admin");
 	}
 
 	@Test
@@ -192,6 +194,48 @@ class CheckServiceTests {
 		round(Duration.ofMinutes(5));
 
 		assertThat(lastEmail().to()).containsExactly("reserva@asobi.com.br");
+	}
+
+	@Test
+	void namesTheBrokenPartAndWhatToDo() {
+		backendIs(Probe.ok(Map.of("db", "UP", "resend", "DOWN", "diskSpace", "UP")));
+		round(Duration.ZERO);
+		round(Duration.ofMinutes(5));
+
+		EmailMessage email = lastEmail();
+		assertThat(email.subject()).isEqualTo("⚠️ ASOBI: parou de funcionar — E-mails da loja (Resend)");
+		assertThat(email.text())
+				.contains("parou de funcionar (afeta: API da loja e painel admin)", "O que fazer: Clientes não estão")
+				.doesNotContain("Banco de dados");
+
+		clearInvocations(emailSender);
+		backendIs(Probe.ok(Map.of("db", "UP", "resend", "UP")));
+		round(Duration.ofMinutes(5));
+		assertThat(lastEmail().subject()).isEqualTo("✅ ASOBI: voltou a funcionar — E-mails da loja (Resend)");
+	}
+
+	@Test
+	void unreachableServiceKeepsItsPartsAsTheyWere() {
+		backendIs(Probe.ok(Map.of("resend", "DOWN")));
+		round(Duration.ZERO);
+		backendIs(Probe.failed("não foi possível conectar"));
+		round(Duration.ofMinutes(5));
+		backendIs(Probe.ok(Map.of("resend", "DOWN")));
+		round(Duration.ofMinutes(5));
+
+		assertThat(lastEmail().subject()).isEqualTo("⚠️ ASOBI: parou de funcionar — E-mails da loja (Resend)");
+	}
+
+	@Test
+	void sameBrokenPartInTwoServicesIsOneItem() {
+		given(prober.probe(eq(STORE), any())).willReturn(Probe.ok(Map.of("db", "DOWN")));
+		backendIs(Probe.ok(Map.of("db", "DOWN")));
+		round(Duration.ZERO);
+		round(Duration.ofMinutes(5));
+
+		EmailMessage email = lastEmail();
+		assertThat(email.subject()).isEqualTo("⚠️ ASOBI: parou de funcionar — Banco de dados (Supabase)");
+		assertThat(email.text()).contains("(afeta: Loja (site), API da loja e painel admin)");
 	}
 
 	@Test

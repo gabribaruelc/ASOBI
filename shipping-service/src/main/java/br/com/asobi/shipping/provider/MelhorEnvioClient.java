@@ -100,6 +100,11 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 		}
 	}
 
+	/** Lança RestClientException se o Melhor Envio não aceitar o token (ele vence de tempos em tempos). */
+	public void checkAccess() {
+		restClient.get().uri("/api/v2/me").retrieve().toBodilessEntity();
+	}
+
 	private static String digits(String postalCode) {
 		return postalCode.replaceAll("\\D", "");
 	}

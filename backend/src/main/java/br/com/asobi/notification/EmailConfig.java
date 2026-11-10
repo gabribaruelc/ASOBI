@@ -2,6 +2,7 @@ package br.com.asobi.notification;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -20,5 +21,11 @@ public class EmailConfig {
 		}
 		log.warn("E-mails: só no log (RESEND_API_KEY não definido).");
 		return new LogEmailSender();
+	}
+
+	@Bean
+	@ConditionalOnExpression("!'${asobi.email.resend-api-key:}'.isBlank()")
+	public ResendHealthIndicator resendHealthIndicator(EmailProperties properties) {
+		return new ResendHealthIndicator(properties);
 	}
 }
