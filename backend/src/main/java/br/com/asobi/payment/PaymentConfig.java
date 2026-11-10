@@ -3,6 +3,7 @@ package br.com.asobi.payment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -23,5 +24,11 @@ public class PaymentConfig {
 		}
 		log.warn("Pagamentos: modo manual (MERCADO_PAGO_ACCESS_TOKEN não definido).");
 		return new ManualPaymentGateway(storeUrl);
+	}
+
+	@Bean
+	@ConditionalOnExpression("!'${asobi.mercado-pago.access-token:}'.isBlank()")
+	public MercadoPagoHealthIndicator mercadoPagoHealthIndicator(MercadoPagoProperties mercadoPago) {
+		return new MercadoPagoHealthIndicator(mercadoPago.accessToken());
 	}
 }

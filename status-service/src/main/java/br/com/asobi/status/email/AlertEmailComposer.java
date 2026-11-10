@@ -33,35 +33,38 @@ public class AlertEmailComposer {
 		this.storeUrl = properties.storeUrl();
 	}
 
-	/** @param detail o erro da última conferência (null quando voltou) */
-	public record Incident(String label, String detail, Instant since, TargetState state) {
+	/**
+	 * @param detail o erro da última conferência (null quando voltou)
+	 * @param hint   o que fazer (null quando voltou ou não configurado)
+	 */
+	public record Incident(String label, String detail, String hint, Instant since, TargetState state) {
 	}
 
 	/** Uma linha do e-mail, já em texto. */
-	public record Line(String label, String info) {
+	public record Line(String label, String info, String hint) {
 	}
 
 	/** Os destinatários são preenchidos por quem envia. */
 	public EmailMessage down(List<Incident> wentDown, List<Incident> stillDown, Instant now) {
 		List<Line> lines = new ArrayList<>();
-		wentDown.forEach(i -> lines.add(new Line(i.label(), downInfo(i, now))));
-		stillDown.forEach(i -> lines.add(new Line(i.label(), "continua fora do ar · " + downInfo(i, now))));
+		wentDown.forEach(i -> lines.add(new Line(i.label(), downInfo(i, now), i.hint())));
+		stillDown.forEach(i -> lines.add(new Line(i.label(), "continua parado · " + downInfo(i, now), i.hint())));
 		String subject = wentDown.isEmpty()
-				? "⚠️ ASOBI: continua fora do ar — " + labels(stillDown)
-				: "⚠️ ASOBI: fora do ar — " + labels(wentDown);
-		return compose(subject, "down", "Algo saiu do ar",
-				"A conferência automática não conseguiu falar com:",
-				"Enquanto isso, a loja pode não abrir, não vender ou o painel pode não entrar. "
-						+ "Se não voltar sozinho em alguns minutos, chame quem cuida da parte técnica.",
+				? "⚠️ ASOBI: continua parado — " + labels(stillDown)
+				: "⚠️ ASOBI: parou de funcionar — " + labels(wentDown);
+		return compose(subject, "down", "Algo parou de funcionar",
+				"A conferência automática encontrou problema em:",
+				"Se não voltar sozinho em alguns minutos, siga o \"o que fazer\" de cada item "
+						+ "ou chame quem cuida da parte técnica.",
 				lines);
 	}
 
 	public EmailMessage recovered(List<Incident> recovered, Instant now) {
 		List<Line> lines = recovered.stream()
 				.map(i -> new Line(i.label(), i.since() == null ? "voltou"
-						: "voltou depois de " + duration(Duration.between(i.since(), now))))
+						: "voltou depois de " + duration(Duration.between(i.since(), now)), null))
 				.toList();
-		return compose("✅ ASOBI: voltou ao ar — " + labels(recovered), "up", "Tudo certo de novo",
+		return compose("✅ ASOBI: voltou a funcionar — " + labels(recovered), "up", "Tudo certo de novo",
 				"Voltou a funcionar:", "Não precisa fazer nada.", lines);
 	}
 
@@ -75,9 +78,14 @@ public class AlertEmailComposer {
 		context.setVariable("lines", lines);
 		context.setVariable("storeUrl", storeUrl);
 		String text = heading + "\n\n" + intro + "\n"
-				+ lines.stream().map(l -> "- " + l.label() + ": " + l.info()).collect(Collectors.joining("\n"))
+				+ lines.stream().map(AlertEmailComposer::textLine).collect(Collectors.joining("\n"))
 				+ "\n\n" + outro;
 		return new EmailMessage(List.of(), subject, templateEngine.process("email/alert", context), text);
+	}
+
+	private static String textLine(Line line) {
+		String text = "- " + line.label() + ": " + line.info();
+		return line.hint() == null ? text : text + "\n  O que fazer: " + line.hint();
 	}
 
 	private static String downInfo(Incident incident, Instant now) {

@@ -41,6 +41,13 @@ management:
     web:
       exposure:
         include: health
+  endpoint:
+    health:
+      # o status-service lê quais partes caíram (só nome e UP/DOWN, sem detalhes)
+      show-components: always
+      # as conferências chamam serviços de fora; não repetir a cada acesso
+      cache:
+        time-to-live: 60s
 
 asobi:
   # CORS de /api/**, separadas por vírgula

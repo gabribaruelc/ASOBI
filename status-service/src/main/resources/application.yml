@@ -42,31 +42,66 @@ status:
   admin-auth-service:
     url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
     api-key: ${ADMIN_AUTH_SERVICE_API_KEY:}
-  # endereço vazio = fica de fora da conferência
+  # endereço vazio = fica de fora da conferência; hint = o "o que fazer" do e-mail
   targets:
     - name: store
       label: Loja (site)
       url: ${STORE_URL:http://localhost:3000}
+      hint: Abra o painel da Cloudflare (Workers & Pages), veja se o Worker da loja está ativo e se o último deploy deu certo.
     - name: backend
       label: API da loja e painel admin
       url: ${BACKEND_URL:http://localhost:8080}
       path: /actuator/health
+      hint: Sem ele a loja não mostra produtos nem vende. No Google Cloud, abra o Cloud Run, serviço asobi-backend, e veja os registros (Logs).
     - name: shipping-service
       label: Cálculo de frete
       url: ${SHIPPING_SERVICE_URL:http://localhost:8081}
       path: /actuator/health
+      hint: O checkout fica sem frete automático. No Google Cloud, abra o Cloud Run, serviço asobi-shipping-service, e veja os registros (Logs).
     - name: two-factor-service
       label: Código de acesso do painel
       url: ${TWO_FACTOR_SERVICE_URL:http://localhost:8082}
       path: /actuator/health
+      hint: Ninguém consegue entrar no painel. No Google Cloud, abra o Cloud Run, serviço asobi-two-factor-service, e veja os registros (Logs).
     - name: admin-auth-service
       label: Lista de admins e login do painel
       url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
       path: /actuator/health
+      hint: Ninguém consegue entrar no painel. No Google Cloud, abra o Cloud Run, serviço asobi-admin-auth-service, e veja os registros (Logs).
     - name: notification-service
       label: Avisos de produto (avise-me)
       url: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
       path: /actuator/health
+      hint: Os "avise-me" não estão sendo enviados. No Google Cloud, abra o Cloud Run, serviço asobi-notification-service, e veja os registros (Logs).
+  # Partes que os serviços informam no /actuator/health. Parte sem nome aqui aparece com o nome técnico.
+  dependencies:
+    db:
+      label: Banco de dados (Supabase)
+      hint: Sem banco a loja não mostra produtos nem recebe pedidos. Entre em supabase.com; se o projeto estiver pausado, clique em "Restore project". Se não estiver, veja em Project Status se há falha anunciada.
+    resend:
+      label: E-mails da loja (Resend)
+      hint: Clientes não estão recebendo e-mails de pedido. Entre em resend.com e confira se a chave de API (RESEND_API_KEY) ainda existe e se o domínio continua verificado (Domains).
+    mercado-pago:
+      label: Pagamentos (Mercado Pago)
+      hint: O cliente não consegue pagar. Entre no Mercado Pago, em Suas integrações > Credenciais de produção, e confira se o Access Token (MERCADO_PAGO_ACCESS_TOKEN) ainda é o mesmo e está ativo.
+    supabase-storage:
+      label: Fotos dos produtos (Supabase Storage)
+      hint: Fotos novas não sobem pelo painel. Entre em supabase.com e confira se o projeto está ativo e se a chave secreta (SUPABASE_SERVICE_KEY) não foi trocada.
+    melhor-envio:
+      label: Frete automático (Melhor Envio)
+      hint: O checkout fica sem cálculo de frete. O token do Melhor Envio vence de tempos em tempos; gere um novo em melhorenvio.com.br (Integrações > Permissões de acesso) e troque o MELHOR_ENVIO_TOKEN no Secret Manager.
+    disk-space:
+      label: Espaço em disco de um serviço
+      hint: Veja no Cloud Run qual serviço está sem espaço (registros) e faça um novo deploy dele.
+    ssl:
+      label: Certificado de segurança (SSL) de um serviço
+      hint: Algum certificado venceu ou está para vencer. Veja os registros do serviço no Cloud Run.
+    liveness-state:
+      label: Serviço travado
+      hint: No Cloud Run, veja os registros do serviço indicado e faça um novo deploy dele.
+    readiness-state:
+      label: Serviço sem aceitar pedidos
+      hint: No Cloud Run, veja os registros do serviço indicado; se não voltar sozinho, faça um novo deploy dele.
   email:
     # Vazio = o aviso só aparece no log.
     resend-api-key: ${RESEND_API_KEY:}
