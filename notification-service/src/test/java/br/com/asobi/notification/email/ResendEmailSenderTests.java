@@ -28,7 +28,7 @@ class ResendEmailSenderTests {
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
 
 	private ResendEmailSender sender(String replyTo) {
-		return new ResendEmailSender(new EmailProperties("re_123", "ASOBI <avisos@asobi.com.br>", replyTo), builder);
+		return new ResendEmailSender(new EmailProperties("re_123", "ASOBI <avisos@asobistore.app>", replyTo), builder);
 	}
 
 	@Test
@@ -37,11 +37,11 @@ class ResendEmailSenderTests {
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Authorization", "Bearer re_123"))
 				.andExpect(jsonPath("$.length()").value(2))
-				.andExpect(jsonPath("$[0].from").value("ASOBI <avisos@asobi.com.br>"))
+				.andExpect(jsonPath("$[0].from").value("ASOBI <avisos@asobistore.app>"))
 				.andExpect(jsonPath("$[0].to[0]").value("maria@example.com"))
 				.andExpect(jsonPath("$[0].subject").value("Assunto"))
 				.andExpect(jsonPath("$[0].html").value("<p>Oi, Maria</p>"))
-				.andExpect(jsonPath("$[0].reply_to").value("contato@asobi.com.br"))
+				.andExpect(jsonPath("$[0].reply_to").value("contato@asobistore.app"))
 				.andExpect(jsonPath("$[0].headers['List-Unsubscribe']")
 						.value("<https://avisos.asobi.test/descadastro/aaa>"))
 				.andExpect(jsonPath("$[0].headers['List-Unsubscribe-Post']").value("List-Unsubscribe=One-Click"))
@@ -50,7 +50,7 @@ class ResendEmailSenderTests {
 						.value("<https://avisos.asobi.test/descadastro/bbb>"))
 				.andRespond(withSuccess("{\"data\": [{\"id\": \"a\"}, {\"id\": \"b\"}]}", MediaType.APPLICATION_JSON));
 
-		sender("contato@asobi.com.br").sendAll(MESSAGES);
+		sender("contato@asobistore.app").sendAll(MESSAGES);
 
 		server.verify();
 	}

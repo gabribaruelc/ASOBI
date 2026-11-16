@@ -8,14 +8,14 @@ status-service:
   api-key: test-key
 
 status:
-  store-url: https://asobi.com.br
-  fallback-emails: reserva@asobi.com.br
+  store-url: https://asobistore.app
+  fallback-emails: reserva@asobistore.app
   admin-auth-service:
     url: http://admin-auth.test
   targets:
     - name: store
       label: Loja (site)
-      url: https://asobi.com.br
+      url: https://asobistore.app
     - name: backend
       label: API da loja e painel admin
       url: https://backend.test

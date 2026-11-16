@@ -53,7 +53,7 @@ spring:
     password:
 
 admin-auth:
-  bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:admin@asobi.com.br}
+  bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:admin@asobistore.app}
 
 ---
 spring:

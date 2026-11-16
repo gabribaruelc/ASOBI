@@ -8,7 +8,7 @@ asobi:
   storage:
     local-dir: target/test-uploads
   admin:
-    bootstrap-email: admin@asobi.com.br
+    bootstrap-email: admin@asobistore.app
     dev-login-enabled: true
   # o backend/.env local pode ter a senha; nos testes, só AdminPasswordTests liga
   admin-password:

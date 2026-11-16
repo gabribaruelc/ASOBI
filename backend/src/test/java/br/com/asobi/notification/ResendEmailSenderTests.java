@@ -26,7 +26,7 @@ class ResendEmailSenderTests {
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
 
 	private ResendEmailSender sender(String replyTo) {
-		return new ResendEmailSender(new EmailProperties("re_123", "ASOBI <pedidos@asobi.com.br>", replyTo), builder);
+		return new ResendEmailSender(new EmailProperties("re_123", "ASOBI <pedidos@asobistore.app>", replyTo), builder);
 	}
 
 	@Test
@@ -34,14 +34,14 @@ class ResendEmailSenderTests {
 		server.expect(requestTo("https://api.resend.com/emails"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Authorization", "Bearer re_123"))
-				.andExpect(jsonPath("$.from").value("ASOBI <pedidos@asobi.com.br>"))
+				.andExpect(jsonPath("$.from").value("ASOBI <pedidos@asobistore.app>"))
 				.andExpect(jsonPath("$.to[0]").value("maria@example.com"))
 				.andExpect(jsonPath("$.subject").value("Assunto"))
 				.andExpect(jsonPath("$.html").value("<p>Oi</p>"))
-				.andExpect(jsonPath("$.reply_to").value("contato@asobi.com.br"))
+				.andExpect(jsonPath("$.reply_to").value("contato@asobistore.app"))
 				.andRespond(withSuccess("{\"id\": \"abc\"}", MediaType.APPLICATION_JSON));
 
-		sender("contato@asobi.com.br").send(MESSAGE);
+		sender("contato@asobistore.app").send(MESSAGE);
 
 		server.verify();
 	}
@@ -63,13 +63,13 @@ class ResendEmailSenderTests {
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(jsonPath("$.length()").value(2))
 				.andExpect(jsonPath("$[1].to[0]").value("joao@example.com"))
-				.andExpect(jsonPath("$[1].headers.List-Unsubscribe").value("<https://api.asobi.com.br/sair/2>"))
+				.andExpect(jsonPath("$[1].headers.List-Unsubscribe").value("<https://api.asobistore.app/sair/2>"))
 				.andExpect(jsonPath("$[1].headers.List-Unsubscribe-Post").value("List-Unsubscribe=One-Click"))
 				.andRespond(withSuccess("{\"data\": []}", MediaType.APPLICATION_JSON));
 
 		sender("").sendAll(List.of(
-				new EmailMessage(List.of("maria@example.com"), "Oi", "<p>Oi</p>", "https://api.asobi.com.br/sair/1"),
-				new EmailMessage(List.of("joao@example.com"), "Oi", "<p>Oi</p>", "https://api.asobi.com.br/sair/2")));
+				new EmailMessage(List.of("maria@example.com"), "Oi", "<p>Oi</p>", "https://api.asobistore.app/sair/1"),
+				new EmailMessage(List.of("joao@example.com"), "Oi", "<p>Oi</p>", "https://api.asobistore.app/sair/2")));
 
 		server.verify();
 	}

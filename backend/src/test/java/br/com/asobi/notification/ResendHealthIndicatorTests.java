@@ -18,7 +18,7 @@ class ResendHealthIndicatorTests {
 	private final RestClient.Builder builder = RestClient.builder();
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
 	private final ResendHealthIndicator indicator = new ResendHealthIndicator(
-			new EmailProperties("re_123", "ASOBI <pedidos@asobi.com.br>", null), builder);
+			new EmailProperties("re_123", "ASOBI <pedidos@asobistore.app>", null), builder);
 
 	private Status statusWhenDomainsAre(String json) {
 		server.expect(requestTo("https://api.resend.com/domains"))
@@ -29,13 +29,13 @@ class ResendHealthIndicatorTests {
 
 	@Test
 	void upWhenSenderDomainIsVerified() {
-		assertThat(statusWhenDomainsAre("{\"data\":[{\"name\":\"asobi.com.br\",\"status\":\"verified\"}]}"))
+		assertThat(statusWhenDomainsAre("{\"data\":[{\"name\":\"asobistore.app\",\"status\":\"verified\"}]}"))
 				.isEqualTo(Status.UP);
 	}
 
 	@Test
 	void downWhenSenderDomainLostVerification() {
-		assertThat(statusWhenDomainsAre("{\"data\":[{\"name\":\"asobi.com.br\",\"status\":\"failed\"}]}"))
+		assertThat(statusWhenDomainsAre("{\"data\":[{\"name\":\"asobistore.app\",\"status\":\"failed\"}]}"))
 				.isEqualTo(Status.DOWN);
 	}
 

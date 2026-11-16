@@ -30,8 +30,8 @@ class MercadoPagoGatewayTests {
 
 	@Test
 	void mapsOrderToPreference() {
-		MercadoPagoGateway gateway = new MercadoPagoGateway("TEST-123", "https://asobi.com.br/",
-				"https://api.asobi.com.br");
+		MercadoPagoGateway gateway = new MercadoPagoGateway("TEST-123", "https://asobistore.app/",
+				"https://api.asobistore.app");
 		Order order = sampleOrder(BigDecimal.ZERO);
 
 		PreferenceRequest request = gateway.buildPreferenceRequest(order);
@@ -45,14 +45,14 @@ class MercadoPagoGatewayTests {
 		});
 		assertThat(request.getPayer().getEmail()).isEqualTo("maria@example.com");
 		assertThat(request.getBackUrls().getSuccess())
-				.isEqualTo("https://asobi.com.br/pedido/" + order.getPublicId());
+				.isEqualTo("https://asobistore.app/pedido/" + order.getPublicId());
 		assertThat(request.getAutoReturn()).isEqualTo("approved");
-		assertThat(request.getNotificationUrl()).isEqualTo("https://api.asobi.com.br/api/webhooks/mercadopago");
+		assertThat(request.getNotificationUrl()).isEqualTo("https://api.asobistore.app/api/webhooks/mercadopago");
 	}
 
 	@Test
 	void addsShippingAsItemWhenCharged() {
-		MercadoPagoGateway gateway = new MercadoPagoGateway("TEST-123", "https://asobi.com.br", "https://api");
+		MercadoPagoGateway gateway = new MercadoPagoGateway("TEST-123", "https://asobistore.app", "https://api");
 		PreferenceRequest request = gateway.buildPreferenceRequest(sampleOrder(new BigDecimal("19.90")));
 		assertThat(request.getItems()).hasSize(2);
 		assertThat(request.getItems().get(1).getTitle()).isEqualTo("Frete");

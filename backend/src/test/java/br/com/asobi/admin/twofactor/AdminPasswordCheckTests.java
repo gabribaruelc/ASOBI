@@ -19,14 +19,14 @@ class AdminPasswordCheckTests {
 
 	private final MutableClock clock = new MutableClock();
 	private final AdminPasswordCheck check = new AdminPasswordCheck(
-			new AdminPasswordProperties("Admin@Asobi.com.br", HASH), clock);
+			new AdminPasswordProperties("Admin@Asobistore.app", HASH), clock);
 
 	@Test
 	void appliesOnlyToTheConfiguredAccount() {
-		assertThat(check.appliesTo(" admin@asobi.com.br ")).isTrue();
-		assertThat(check.appliesTo("outra@asobi.com.br")).isFalse();
-		assertThat(new AdminPasswordCheck(new AdminPasswordProperties("admin@asobi.com.br", "")).appliesTo(
-				"admin@asobi.com.br")).isFalse();
+		assertThat(check.appliesTo(" admin@asobistore.app ")).isTrue();
+		assertThat(check.appliesTo("outra@asobistore.app")).isFalse();
+		assertThat(new AdminPasswordCheck(new AdminPasswordProperties("admin@asobistore.app", "")).appliesTo(
+				"admin@asobistore.app")).isFalse();
 	}
 
 	@Test
@@ -53,7 +53,7 @@ class AdminPasswordCheckTests {
 
 	@Test
 	void invalidHashStopsTheStartup() {
-		assertThatThrownBy(() -> new AdminPasswordCheck(new AdminPasswordProperties("admin@asobi.com.br", "senha")))
+		assertThatThrownBy(() -> new AdminPasswordCheck(new AdminPasswordProperties("admin@asobistore.app", "senha")))
 				.isInstanceOf(IllegalStateException.class);
 	}
 

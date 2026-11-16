@@ -48,7 +48,7 @@ import br.com.asobi.payment.PaymentGateway;
 @Transactional
 class PaymentReminderTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 	private static final String CHECKOUT_URL = "https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=1";
 
 	@Autowired

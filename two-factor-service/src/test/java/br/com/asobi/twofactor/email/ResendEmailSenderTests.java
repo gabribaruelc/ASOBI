@@ -24,14 +24,14 @@ class ResendEmailSenderTests {
 	private final RestClient.Builder builder = RestClient.builder();
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
 	private final ResendEmailSender sender = new ResendEmailSender(
-			new EmailProperties("re_123", "ASOBI <acesso@asobi.com.br>"), builder);
+			new EmailProperties("re_123", "ASOBI <acesso@asobistore.app>"), builder);
 
 	@Test
 	void postsEmailToResend() {
 		server.expect(requestTo("https://api.resend.com/emails"))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Authorization", "Bearer re_123"))
-				.andExpect(jsonPath("$.from").value("ASOBI <acesso@asobi.com.br>"))
+				.andExpect(jsonPath("$.from").value("ASOBI <acesso@asobistore.app>"))
 				.andExpect(jsonPath("$.to[0]").value("maria@example.com"))
 				.andExpect(jsonPath("$.subject").value("Assunto"))
 				.andExpect(jsonPath("$.html").value("<p>123456</p>"))

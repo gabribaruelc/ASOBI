@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class SiteContentTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -34,7 +34,7 @@ class SiteContentTests {
 	void siteInfoStartsWithoutPlaceholders() throws Exception {
 		mockMvc.perform(get("/api/content/site-info"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.contactEmail").value("contato@asobi.com.br"))
+				.andExpect(jsonPath("$.contactEmail").value("contato@asobistore.app"))
 				.andExpect(jsonPath("$.contactPhone").value(nullValue()))
 				.andExpect(jsonPath("$.whatsappUrl").value(nullValue()))
 				.andExpect(jsonPath("$.cnpj").value(nullValue()));
@@ -43,7 +43,7 @@ class SiteContentTests {
 	@Test
 	void adminUpdatesContactShownInStore() throws Exception {
 		mockMvc.perform(post("/admin/contato").with(user(ADMIN)).with(csrf())
-						.param("contactEmail", "oi@asobi.com.br")
+						.param("contactEmail", "oi@asobistore.app")
 						.param("contactPhone", "(11) 91234-5678")
 						.param("businessHours", "")
 						.param("instagramUrl", "https://instagram.com/asobi")
@@ -52,7 +52,7 @@ class SiteContentTests {
 				.andExpect(redirectedUrl("/admin/contato"));
 
 		mockMvc.perform(get("/api/content/site-info"))
-				.andExpect(jsonPath("$.contactEmail").value("oi@asobi.com.br"))
+				.andExpect(jsonPath("$.contactEmail").value("oi@asobistore.app"))
 				.andExpect(jsonPath("$.contactPhone").value("(11) 91234-5678"))
 				.andExpect(jsonPath("$.whatsappUrl").value("https://wa.me/5511912345678"))
 				.andExpect(jsonPath("$.businessHours").value(nullValue()))

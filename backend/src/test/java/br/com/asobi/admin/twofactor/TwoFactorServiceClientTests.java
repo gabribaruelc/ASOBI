@@ -25,7 +25,7 @@ class TwoFactorServiceClientTests {
 
 	private static final String BASE = "http://two-factor.test";
 	private static final String VERIFICATIONS = BASE + "/api/challenges/abc/verifications";
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	private final RestClient.Builder builder = RestClient.builder();
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
@@ -44,7 +44,7 @@ class TwoFactorServiceClientTests {
 				.andExpect(jsonPath("$.email").value(ADMIN))
 				.andExpect(jsonPath("$.purpose").value("admin-login"))
 				.andRespond(withStatus(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON)
-						.body("{\"id\": \"abc\", \"email\": \"admin@asobi.com.br\", \"purpose\": \"admin-login\"}"));
+						.body("{\"id\": \"abc\", \"email\": \"admin@asobistore.app\", \"purpose\": \"admin-login\"}"));
 
 		assertThat(client.requestCode(ADMIN)).isEqualTo("abc");
 		server.verify();
@@ -72,10 +72,10 @@ class TwoFactorServiceClientTests {
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(jsonPath("$.code").value("123456"))
 				.andRespond(withSuccess(
-						"{\"id\": \"abc\", \"email\": \"admin@asobi.com.br\", \"purpose\": \"admin-login\", \"verified\": true}",
+						"{\"id\": \"abc\", \"email\": \"admin@asobistore.app\", \"purpose\": \"admin-login\", \"verified\": true}",
 						MediaType.APPLICATION_JSON));
 
-		assertThat(client.verify("abc", "123456", " Admin@Asobi.com.br ").status())
+		assertThat(client.verify("abc", "123456", " Admin@Asobistore.app ").status())
 				.isEqualTo(Verification.Status.VERIFIED);
 	}
 
@@ -88,7 +88,7 @@ class TwoFactorServiceClientTests {
 
 		server.reset();
 		server.expect(requestTo(VERIFICATIONS)).andRespond(withSuccess(
-				"{\"email\": \"admin@asobi.com.br\", \"purpose\": \"outra-coisa\", \"verified\": true}",
+				"{\"email\": \"admin@asobistore.app\", \"purpose\": \"outra-coisa\", \"verified\": true}",
 				MediaType.APPLICATION_JSON));
 		assertThat(client.verify("abc", "123456", ADMIN).status()).isEqualTo(Verification.Status.EXPIRED);
 	}

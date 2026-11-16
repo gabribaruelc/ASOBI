@@ -63,7 +63,7 @@ adicionado ou removido no painel passa a receber (ou deixa de receber) sem mexer
 
 O próprio `admin-auth-service` pode estar entre os que caíram. Por isso a lista lida fica guardada no
 banco deste serviço (`known_admins`) e é usada quando ele não responde. Se a lista nunca pôde ser lida,
-o aviso vai para `STATUS_FALLBACK_EMAILS` (padrão `admin@asobi.com.br`).
+o aviso vai para `STATUS_FALLBACK_EMAILS` (padrão `admin@asobistore.app`).
 
 ### O que ele não consegue avisar
 
@@ -107,10 +107,10 @@ Testes: `.\mvnw.cmd test`
 |---|---|
 | `STATUS_SERVICE_API_KEY` | uma senha longa e aleatória; a rotina do Cloud Scheduler manda no `X-Api-Key`. Vazia = não confere (só no computador) |
 | `ADMIN_AUTH_SERVICE_URL` / `ADMIN_AUTH_SERVICE_API_KEY` | endereço e chave do `admin-auth-service` (a mesma chave do backend) |
-| `STATUS_FALLBACK_EMAILS` | para quem avisar se a lista de admins nunca pôde ser lida; separados por vírgula. Padrão `admin@asobi.com.br` |
+| `STATUS_FALLBACK_EMAILS` | para quem avisar se a lista de admins nunca pôde ser lida; separados por vírgula. Padrão `admin@asobistore.app` |
 | `STORE_URL`, `BACKEND_URL`, `SHIPPING_SERVICE_URL`, `TWO_FACTOR_SERVICE_URL`, `NOTIFICATION_SERVICE_URL` | endereços conferidos (veja a tabela lá em cima) |
 | `RESEND_API_KEY` | chave do Resend. Vazia = o aviso só aparece no log |
-| `EMAIL_FROM` | `ASOBI <avisos@asobi.com.br>`; o domínio precisa estar verificado no Resend |
+| `EMAIL_FROM` | `ASOBI <avisos@asobistore.app>`; o domínio precisa estar verificado no Resend |
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | banco no Supabase (com o perfil `supabase`; veja abaixo) |
 | `DB_SCHEMA` | opcional; se não preencher, usa `status` |
 
@@ -143,7 +143,7 @@ gcloud run deploy asobi-status-service \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 1 \
-  --set-env-vars "EMAIL_FROM=ASOBI <avisos@asobi.com.br>,STORE_URL=https://asobi.com.br,BACKEND_URL=<url-do-backend>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,TWO_FACTOR_SERVICE_URL=<url-do-two-factor-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service>,NOTIFICATION_SERVICE_URL=<url-do-notification-service>" \
+  --set-env-vars "EMAIL_FROM=ASOBI <avisos@asobistore.app>,STORE_URL=https://asobistore.app,BACKEND_URL=<url-do-backend>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,TWO_FACTOR_SERVICE_URL=<url-do-two-factor-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service>,NOTIFICATION_SERVICE_URL=<url-do-notification-service>" \
   --set-secrets STATUS_SERVICE_API_KEY=asobi-status-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest,DB_URL=asobi-db-url:latest,DB_USER=asobi-status-db-user:latest,DB_PASSWORD=asobi-status-db-password:latest
 ```
 

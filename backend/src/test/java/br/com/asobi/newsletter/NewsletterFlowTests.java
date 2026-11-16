@@ -31,7 +31,7 @@ import br.com.asobi.newsletter.repository.NewsletterSubscriberRepository;
 @Transactional
 class NewsletterFlowTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	@Autowired
 	private MockMvc mockMvc;

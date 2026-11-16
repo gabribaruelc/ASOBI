@@ -17,7 +17,7 @@ import org.springframework.mock.web.MockHttpSession;
 
 class TwoFactorSessionTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	private final TwoFactorGateway gateway = mock(TwoFactorGateway.class);
 	private final TwoFactorSession twoFactorSession = new TwoFactorSession(gateway,

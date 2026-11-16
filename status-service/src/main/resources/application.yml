@@ -38,7 +38,7 @@ status:
   reminder-interval: 6h
   store-url: ${STORE_URL:http://localhost:3000}
   # usados só se nunca deu para ler a lista do admin-auth-service; separados por vírgula
-  fallback-emails: ${STATUS_FALLBACK_EMAILS:admin@asobi.com.br}
+  fallback-emails: ${STATUS_FALLBACK_EMAILS:admin@asobistore.app}
   admin-auth-service:
     url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
     api-key: ${ADMIN_AUTH_SERVICE_API_KEY:}

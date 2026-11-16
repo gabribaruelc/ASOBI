@@ -26,7 +26,7 @@ import br.com.asobi.twofactor.email.EmailSender;
 @ActiveProfiles("test")
 class ChallengeConcurrencyTests {
 
-	private static final String EMAIL = "admin@asobi.com.br";
+	private static final String EMAIL = "admin@asobistore.app";
 
 	@Autowired
 	private ChallengeService challengeService;

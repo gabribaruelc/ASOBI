@@ -44,7 +44,7 @@ import br.com.asobi.twofactor.email.EmailSender;
 @Transactional
 class ChallengeApiTests {
 
-	private static final String EMAIL = "admin@asobi.com.br";
+	private static final String EMAIL = "admin@asobistore.app";
 	private static final Pattern CODE = Pattern.compile("\\b\\d{6}\\b");
 
 	@Autowired
@@ -93,7 +93,7 @@ class ChallengeApiTests {
 
 	@Test
 	void sendsCodeByEmailAndNeverReturnsIt() throws Exception {
-		String body = mockMvc.perform(create("  Admin@Asobi.com.br "))
+		String body = mockMvc.perform(create("  Admin@Asobistore.app "))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.email").value(EMAIL))
 				.andExpect(jsonPath("$.purpose").value("admin-login"))

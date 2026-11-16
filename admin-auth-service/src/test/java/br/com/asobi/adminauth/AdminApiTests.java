@@ -28,7 +28,7 @@ import br.com.asobi.adminauth.config.ApiKeyFilter;
 @Transactional
 class AdminApiTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -66,7 +66,7 @@ class AdminApiTests {
 	@Test
 	void addsAdminNormalizingEmail() throws Exception {
 		mockMvc.perform(addAdmin("""
-				{"email": "  Nova@Example.com ", "createdByEmail": "Admin@asobi.com.br"}
+				{"email": "  Nova@Example.com ", "createdByEmail": "Admin@asobistore.app"}
 				"""))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.email").value("nova@example.com"))
@@ -86,7 +86,7 @@ class AdminApiTests {
 
 	@Test
 	void answersWhetherAnEmailIsAdmin() throws Exception {
-		mockMvc.perform(withKey(get("/api/authorizations")).param("email", " Admin@Asobi.com.br "))
+		mockMvc.perform(withKey(get("/api/authorizations")).param("email", " Admin@Asobistore.app "))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value(ADMIN))
 				.andExpect(jsonPath("$.admin").value(true));

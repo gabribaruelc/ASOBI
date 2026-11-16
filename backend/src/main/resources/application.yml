@@ -109,7 +109,7 @@ asobi:
   admin-password:
     # Esta conta confirma o login com senha em vez do código por e-mail. hash = BCrypt da senha
     # (ADMIN_PASSWORD_HASH). Vazio = ela também recebe o código.
-    email: ${ADMIN_PASSWORD_EMAIL:admin@asobi.com.br}
+    email: ${ADMIN_PASSWORD_EMAIL:admin@asobistore.app}
     hash: ${ADMIN_PASSWORD_HASH:}
   notification-service:
     # Avisos de "entrou em promoção" e "voltou ao estoque". Vazio = a loja não mostra o "avise-me".
@@ -141,7 +141,7 @@ asobi:
     # defina ADMIN_AUTH_SERVICE_URL vazia.
     url: ${ADMIN_AUTH_SERVICE_URL:http://localhost:8083}
   admin:
-    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:admin@asobi.com.br}
+    bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:admin@asobistore.app}
     dev-login-enabled: true
 
 ---
