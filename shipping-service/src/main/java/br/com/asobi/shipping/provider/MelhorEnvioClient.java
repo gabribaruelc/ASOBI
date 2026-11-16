@@ -38,7 +38,7 @@ public class MelhorEnvioClient implements ShippingQuoteProvider {
 	MelhorEnvioClient(MelhorEnvioProperties properties, RestClient.Builder builder) {
 		this.properties = properties;
 		String baseUrl = properties.sandbox() ? "https://sandbox.melhorenvio.com.br" : "https://melhorenvio.com.br";
-		String contact = StringUtils.hasText(properties.contactEmail()) ? properties.contactEmail() : "contato@asobi.com.br";
+		String contact = StringUtils.hasText(properties.contactEmail()) ? properties.contactEmail() : "contato@asobistore.app";
 		this.restClient = builder
 				.baseUrl(baseUrl)
 				.defaultHeader("Authorization", "Bearer " + properties.token())

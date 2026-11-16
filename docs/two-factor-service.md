@@ -75,7 +75,7 @@ Outra opção é subir tudo junto com `docker compose up --build` na pasta princ
 
 ```bash
 curl -X POST localhost:8082/api/challenges -H "Content-Type: application/json" \
-  -d '{"email": "admin@asobi.com.br", "purpose": "admin-login"}'
+  -d '{"email": "admin@asobistore.app", "purpose": "admin-login"}'
 # copie o código que apareceu no log e o id da resposta
 curl -X POST localhost:8082/api/challenges/<id>/verifications -H "Content-Type: application/json" \
   -d '{"code": "123456"}'
@@ -90,7 +90,7 @@ Testes: `.\mvnw.cmd test`
 | `TWO_FACTOR_SERVICE_API_KEY` | uma senha longa e aleatória, igual à do backend. Se ficar vazia, não confere a senha (só use assim no computador) |
 | `TWO_FACTOR_CODE_SECRET` | uma chave longa e aleatória usada no HMAC. **Obrigatória no ar**: se ficar vazia, o serviço cria uma nova toda vez que liga, e como o Cloud Run desliga quando ninguém usa, os códigos enviados antes deixariam de funcionar |
 | `RESEND_API_KEY` | chave do Resend. Vazia = o e-mail só aparece no log, com o código (nunca deixe assim no ar) |
-| `EMAIL_FROM` | `ASOBI <acesso@asobi.com.br>`; o domínio precisa estar verificado no Resend |
+| `EMAIL_FROM` | `ASOBI <acesso@asobistore.app>`; o domínio precisa estar verificado no Resend |
 | `DB_URL` | `jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require` (com o perfil `supabase`) |
 | `DB_USER` / `DB_PASSWORD` | usuário e senha deste serviço no Supabase (veja abaixo) |
 | `DB_SCHEMA` | opcional; se não preencher, usa `two_factor` |
@@ -124,7 +124,7 @@ gcloud run deploy asobi-two-factor-service \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 1 \
-  --set-env-vars "EMAIL_FROM=ASOBI <acesso@asobi.com.br>" \
+  --set-env-vars "EMAIL_FROM=ASOBI <acesso@asobistore.app>" \
   --set-secrets TWO_FACTOR_SERVICE_API_KEY=asobi-two-factor-api-key:latest,TWO_FACTOR_CODE_SECRET=asobi-two-factor-code-secret:latest,RESEND_API_KEY=asobi-resend-api-key:latest,DB_URL=asobi-db-url:latest,DB_USER=asobi-two-factor-db-user:latest,DB_PASSWORD=asobi-two-factor-db-password:latest
 ```
 

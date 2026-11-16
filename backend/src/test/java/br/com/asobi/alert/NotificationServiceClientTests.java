@@ -64,14 +64,14 @@ class NotificationServiceClientTests {
 				.andExpect(jsonPath("$.type").value("PROMOTION"))
 				.andExpect(jsonPath("$.productId").value(7))
 				.andExpect(jsonPath("$.productName").value("Corrida dos Sapos"))
-				.andExpect(jsonPath("$.productUrl").value("https://asobi.com.br/jogos/corrida-dos-sapos"))
+				.andExpect(jsonPath("$.productUrl").value("https://asobistore.app/jogos/corrida-dos-sapos"))
 				.andExpect(jsonPath("$.price").value(79.90))
 				.andExpect(jsonPath("$.originalPrice").value(99.90))
 				.andRespond(withSuccess("{\"subscribers\": 2, \"sent\": 2, \"failed\": 0, \"skipped\": 0}",
 						MediaType.APPLICATION_JSON));
 
 		client.publish(new Alert(AlertType.PROMOTION, 7L, "Corrida dos Sapos",
-				"https://asobi.com.br/jogos/corrida-dos-sapos", new BigDecimal("79.90"), new BigDecimal("99.90"), null));
+				"https://asobistore.app/jogos/corrida-dos-sapos", new BigDecimal("79.90"), new BigDecimal("99.90"), null));
 
 		server.verify();
 	}
@@ -81,7 +81,7 @@ class NotificationServiceClientTests {
 		server.expect(requestTo(BASE + "/api/product-events")).andRespond(withServerError());
 
 		assertThatThrownBy(() -> client.publish(new Alert(AlertType.BACK_IN_STOCK, 7L, "Corrida dos Sapos",
-				"https://asobi.com.br/jogos/corrida-dos-sapos", new BigDecimal("99.90"), null, null)))
+				"https://asobistore.app/jogos/corrida-dos-sapos", new BigDecimal("99.90"), null, null)))
 				.isInstanceOf(RestClientException.class);
 	}
 

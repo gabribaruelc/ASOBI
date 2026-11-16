@@ -45,7 +45,7 @@ import br.com.asobi.common.exception.BusinessException;
 @Transactional
 class ProductAlertTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 	// no catálogo de exemplo: em estoque e fora de promoção
 	private static final String SLUG = "corrida-dos-sapos";
 

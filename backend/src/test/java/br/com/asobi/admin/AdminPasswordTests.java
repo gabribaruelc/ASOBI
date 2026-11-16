@@ -44,8 +44,8 @@ import jakarta.servlet.http.Cookie;
 @DirtiesContext
 class AdminPasswordTests {
 
-	private static final String MAIN = "admin@asobi.com.br";
-	private static final String OTHER = "outra@asobi.com.br";
+	private static final String MAIN = "admin@asobistore.app";
+	private static final String OTHER = "outra@asobistore.app";
 	private static final String PASSWORD = "senha-de-teste";
 	private static final String PAGE = "/admin/verificacao";
 

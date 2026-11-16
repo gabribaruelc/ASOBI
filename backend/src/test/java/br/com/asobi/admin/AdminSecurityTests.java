@@ -29,7 +29,7 @@ import br.com.asobi.admin.directory.AdminDirectory;
 @Transactional
 class AdminSecurityTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -72,7 +72,7 @@ class AdminSecurityTests {
 
 	@Test
 	void devLoginWithAdminEmailOpensPanel() throws Exception {
-		mockMvc.perform(post("/admin/dev-login").param("email", " Admin@Asobi.com.br ").with(csrf()))
+		mockMvc.perform(post("/admin/dev-login").param("email", " Admin@Asobistore.app ").with(csrf()))
 				.andExpect(redirectedUrl("/admin"));
 	}
 

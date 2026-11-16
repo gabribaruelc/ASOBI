@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * Segundo passo do login para a conta principal (admin@asobi.com.br): uma senha, conferida contra
+ * Segundo passo do login para a conta principal (admin@asobistore.app): uma senha, conferida contra
  * o hash BCrypt da configuração. Depois de 5 erros em 15 minutos, a senha fica bloqueada por 15
  * minutos, mesmo se estiver certa.
  */

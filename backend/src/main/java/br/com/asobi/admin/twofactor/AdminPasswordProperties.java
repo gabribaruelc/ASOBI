@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Conta do painel que confirma o login com senha em vez do código por e-mail.
  *
- * @param email conta que usa a senha (padrão admin@asobi.com.br)
+ * @param email conta que usa a senha (padrão admin@asobistore.app)
  * @param hash  hash BCrypt da senha (ADMIN_PASSWORD_HASH); vazio = essa conta também recebe o código
  */
 @ConfigurationProperties("asobi.admin-password")

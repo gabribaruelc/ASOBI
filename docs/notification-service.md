@@ -57,7 +57,7 @@ Exemplo do que o backend manda quando um jogo muda:
   "type": "PROMOTION",
   "productId": 7,
   "productName": "Corrida dos Sapos",
-  "productUrl": "https://asobi.com.br/jogos/corrida-dos-sapos",
+  "productUrl": "https://asobistore.app/jogos/corrida-dos-sapos",
   "price": 79.90,
   "originalPrice": 99.90
 }
@@ -119,7 +119,7 @@ Testes: `.\mvnw.cmd test`
 | `PUBLIC_URL` | endereço **deste serviço** na internet; é ele que vai nos links de cancelamento. Se não preencher, usa `http://localhost:8084` |
 | `STORE_URL` | endereço da loja, para o botão "voltar para a loja". Se não preencher, usa `http://localhost:3000` |
 | `RESEND_API_KEY` | chave do Resend. Vazia = os e-mails só aparecem no log |
-| `EMAIL_FROM` | `ASOBI <avisos@asobi.com.br>`; o domínio precisa estar verificado no Resend |
+| `EMAIL_FROM` | `ASOBI <avisos@asobistore.app>`; o domínio precisa estar verificado no Resend |
 | `EMAIL_REPLY_TO` | e-mail de atendimento para respostas (opcional) |
 | `DB_URL` | `jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require` (com o perfil `supabase`) |
 | `DB_USER` / `DB_PASSWORD` | usuário e senha deste serviço no Supabase (veja abaixo) |
@@ -153,7 +153,7 @@ gcloud run deploy asobi-notification-service \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 1 \
-  --set-env-vars "STORE_URL=https://asobi.com.br,EMAIL_FROM=ASOBI <avisos@asobi.com.br>" \
+  --set-env-vars "STORE_URL=https://asobistore.app,EMAIL_FROM=ASOBI <avisos@asobistore.app>" \
   --set-secrets NOTIFICATION_SERVICE_API_KEY=asobi-notification-api-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest,DB_URL=asobi-db-url:latest,DB_USER=asobi-notification-db-user:latest,DB_PASSWORD=asobi-notification-db-password:latest
 ```
 

@@ -39,7 +39,7 @@ import jakarta.servlet.http.Cookie;
 @Transactional
 class AdminTwoFactorTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 	private static final String PAGE = "/admin/verificacao";
 
 	@Autowired

@@ -31,4 +31,4 @@ melhor-envio:
   # vazio = cotação indisponível
   token: ${MELHOR_ENVIO_TOKEN:}
   sandbox: ${MELHOR_ENVIO_SANDBOX:true}
-  contact-email: ${MELHOR_ENVIO_CONTACT_EMAIL:contato@asobi.com.br}
+  contact-email: ${MELHOR_ENVIO_CONTACT_EMAIL:contato@asobistore.app}

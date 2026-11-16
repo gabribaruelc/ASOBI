@@ -32,14 +32,14 @@ class MelhorEnvioClientTests {
 	private final RestClient.Builder builder = RestClient.builder();
 	private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
 	private final MelhorEnvioClient client = new MelhorEnvioClient(
-			new MelhorEnvioProperties("tok-123", true, "dev@asobi.com.br"), builder);
+			new MelhorEnvioProperties("tok-123", true, "dev@asobistore.app"), builder);
 
 	@Test
 	void parsesAvailableServicesSortedByPrice() {
 		server.expect(requestTo(URL))
 				.andExpect(method(HttpMethod.POST))
 				.andExpect(header("Authorization", "Bearer tok-123"))
-				.andExpect(header("User-Agent", "ASOBI (dev@asobi.com.br)"))
+				.andExpect(header("User-Agent", "ASOBI (dev@asobistore.app)"))
 				.andExpect(jsonPath("$.from.postal_code").value("01310100"))
 				.andExpect(jsonPath("$.to.postal_code").value("20040002"))
 				.andExpect(jsonPath("$.products[0].quantity").value(2))

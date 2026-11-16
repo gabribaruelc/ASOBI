@@ -73,7 +73,7 @@ public class ResendHealthIndicator extends AbstractHealthIndicator {
 		builder.up();
 	}
 
-	/** "ASOBI <pedidos@asobi.com.br>" → "asobi.com.br" */
+	/** "ASOBI <pedidos@asobistore.app>" → "asobistore.app" */
 	static String domainOf(String from) {
 		if (from == null || !from.contains("@")) {
 			return null;

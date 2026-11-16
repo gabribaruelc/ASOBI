@@ -35,7 +35,7 @@ import br.com.asobi.catalog.repository.ProductRepository;
 @Transactional
 class AdminCatalogTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	@Autowired
 	private MockMvc mockMvc;

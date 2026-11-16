@@ -56,7 +56,7 @@ lista · `404` admin não encontrado · `409` e-mail já cadastrado ou tentou re
 ./mvnw spring-boot:run          # macOS/Linux
 ```
 
-Ele sobe com o banco H2 na pasta `data/admin-auth` e com `admin@asobi.com.br` como primeiro admin.
+Ele sobe com o banco H2 na pasta `data/admin-auth` e com `admin@asobistore.app` como primeiro admin.
 Como o banco fica em arquivo, os admins adicionados continuam lá depois de reiniciar.
 No computador, o backend já procura este serviço em `http://localhost:8083`.
 Outra opção é subir tudo junto com `docker compose up --build` na pasta principal do projeto.

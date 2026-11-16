@@ -44,7 +44,7 @@ import br.com.asobi.status.recipient.AdminListClient;
 @Transactional
 class CheckServiceTests {
 
-	private static final String STORE = "https://asobi.com.br";
+	private static final String STORE = "https://asobistore.app";
 	private static final String BACKEND = "https://backend.test/actuator/health";
 
 	@Autowired
@@ -71,7 +71,7 @@ class CheckServiceTests {
 	void setUp() {
 		given(clock.instant()).willAnswer(invocation -> now);
 		given(adminList.isConfigured()).willReturn(true);
-		given(adminList.listAdminEmails()).willReturn(List.of("b@asobi.com.br", "A@asobi.com.br"));
+		given(adminList.listAdminEmails()).willReturn(List.of("b@asobistore.app", "A@asobistore.app"));
 		given(prober.probe(eq(STORE), any())).willReturn(Probe.ok());
 		backendIs(Probe.ok());
 	}
@@ -105,7 +105,7 @@ class CheckServiceTests {
 
 		round(Duration.ofMinutes(5));
 		EmailMessage email = lastEmail();
-		assertThat(email.to()).containsExactly("a@asobi.com.br", "b@asobi.com.br");
+		assertThat(email.to()).containsExactly("a@asobistore.app", "b@asobistore.app");
 		assertThat(email.subject()).isEqualTo("⚠️ ASOBI: parou de funcionar — API da loja e painel admin");
 		assertThat(email.text()).contains("não respondeu em 30 segundos", "desde 02/11 às 12:00 (5 min)",
 				"O que fazer: Sem ele a loja não mostra produtos");
@@ -172,18 +172,18 @@ class CheckServiceTests {
 		round(Duration.ofMinutes(5));
 		round(Duration.ofMinutes(5));
 
-		assertThat(lastEmail().to()).containsExactly("a@asobi.com.br", "b@asobi.com.br");
+		assertThat(lastEmail().to()).containsExactly("a@asobistore.app", "b@asobistore.app");
 	}
 
 	@Test
 	void removedAdminStopsGettingWarnings() {
 		round(Duration.ZERO);
-		given(adminList.listAdminEmails()).willReturn(List.of("b@asobi.com.br"));
+		given(adminList.listAdminEmails()).willReturn(List.of("b@asobistore.app"));
 		backendIs(Probe.failed("não foi possível conectar"));
 		round(Duration.ofMinutes(5));
 		round(Duration.ofMinutes(5));
 
-		assertThat(lastEmail().to()).containsExactly("b@asobi.com.br");
+		assertThat(lastEmail().to()).containsExactly("b@asobistore.app");
 	}
 
 	@Test
@@ -193,7 +193,7 @@ class CheckServiceTests {
 		round(Duration.ZERO);
 		round(Duration.ofMinutes(5));
 
-		assertThat(lastEmail().to()).containsExactly("reserva@asobi.com.br");
+		assertThat(lastEmail().to()).containsExactly("reserva@asobistore.app");
 	}
 
 	@Test

@@ -67,7 +67,7 @@ from_env asobi-notification-db-password notification-service/.env DB_PASSWORD
 from_env asobi-status-db-user status-service/.env DB_USER
 from_env asobi-status-db-password status-service/.env DB_PASSWORD
 
-echo "Senha do painel (admin@asobi.com.br)"
+echo "Senha do painel (admin@asobistore.app)"
 from_env asobi-admin-password-hash backend/.env ADMIN_PASSWORD_HASH
 
 echo "Contas externas"

@@ -53,12 +53,12 @@ dono das tabelas.
 | `DB_URL` | `jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require` (Supabase → Connect → **Session pooler**) |
 | `DB_USER` | `postgres.<id-do-projeto>` |
 | `DB_PASSWORD` | senha do banco no Supabase |
-| `FRONTEND_ORIGINS` | endereços da loja que podem chamar a API: `https://asobi.com.br,https://www.asobi.com.br` |
+| `FRONTEND_ORIGINS` | endereços da loja que podem chamar a API: `https://asobistore.app,https://www.asobistore.app` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | dados do Google para o login do painel |
 | `ADMIN_AUTH_SERVICE_URL` | endereço do `admin-auth-service` (guarda a lista de admins). Vazio = lista só na memória, para testes |
 | `ADMIN_AUTH_SERVICE_API_KEY` | a mesma senha configurada no `admin-auth-service` |
 | `ADMIN_BOOTSTRAP_EMAIL` | só é usado quando `ADMIN_AUTH_SERVICE_URL` está vazia; no ar, o primeiro admin é configurado no `admin-auth-service` |
-| `STORE_URL` | `https://asobi.com.br` (endereço da loja, usado na volta do pagamento e nos links do painel) |
+| `STORE_URL` | `https://asobistore.app` (endereço da loja, usado na volta do pagamento e nos links do painel) |
 | `PUBLIC_URL` | endereço deste backend no Cloud Run (usado para montar o endereço que o Mercado Pago chama) |
 | `MERCADO_PAGO_ACCESS_TOKEN` | `TEST-...` (testes) ou `APP_USR-...` (de verdade). Vazio = modo manual |
 | `MERCADO_PAGO_WEBHOOK_SECRET` | a "assinatura secreta" que o Mercado Pago mostra quando você configura os Webhooks |
@@ -66,14 +66,14 @@ dono das tabelas.
 | `SHIPPING_SERVICE_API_KEY` | a mesma senha configurada no `shipping-service` (vai no cabeçalho `X-Api-Key`) |
 | `TWO_FACTOR_SERVICE_URL` | endereço do [`two-factor-service`](two-factor-service.md); no computador: `http://localhost:8082`. Preenchida, o painel pede um código por e-mail depois do login. Vazia = só o login |
 | `TWO_FACTOR_SERVICE_API_KEY` | a mesma senha configurada no `two-factor-service` |
-| `ADMIN_PASSWORD_HASH` | hash BCrypt da senha do painel da conta `admin@asobi.com.br` (outra conta: `ADMIN_PASSWORD_EMAIL`). Preenchido, essa conta digita a senha em vez de receber o código. Vazio = ela também recebe o código |
+| `ADMIN_PASSWORD_HASH` | hash BCrypt da senha do painel da conta `admin@asobistore.app` (outra conta: `ADMIN_PASSWORD_EMAIL`). Preenchido, essa conta digita a senha em vez de receber o código. Vazio = ela também recebe o código |
 | `NOTIFICATION_SERVICE_URL` | endereço do [`notification-service`](notification-service.md); no computador: `http://localhost:8084`. Preenchida, a página do jogo mostra o "avise-me". Vazia = avisos desligados |
 | `NOTIFICATION_SERVICE_API_KEY` | a mesma senha configurada no `notification-service` |
 | `SUPABASE_URL` | `https://<id-do-projeto>.supabase.co` (fotos dos jogos). Vazio = as fotos vão para uma pasta local, que **some** sempre que o Cloud Run reinicia |
 | `SUPABASE_SERVICE_KEY` | a chave **secreta** do Supabase (Project Settings → API Keys → `service_role` / `sb_secret_...`). Nunca a `anon`. Também serve para conferir o login do cliente |
 | `SUPABASE_STORAGE_BUCKET` | opcional; se não preencher, usa `product-images` |
 | `RESEND_API_KEY` | chave do [Resend](https://resend.com) (`re_...`). Vazia = os e-mails só aparecem no log |
-| `EMAIL_FROM` | quem envia, ex.: `ASOBI <pedidos@asobi.com.br>` (o domínio precisa estar verificado no Resend) |
+| `EMAIL_FROM` | quem envia, ex.: `ASOBI <pedidos@asobistore.app>` (o domínio precisa estar verificado no Resend) |
 | `EMAIL_REPLY_TO` | opcional; e-mail que recebe as respostas dos clientes |
 | `JOBS_API_KEY` | senha do cabeçalho `X-Job-Key`, usada pelas tarefas automáticas do Cloud Scheduler (lembrete de pagamento). Vazia = tarefas desligadas |
 | `NEWSLETTER_DAILY_LIMIT` | opcional; máximo de e-mails de newsletter a cada 24 horas (padrão `80`, para sobrar espaço para os e-mails de pedido no plano grátis do Resend) |
@@ -98,7 +98,7 @@ Cloud Run desliga e liga de novo.
 - **Com `ADMIN_AUTH_SERVICE_URL` vazia** (`ADMIN_AUTH_SERVICE_URL=` no `.env`), a lista fica só na memória,
   com o `ADMIN_BOOTSTRAP_EMAIL`, e o que for adicionado some quando reinicia. É assim que os testes automáticos rodam.
 - **Modo desenvolvimento**: no computador, a tela de login tem uma opção que entra só com o e-mail
-  (admin inicial `admin@asobi.com.br`). Isso nunca fica ligado no ar (`asobi.admin.dev-login-enabled`).
+  (admin inicial `admin@asobistore.app`). Isso nunca fica ligado no ar (`asobi.admin.dev-login-enabled`).
 - **Google (no ar)**: no [Google Cloud Console](https://console.cloud.google.com/apis/credentials), crie um
   "ID do cliente OAuth" do tipo *Aplicativo da Web* com o endereço de retorno
   `https://<url-do-cloud-run>/login/oauth2/code/google` (e `http://localhost:8080/login/oauth2/code/google`
@@ -108,7 +108,7 @@ Cloud Run desliga e liga de novo.
   Quem cria, envia e confere o código é o [`two-factor-service`](two-factor-service.md).
   Se ele estiver fora do ar, ninguém passa dessa tela. No computador, sem `RESEND_API_KEY` no serviço,
   o código aparece no log dele. Vale também para o modo desenvolvimento.
-- **Senha da conta principal**: `admin@asobi.com.br` não recebe código. Depois do login ela digita a senha do
+- **Senha da conta principal**: `admin@asobistore.app` não recebe código. Depois do login ela digita a senha do
   painel na mesma tela. Só o hash fica guardado (`ADMIN_PASSWORD_HASH`); 5 erros em 15 minutos bloqueiam a
   senha por 15 minutos. Para trocar a senha, gere outro hash BCrypt (custo 12) e atualize o segredo
   `asobi-admin-password-hash`. Isso vale mesmo com `TWO_FACTOR_SERVICE_URL` vazia.
@@ -163,12 +163,12 @@ gcloud run deploy asobi-backend \
   --allow-unauthenticated \
   --memory 512Mi \
   --min-instances 0 --max-instances 2 \
-  --set-env-vars FRONTEND_ORIGINS=https://asobi.com.br,STORE_URL=https://asobi.com.br,PUBLIC_URL=<url-do-cloud-run>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service>,TWO_FACTOR_SERVICE_URL=<url-do-two-factor-service>,NOTIFICATION_SERVICE_URL=<url-do-notification-service> \
+  --set-env-vars FRONTEND_ORIGINS=https://asobistore.app,STORE_URL=https://asobistore.app,PUBLIC_URL=<url-do-cloud-run>,SHIPPING_SERVICE_URL=<url-do-shipping-service>,ADMIN_AUTH_SERVICE_URL=<url-do-admin-auth-service>,TWO_FACTOR_SERVICE_URL=<url-do-two-factor-service>,NOTIFICATION_SERVICE_URL=<url-do-notification-service> \
   --set-secrets DB_URL=asobi-db-url:latest,DB_USER=asobi-db-user:latest,DB_PASSWORD=asobi-db-password:latest,GOOGLE_CLIENT_ID=asobi-google-client-id:latest,GOOGLE_CLIENT_SECRET=asobi-google-client-secret:latest,MERCADO_PAGO_ACCESS_TOKEN=asobi-mp-token:latest,MERCADO_PAGO_WEBHOOK_SECRET=asobi-mp-webhook-secret:latest,SHIPPING_SERVICE_API_KEY=asobi-shipping-api-key:latest,ADMIN_AUTH_SERVICE_API_KEY=asobi-admin-auth-api-key:latest,TWO_FACTOR_SERVICE_API_KEY=asobi-two-factor-api-key:latest,NOTIFICATION_SERVICE_API_KEY=asobi-notification-api-key:latest,SUPABASE_SERVICE_KEY=asobi-supabase-service-key:latest,RESEND_API_KEY=asobi-resend-api-key:latest,JOBS_API_KEY=asobi-jobs-api-key:latest,ADMIN_PASSWORD_HASH=asobi-admin-password-hash:latest
 ```
 
 Também coloque em `--set-env-vars`: `SUPABASE_URL=https://<id-do-projeto>.supabase.co` e
-`EMAIL_FROM=ASOBI <pedidos@asobi.com.br>` (como esse valor tem espaço, coloque a lista inteira entre aspas).
+`EMAIL_FROM=ASOBI <pedidos@asobistore.app>` (como esse valor tem espaço, coloque a lista inteira entre aspas).
 
 O `--min-instances 0` deixa o custo perto de zero: o serviço desliga quando ninguém usa. A desvantagem é
 que o primeiro acesso depois de um tempo parado demora alguns segundos.
@@ -257,7 +257,7 @@ fica em `templates/email/order.html`.
 - O e-mail só sai depois que tudo foi salvo no banco. Se o Resend falhar, o pedido não é afetado (o erro
   fica no log).
 - **Como configurar**: crie a conta no [Resend](https://resend.com), gere a chave em *API Keys* e verifique o
-  domínio em *Domains* (o Resend mostra os registros DNS para cadastrar no registro.br). Enquanto o domínio
+  domínio em *Domains* (o Resend mostra os registros DNS para cadastrar no painel de DNS do domínio). Enquanto o domínio
   não estiver verificado, o remetente de teste `onboarding@resend.dev` só entrega para o dono da conta.
 - Plano grátis: 100 e-mails por dia, contando a newsletter. Cada pedido completo gasta 3 do cliente + 1 por
   admin. Por isso a newsletter para em `NEWSLETTER_DAILY_LIMIT` (80) por dia.

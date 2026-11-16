@@ -48,7 +48,7 @@ import br.com.asobi.notification.EmailSender;
 @Transactional
 class NewsletterCampaignTests {
 
-	private static final String ADMIN = "admin@asobi.com.br";
+	private static final String ADMIN = "admin@asobistore.app";
 
 	@Autowired
 	private MockMvc mockMvc;
