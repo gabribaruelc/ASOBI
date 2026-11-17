@@ -25,7 +25,7 @@ save() {
 
 random_secret() {
   if exists "$1"; then echo "  já existe: $1"; return; fi
-  save "$1" "$(openssl rand -base64 36 | tr '+/' '-_' | tr -d '=\n')"
+  save "$1" "$(openssl rand -base64 36 | tr '+/' '-_' | tr -d '=\r\n')"
 }
 
 # Valor de uma variável num .env (formato .properties: "\\" vira "\").

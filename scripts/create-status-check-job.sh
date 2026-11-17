@@ -11,7 +11,7 @@ SERVICE_URL="${1:?informe a URL do status-service no Cloud Run}"
 SERVICE_URL="${SERVICE_URL%/}"
 
 gcloud services enable cloudscheduler.googleapis.com --project "$PROJECT"
-KEY="$(gcloud secrets versions access latest --secret asobi-status-api-key --project "$PROJECT")"
+KEY="$(gcloud secrets versions access latest --secret asobi-status-api-key --project "$PROJECT" | tr -d '\r')"
 
 ACTION=create
 if gcloud scheduler jobs describe "$JOB" --location "$REGION" --project "$PROJECT" >/dev/null 2>&1; then

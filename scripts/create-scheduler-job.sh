@@ -11,7 +11,7 @@ BACKEND_URL="${1:?informe a URL do backend no Cloud Run}"
 BACKEND_URL="${BACKEND_URL%/}"
 
 gcloud services enable cloudscheduler.googleapis.com --project "$PROJECT"
-KEY="$(gcloud secrets versions access latest --secret asobi-jobs-api-key --project "$PROJECT")"
+KEY="$(gcloud secrets versions access latest --secret asobi-jobs-api-key --project "$PROJECT" | tr -d '\r')"
 
 ACTION=create
 if gcloud scheduler jobs describe "$JOB" --location "$REGION" --project "$PROJECT" >/dev/null 2>&1; then

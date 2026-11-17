@@ -75,7 +75,13 @@ npm run deploy
 ```
 
 - As variáveis `NEXT_PUBLIC_*` são gravadas no site na hora do build. Por isso, coloque-as em
-  `.env.production` **antes** de rodar `npm run deploy`.
+  `.env.production.local` **antes** de rodar `npm run deploy` (o `.env.production` perde para o `.env.local`,
+  que aponta para `localhost`).
+- O site responde só em `asobistore.app` (`routes` no `wrangler.jsonc`); a Cloudflare cria o DNS e o certificado.
+  Mesmo assim a conta precisa ter um subdomínio `workers.dev`: ele é criado ao abrir **Workers & Pages** no painel.
+- No Windows, o envio do cache para o R2 (`npm run deploy`) trava por timeout. Nesse caso, compile e publique
+  sem enviar o cache; as páginas são montadas na primeira visita:
+  `npx opennextjs-cloudflare build`, depois `OPEN_NEXT_DEPLOY=true npx wrangler deploy` (Git Bash).
 - As páginas prontas ficam guardadas num espaço da Cloudflare chamado **R2** (gratuito até 10 GB e
   1 milhão de gravações por mês; a Cloudflare pede um cartão para ativar, mas não cobra dentro desse limite).
 - `npm run preview` roda no computador a mesma versão que vai para a Cloudflare. No Windows, se o build
