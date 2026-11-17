@@ -1,5 +1,6 @@
 package br.com.asobi.admin;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
@@ -125,5 +126,46 @@ class AdminPasswordTests {
 		as(OTHER, post(PAGE + "/senha").param("password", PASSWORD).with(csrf()))
 				.andExpect(redirectedUrl(PAGE));
 		as(OTHER, get("/admin")).andExpect(redirectedUrl(PAGE));
+	}
+
+	private ResultActions loginScreen(String email, String password) throws Exception {
+		ResultActions result = mockMvc.perform(post("/admin/login/senha")
+				.param("email", email).param("password", password).with(csrf()));
+		Cookie issued = result.andReturn().getResponse().getCookie("SESSION");
+		if (issued != null) {
+			sessionCookie = issued;
+		}
+		return result;
+	}
+
+	@Test
+	void mainAccountLogsInWithEmailAndPasswordWithoutGoogleOrCode() throws Exception {
+		mockMvc.perform(get("/admin/login"))
+				.andExpect(content().string(containsString("action=\"/admin/login/senha\"")));
+
+		loginScreen(" Admin@Asobistore.app ", PASSWORD).andExpect(redirectedUrl("/admin"));
+		mockMvc.perform(get("/admin").cookie(sessionCookie)).andExpect(status().isOk());
+		verify(gateway, never()).requestCode(any());
+	}
+
+	@Test
+	void loginScreenRejectsWrongPasswordAndOtherAccounts() throws Exception {
+		loginScreen(MAIN, "errada").andExpect(redirectedUrl("/admin/login?senha"));
+		loginScreen(OTHER, PASSWORD).andExpect(redirectedUrl("/admin/login?senha"));
+		mockMvc.perform(get("/admin")).andExpect(redirectedUrl("/admin/login"));
+	}
+
+	@Test
+	void mainAccountCannotBeRemoved() throws Exception {
+		given(gateway.isEnabled()).willReturn(false);
+		Long mainId = adminDirectory.listAdmins().stream()
+				.filter(admin -> admin.email().equals(MAIN)).findFirst().orElseThrow().id();
+
+		as(OTHER, get("/admin/admins"))
+				.andExpect(content().string(containsString("conta principal")))
+				.andExpect(content().string(not(containsString("/admin/admins/" + mainId + "/excluir"))));
+		as(OTHER, post("/admin/admins/{id}/excluir", mainId).with(csrf()))
+				.andExpect(flash().attribute("error", "A conta principal não pode ser removida."));
+		assertThat(adminDirectory.isAdmin(MAIN)).isTrue();
 	}
 }

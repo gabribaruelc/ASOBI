@@ -19,6 +19,7 @@ Só o backend da loja ([`backend`](backend.md)) conversa com ele. O navegador nu
 | Responder se um e-mail ainda está na lista | Saber qualquer coisa de produtos, pedidos ou clientes |
 | Cuidar das regras: não repetir e-mail e ninguém remover a si mesmo | |
 | Criar o primeiro admin (`ADMIN_BOOTSTRAP_EMAIL`) quando a lista está vazia | |
+| Manter a conta principal (`ADMIN_MAIN_EMAIL`): recolocada a cada subida e nunca removida | |
 
 ### Como o login funciona, passo a passo
 
@@ -69,6 +70,7 @@ Testes: `.\mvnw.cmd test`
 |---|---|
 | `ADMIN_AUTH_SERVICE_API_KEY` | uma senha longa e aleatória, igual à do backend. Se ficar vazia, não confere a senha (só use assim no computador) |
 | `ADMIN_BOOTSTRAP_EMAIL` | conta Google do primeiro admin (só é usada se a lista estiver vazia) |
+| `ADMIN_MAIN_EMAIL` | conta principal, que não pode ser removida (padrão `admin@asobistore.app`; vazio = nenhuma) |
 | `GOOGLE_CLIENT_ID` | o **mesmo** ID de cliente do Google usado no backend. Vazio = login com Google desligado |
 | `DB_URL` | `jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require` (com o perfil `supabase`) |
 | `DB_USER` / `DB_PASSWORD` | usuário e senha deste serviço no Supabase (veja abaixo) |

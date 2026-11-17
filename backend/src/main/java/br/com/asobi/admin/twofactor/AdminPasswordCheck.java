@@ -13,9 +13,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * Segundo passo do login para a conta principal (admin@asobistore.app): uma senha, conferida contra
- * o hash BCrypt da configuração. Depois de 5 erros em 15 minutos, a senha fica bloqueada por 15
- * minutos, mesmo se estiver certa.
+ * Senha da conta principal (admin@asobistore.app), conferida contra o hash BCrypt da configuração.
+ * Ela entra direto pela tela de login com e-mail e senha, ou confirma com a senha depois do Google.
+ * Depois de 5 erros em 15 minutos, a senha fica bloqueada por 15 minutos, mesmo se estiver certa.
  */
 @Component
 public class AdminPasswordCheck {
@@ -49,7 +49,20 @@ public class AdminPasswordCheck {
 
 	/** Só vale com o hash configurado; sem ele, a conta segue o fluxo do código por e-mail. */
 	public boolean appliesTo(String accountEmail) {
-		return hash != null && email != null && email.equals(normalize(accountEmail));
+		return isEnabled() && email.equals(normalize(accountEmail));
+	}
+
+	public boolean isEnabled() {
+		return hash != null && email != null;
+	}
+
+	/** A conta principal: entra com senha e não pode ser removida do painel. */
+	public String mainEmail() {
+		return email;
+	}
+
+	public boolean isMainAccount(String accountEmail) {
+		return email != null && email.equals(normalize(accountEmail));
 	}
 
 	public synchronized Result check(String password) {

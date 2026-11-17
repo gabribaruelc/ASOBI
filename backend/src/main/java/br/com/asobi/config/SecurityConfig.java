@@ -46,7 +46,7 @@ public class SecurityConfig {
 
 		http
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/admin/login", "/admin/dev-login").permitAll()
+						.requestMatchers("/admin/login", "/admin/login/senha", "/admin/dev-login").permitAll()
 						.requestMatchers("/admin/verificacao", "/admin/verificacao/**")
 						.access((authentication, context) -> new AuthorizationDecision(
 								adminDirectory.isAdmin(CurrentAdmin.emailOf(authentication.get()))))

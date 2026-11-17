@@ -27,10 +27,11 @@
             <td>
               <span th:text="${admin.email}">admin@asobistore.app</span>
               <span class="badge blue" th:if="${admin.email == currentAdminEmail}">você</span>
+              <span class="badge pink" th:if="${admin.email == mainAdminEmail}">conta principal</span>
             </td>
             <td class="muted" th:text="${admin.createdByEmail ?: '—'}">—</td>
             <td class="actions">
-              <form th:unless="${admin.email == currentAdminEmail}"
+              <form th:unless="${admin.email == currentAdminEmail or admin.email == mainAdminEmail}"
                     th:action="@{/admin/admins/{id}/excluir(id=${admin.id})}" method="post"
                     onsubmit="return confirm('Remover o acesso deste e-mail ao painel?');">
                 <button type="submit" class="link-button danger">Remover</button>
