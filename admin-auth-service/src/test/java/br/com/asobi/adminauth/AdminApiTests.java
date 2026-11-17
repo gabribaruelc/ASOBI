@@ -110,4 +110,16 @@ class AdminApiTests {
 		mockMvc.perform(withKey(delete("/api/admins/{id}", other.getId())).param("requestedBy", ADMIN))
 				.andExpect(status().isNotFound());
 	}
+
+	@Test
+	void neverRemovesTheMainAccount() throws Exception {
+		AdminUser main = adminUserRepository.findAllByOrderByEmailAsc().stream()
+				.filter(admin -> admin.getEmail().equals(ADMIN)).findFirst().orElseThrow();
+		adminUserRepository.save(new AdminUser("outra@example.com", ADMIN));
+
+		mockMvc.perform(withKey(delete("/api/admins/{id}", main.getId())).param("requestedBy", "outra@example.com"))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.detail").value("A conta principal não pode ser removida."));
+		assertThat(adminUserRepository.existsByEmail(ADMIN)).isTrue();
+	}
 }

@@ -9,7 +9,10 @@ import org.springframework.util.StringUtils;
 
 import br.com.asobi.adminauth.config.AdminAuthProperties;
 
-/** Cria o primeiro admin (ADMIN_BOOTSTRAP_EMAIL) se a tabela estiver vazia. */
+/**
+ * Na subida, recoloca a conta principal (ADMIN_MAIN_EMAIL) se ela tiver sumido da tabela e, sem ela,
+ * cria o primeiro admin (ADMIN_BOOTSTRAP_EMAIL) se a tabela estiver vazia.
+ */
 @Component
 public class AdminBootstrap implements ApplicationRunner {
 
@@ -25,6 +28,11 @@ public class AdminBootstrap implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) {
+		String mainEmail = properties.mainEmail();
+		if (StringUtils.hasText(mainEmail) && !adminUserService.isAdmin(mainEmail)) {
+			adminUserService.addAdmin(mainEmail, null);
+			log.info("Conta principal recolocada na lista de admins: {}", AdminUserService.normalize(mainEmail));
+		}
 		if (adminUserService.countAdmins() > 0) {
 			return;
 		}

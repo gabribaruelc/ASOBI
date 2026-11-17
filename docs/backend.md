@@ -108,9 +108,10 @@ Cloud Run desliga e liga de novo.
   Quem cria, envia e confere o código é o [`two-factor-service`](two-factor-service.md).
   Se ele estiver fora do ar, ninguém passa dessa tela. No computador, sem `RESEND_API_KEY` no serviço,
   o código aparece no log dele. Vale também para o modo desenvolvimento.
-- **Senha da conta principal**: `admin@asobistore.app` não recebe código. Depois do login ela digita a senha do
-  painel na mesma tela. Só o hash fica guardado (`ADMIN_PASSWORD_HASH`); 5 erros em 15 minutos bloqueiam a
-  senha por 15 minutos. Para trocar a senha, gere outro hash BCrypt (custo 12) e atualize o segredo
+- **Senha da conta principal**: `admin@asobistore.app` entra pela tela de login com e-mail e senha, sem Google e
+  sem código (`POST /admin/login/senha`); se entrar pelo Google, digita a senha no lugar do código. Ela não
+  pode ser removida da lista de admins. Só o hash fica guardado (`ADMIN_PASSWORD_HASH`); 5 erros em 15 minutos
+  bloqueiam a senha por 15 minutos. Para trocar a senha, gere outro hash BCrypt (custo 12) e atualize o segredo
   `asobi-admin-password-hash`. Isso vale mesmo com `TWO_FACTOR_SERVICE_URL` vazia.
 
 ### O que tem no painel

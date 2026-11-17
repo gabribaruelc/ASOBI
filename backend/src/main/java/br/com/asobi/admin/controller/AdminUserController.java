@@ -16,6 +16,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import br.com.asobi.admin.directory.AdminDirectory;
 import br.com.asobi.admin.security.CurrentAdmin;
+import br.com.asobi.admin.twofactor.AdminPasswordCheck;
 import br.com.asobi.common.exception.BusinessException;
 import br.com.asobi.common.exception.NotFoundException;
 import jakarta.validation.constraints.Email;
@@ -26,9 +27,11 @@ import jakarta.validation.constraints.NotBlank;
 public class AdminUserController {
 
 	private final AdminDirectory adminDirectory;
+	private final AdminPasswordCheck passwordCheck;
 
-	public AdminUserController(AdminDirectory adminDirectory) {
+	public AdminUserController(AdminDirectory adminDirectory, AdminPasswordCheck passwordCheck) {
 		this.adminDirectory = adminDirectory;
+		this.passwordCheck = passwordCheck;
 	}
 
 	@GetMapping
@@ -59,6 +62,11 @@ public class AdminUserController {
 	@PostMapping("/{id}/excluir")
 	public String remove(@PathVariable Long id, Authentication authentication, RedirectAttributes redirect) {
 		try {
+			boolean mainAccount = adminDirectory.listAdmins().stream()
+					.anyMatch(admin -> admin.id().equals(id) && passwordCheck.isMainAccount(admin.email()));
+			if (mainAccount) {
+				throw new BusinessException("A conta principal não pode ser removida.");
+			}
 			adminDirectory.removeAdmin(id, CurrentAdmin.emailOf(authentication));
 			redirect.addFlashAttribute("success", "Acesso removido.");
 		} catch (BusinessException | NotFoundException ex) {
@@ -68,6 +76,7 @@ public class AdminUserController {
 	}
 
 	private void addAdmins(Model model) {
+		model.addAttribute("mainAdminEmail", passwordCheck.mainEmail());
 		try {
 			model.addAttribute("admins", adminDirectory.listAdmins());
 		} catch (BusinessException ex) {

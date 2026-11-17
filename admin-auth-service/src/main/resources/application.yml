@@ -36,6 +36,8 @@ admin-auth-service:
 admin-auth:
   # primeiro admin, criado na subida só se a lista estiver vazia
   bootstrap-email: ${ADMIN_BOOTSTRAP_EMAIL:}
+  # conta principal: não pode ser removida e volta para a lista a cada subida. Vazio = nenhuma
+  main-email: ${ADMIN_MAIN_EMAIL:admin@asobistore.app}
   google:
     # o mesmo GOOGLE_CLIENT_ID do backend: o ID token precisa ter sido emitido para ele.
     # vazio = login Google indisponível

@@ -106,9 +106,8 @@ class AdminSecurityTests {
 
 	@Test
 	void cannotRemoveYourself() throws Exception {
-		Long ownId = adminDirectory.listAdmins().stream()
-				.filter(admin -> admin.email().equals(ADMIN)).findFirst().orElseThrow().id();
-		mockMvc.perform(post("/admin/admins/{id}/excluir", ownId).with(user(ADMIN)).with(csrf()))
+		AdminAccount own = adminDirectory.addAdmin("propria@example.com", ADMIN);
+		mockMvc.perform(post("/admin/admins/{id}/excluir", own.id()).with(user(own.email())).with(csrf()))
 				.andExpect(flash().attribute("error", "Você não pode remover o seu próprio acesso."));
 	}
 
