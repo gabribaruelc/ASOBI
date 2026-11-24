@@ -8,3 +8,6 @@ AGENTS.md
 
 # Relatórios de erro da JVM
 hs_err_pid*.log
+
+# Documentação (fica só local)
+*.md
