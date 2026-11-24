@@ -1,4 +1,4 @@
-// Deploy da loja na Cloudflare (Workers) pelo OpenNext. Ver docs/frontend.md.
+// Deploy da loja na Cloudflare (Workers) pelo OpenNext.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
